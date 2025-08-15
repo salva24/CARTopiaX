@@ -210,7 +210,7 @@ real_t CartCell::ConsumeSecreteSubstance(int substance_id, real_t old_concentrat
   if (substance_id == oxygen_dgrid_->GetContinuumId()) {
     res= (old_concentration + constant1_oxygen_) / constant2_oxygen_;// consuming oxygen
   } else if (substance_id == immunostimulatory_factor_dgrid_->GetContinuumId()) {
-    res= old_concentration;//This point should never be reached
+    res= old_concentration;//CAR-T do not change immunostimulatory factor levels
   } else {
     throw std::invalid_argument("Unknown substance id: " + std::to_string(substance_id));
   }

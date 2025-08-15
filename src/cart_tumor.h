@@ -108,17 +108,17 @@ inline int Simulate(int argc, const char** argv) {
   // ───────────────────────────────────────
   std::vector<Real3> positions=CreateSphereOfTumorCells(kInitialRadiusTumor);//positions of the cells
   // positions={{0.1,0.1,0.1},{19.9,19.9,19.9}};//Debug {0.1,0.1,0.1},{19.9,19.9,19.9}
-  for (const auto& pos : positions) {
-    TumorCell* tumor_cell = new TumorCell(pos);
-    tumor_cell->AddBehavior(new StateControlGrowProliferate());
-    ctxt->AddAgent(tumor_cell);
-  }
+  // for (const auto& pos : positions) {
+  //   TumorCell* tumor_cell = new TumorCell(pos);
+  //   tumor_cell->AddBehavior(new StateControlGrowProliferate());
+  //   ctxt->AddAgent(tumor_cell);
+  // }
 
 
-  // //debug
-  // CartCell* cart_cell = new CartCell({0.,0.,0.});
-  // cart_cell->AddBehavior(new StateControlCart());
-  // ctxt->AddAgent(cart_cell);
+  //debug
+  CartCell* cart_cell = new CartCell({0.,0.,0.});
+  cart_cell->AddBehavior(new StateControlCart());
+  ctxt->AddAgent(cart_cell);
 
 
 
