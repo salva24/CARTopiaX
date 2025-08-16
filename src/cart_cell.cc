@@ -105,32 +105,17 @@ void CartCell::ChangeVolumeExponentialRelaxationEquation(real_t relaxation_rate_
 //compute Displacement
 Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
                             real_t squared_radius, real_t dt) {
-
-      // std::cout << "Calculating displacement..." << std::endl;//Debug
-
-  // const auto& tf = GetTractorForce();
-
-  // // the 3 types of movement that can occur
-  // // bool biological_translation = false;
-  // bool physical_translation = false;
-  // // bool physical_rotation = false;
-
-  // real_t h = dt;
+  
   Real3 movement_at_next_step{0, 0, 0};
   squared_radius=kSquaredMaxDistanceNeighborsForce;//this should be chaged in a future version of BioDynaMo in order to have a cleaner code instead of hardcoding it here
-
-  // // BIOLOGY :
-  // // 0) Start with tractor force : What the biology defined as active
-  // // movement------------
-  // movement_at_next_step += tf * h;//this is actually 0 for cart cells
-
-  // PHYSICS
-  // the physics force to move the point mass
+  
   Real3 translation_velocity_on_point_mass{0, 0, 0};
 
+  //--------------------------------------------
+  //Adhesion and repulsion forces
+  //--------------------------------------------
   // We check for every neighbor object if they touch us, i.e. push us
   // away and agreagate the velocities
-
   uint64_t non_zero_neighbor_forces = 0;
   if (!IsStatic()) {
     auto* ctxt = Simulation::GetActive()->GetExecutionContext();
@@ -152,52 +137,29 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
     }
   }
 
+  //--------------------------------------------
+
+  //Still in progress
+  Real3 motility{0, 0, 0};
+
+  if (DoesCellMove()){
+    //compute motility
+  }
+
+
+
+
+
+
+
+
+
+
+  //--------------------------------------------
   // Two step Adams-Bashforth approximation of the time derivative for position
   // position(t + dt) ≈ position(t) + dt * [ 1.5 * velocity(t) - 0.5 * velocity(t - dt) ]
+  //--------------------------------------------
   movement_at_next_step += translation_velocity_on_point_mass * kDnew + older_velocity_ * kDold;
-
-  //Debug
-    //     std::ofstream file1("output/movement_at_next_step.csv", std::ios::app);
-    // if (file1.is_open()) {
-
-    //   // Calculate time in days, hours, minutes
-    //   double total_minutes = Simulation::GetActive()->GetScheduler()->GetSimulatedTime();
-    //   // Write data to CSV file
-    //   file1
-    //    << "minute"<<total_minutes << ","
-    //    <<"translation_velocity_on_point_mass"<< translation_velocity_on_point_mass[0]<< ","
-    //    << translation_velocity_on_point_mass[1] << ","
-    //    << translation_velocity_on_point_mass[2] << ","
-    //    << "kDnew" << kDnew << ","
-    //    << "older_velocity_" << older_velocity_[0] << ","
-    //     << older_velocity_[1] << ","
-    //     << older_velocity_[2] << ","
-    //    << "kDold" << kDold << "\n";
-    // }
-
-  //Debug Output forces
-    // std::ofstream file("output/forces.csv", std::ios::app);
-    // if (file.is_open()) {
-      
-    //   // Calculate time in days, hours, minutes
-    //   double total_minutes = Simulation::GetActive()->GetScheduler()->GetSimulatedTime();
-    //   double modulus_total_displacement = movement_at_next_step[0] * movement_at_next_step[0] +
-    //                                      movement_at_next_step[1] * movement_at_next_step[1] +
-    //                                      movement_at_next_step[2] * movement_at_next_step[2];
-    //   modulus_total_displacement = std::sqrt(modulus_total_displacement);
-    //   Real3 position = this->GetPosition();
-    //   // Write data to CSV file
-    //   file 
-    //    << total_minutes << ","
-    //     << position[0] << ","
-    //    << position[1] << ","
-    //    << position[2] << ","
-    //    << movement_at_next_step[0] << ","
-    //    << movement_at_next_step[1] << ","
-    //    << movement_at_next_step[2] << ","
-    //    << modulus_total_displacement << "\n";
-    // }
-    // End Debug Output
 
   older_velocity_ = translation_velocity_on_point_mass;
 
