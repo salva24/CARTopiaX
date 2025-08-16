@@ -30,8 +30,9 @@ CartCell::CartCell(const Real3& position) {
   this->SetNuclearVolume(kDefaultVolumeNucleusCartCell); // Set default nuclear volume
 
 
-  this->oxygen_dgrid_ = Simulation::GetActive()->GetResourceManager()->GetDiffusionGrid("oxygen"); // Pointer to oxygen diffusion grid
-  this->immunostimulatory_factor_dgrid_ = Simulation::GetActive()->GetResourceManager()->GetDiffusionGrid("immunostimulatory_factor"); // Pointer to immunostimulatory_factor diffusion grid
+  ResourceManager &rm = *Simulation::GetActive()->GetResourceManager();
+  this->oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen"); // Pointer to oxygen diffusion grid
+  this->immunostimulatory_factor_dgrid_ = rm.GetDiffusionGrid("immunostimulatory_factor"); // Pointer to immunostimulatory_factor diffusion grid
   // Initially not attached to a tumor cell
   this->attached_to_tumor_cell_ = false; 
   this->attached_cell_ = nullptr; // Initialize attached cell pointer to null
