@@ -1,19 +1,22 @@
-// -----------------------------------------------------------------------------
-// Copyright (C) 2025 Salvador de la Torre Gonzalez
-// Co-author: Luciana Melina Luque
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -----------------------------------------------------------------------------
+/*
+ * Copyright 2025 compiler-research.org, Salvador de la Torre Gonzalez, Luciana Melina Luque
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *     SPDX-License-Identifier: Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This file contains a model developed under Google Summer of Code (GSoC)
+ * for the compiler-research.org organization.
+ */
 
 #ifndef CART_CELL_H_
 #define CART_CELL_H_
@@ -27,21 +30,22 @@
 
 namespace bdm {
 
-
-// ─────────────────────────────
-// CartCellState Enum Definition
-// ─────────────────────────────
+/// Enumeration defining the possible states of a CAR-T cell
+/// 
+/// This enum class represents the different states that a CAR-T cell can be in
+/// during its lifecycle in the simulation.
 enum class CartCellState : int {
-  //living cell
-  kAlive=0,
+  kAlive=0,///< Living cell state - the cell is alive and functioning normally
 
-  // Apoptotic schedule of a apoptotic cell: controled death
-  kApoptotic=1 // Apoptotic phase (the cell is undergoing programmed cell death characterized by cell shrinkage)
+  kApoptotic=1///< Apoptotic phase - the cell is undergoing programmed cell death characterized by cell shrinkage and controlled death
 };
 
-// ─────────────────────────────
-// CartCell Class Definition
-// ─────────────────────────────
+/// CAR-T cell class implementation
+/// 
+/// This class represents a CAR-T (Chimeric Antigen Receptor T-cell) in the simulation.
+/// It inherits from the base Cell class and includes specific behaviors and properties
+/// related to CAR-T cell biology, including states, volume dynamics, and interactions
+/// with tumor cells.
 class CartCell : public Cell {
   BDM_AGENT_HEADER(CartCell, Cell, 1);
 
@@ -50,7 +54,7 @@ class CartCell : public Cell {
   explicit CartCell(const Real3& position);
   virtual ~CartCell() {}
 
-  //Getters and Setters
+  ///Getters and Setters
   void SetState(CartCellState state) { state_ = state; }
   CartCellState GetState() const { return state_; }
 
@@ -90,7 +94,7 @@ class CartCell : public Cell {
   TumorCell* GetAttachedCell() const { return attached_cell_; }
   void SetAttachedCell(TumorCell* cell) { attached_cell_ = cell; }
 
-  //returns whether the cell moves by its own
+  /// Returns whether the cell moves by its own
   bool DoesCellMove();
 
   real_t GetTargetTotalVolume();
@@ -99,59 +103,122 @@ class CartCell : public Cell {
   DiffusionGrid* GetOxygenDiffusionGrid() const { return oxygen_dgrid_; }
   /// Returns the diffusion grid for immunostimulatory factors
   DiffusionGrid* GetImmunostimulatoryFactorDiffusionGrid() const { return immunostimulatory_factor_dgrid_; }
-
-  // This method explicitly solves the system of exponential relaxation differential equation using a discrete 
-  // update step. It is used to grow or shrink the volume (and proportions) smoothly toward a desired target 
-  // volume over time. The relaxations rate controls the speed of convergence and dt=1 (the time_step). 
+  
+  /// Change volume using exponential relaxation equation
+  /// 
+  /// This method explicitly solves the system of exponential relaxation differential
+  /// equations using a discrete update step. It is used to grow or shrink the volume
+  /// (and proportions) smoothly toward a desired target volume over time. The relaxation
+  /// rate controls the speed of convergence and dt=1 (the time_step).
+  /// 
+  /// @param relaxation_rate_cytoplasm Relaxation rate for cytoplasm volume changes
+  /// @param relaxation_rate_nucleus Relaxation rate for nucleus volume changes
+  /// @param relaxation_rate_fluid Relaxation rate for fluid volume changes
   void ChangeVolumeExponentialRelaxationEquation(real_t relaxation_rate_cytoplasm, real_t relaxation_rate_nucleus, real_t relaxation_rate_fluid);
 
-  //compute Displacement
+  /// Calculate displacement of the cell
+  /// 
+  /// Computes the displacement of the cell based on interaction forces.
+  /// 
+  /// @param force Pointer to the interaction force object
+  /// @param squared_radius The squared radius of the cell
+  /// @param dt The time step for the simulation
+  /// @return The calculated displacement vector
   Real3 CalculateDisplacement(const InteractionForce* force,
                               real_t squared_radius, real_t dt) override;
 
-  //Compute new oxygen or immunostimulatory factor concentration after consumption/ secretion
+  /// Consume or secrete substances
+  /// 
+  /// Computes new oxygen or immunostimulatory factor concentration after
+  /// consumption or secretion by the cell.
+  /// 
+  /// @param substance_id The ID of the substance (oxygen or immunostimulatory factor)
+  /// @param old_concentration The previous concentration of the substance
+  /// @return The new concentration after consumption/secretion
   real_t ConsumeSecreteSubstance(int substance_id, real_t old_concentration);
 
-  //constants after cell's change of volume or quantities
+  /// Compute constants for consumption and secretion
+  /// 
+  /// Updates constants after the cell's change of volume or quantities.
+  /// These constants are used in the consumption/secretion differential equations.
   void ComputeConstantsConsumptionSecretion();
 
- //Attributes
  private:
-  CartCellState state_;  // Current state of the cart cell
-  int timer_state_;//timer to track time in the current state (in minutes): used for apoptotic state
-  DiffusionGrid* oxygen_dgrid_;  // Pointer to the oxygen diffusion grid
-  DiffusionGrid* immunostimulatory_factor_dgrid_;  // Pointer to the immunostimulatory_factor diffusion grid
-  bool attached_to_tumor_cell_; // Flag to indicate if the cell is attached to a tumor cell
-  real_t current_live_time_; // Current time untill apoptosis
-  //volumes
+  /// Current state of the CAR-T cell
+  CartCellState state_;
+  
+  /// Timer to track time in the current state (in minutes)
+  /// Used for apoptotic state timing
+  int timer_state_;
+  
+  /// Pointer to the oxygen diffusion grid
+  DiffusionGrid* oxygen_dgrid_;
+  
+  /// Pointer to the immunostimulatory factor diffusion grid
+  DiffusionGrid* immunostimulatory_factor_dgrid_;
+  
+  /// Flag indicating if the cell is attached to a tumor cell
+  bool attached_to_tumor_cell_;
+  
+  /// Current time until apoptosis
+  real_t current_live_time_;
+  
+  /// Fluid fraction of the cell volume
   real_t fluid_fraction_;
-  real_t nuclear_volume_; // Volume of the nucleus
-  // Target volume for shrinking apoptotic cells. The change of volume follows a exponential relaxation equation with this target volume
-  real_t target_cytoplasm_solid_; 
+  
+  /// Volume of the nucleus
+  real_t nuclear_volume_;
+  
+  /// Target cytoplasm solid volume for exponential relaxation
+  /// Used during volume changes following exponential relaxation equation
+  real_t target_cytoplasm_solid_;
+  
+  /// Target nucleus solid volume for exponential relaxation
   real_t target_nucleus_solid_;
+  
+  /// Target fluid fraction for exponential relaxation
   real_t target_fraction_fluid_;
+  
+  /// Target relation between cytoplasm and nucleus volumes
   real_t target_relation_cytoplasm_nucleus_;
-  Real3 older_velocity_; // Velocity of the cell in the previous step
+  
+  /// Velocity of the cell in the previous time step
+  Real3 older_velocity_;
+  
+  /// Rate of oxygen consumption by the cell
   real_t oxygen_consumption_rate_;
+  
+  /// Rate of immunostimulatory factor secretion by the cell
   real_t immunostimulatory_factor_secretion_rate_;
-  //constants for ConsumptionSecretion differential equation solution
+  
+  /// Constant 1 for oxygen consumption/secretion differential equation solution
   real_t constant1_oxygen_;
+  
+  /// Constant 2 for oxygen consumption/secretion differential equation solution
   real_t constant2_oxygen_;
-  TumorCell* attached_cell_; // Pointer to the attached tumor cell
+  
+  /// Pointer to the attached tumor cell
+  TumorCell* attached_cell_;
+
 };
 
-// ─────────────────────────────
-// Behavior: StateControlCart
-// ─────────────────────────────
+/// Behavior class for controlling CAR-T cell state transitions
+/// 
+/// This behavior handles the state control logic for CAR-T cells, managing
+/// transitions between different cell states: alive and apoptotic phases.
+/// It inherits from the base Behavior class and implements the Run method to
+/// execute the state control logic during simulation steps.
 struct StateControlCart : public Behavior {
   BDM_BEHAVIOR_HEADER(StateControlCart, Behavior, 1);
 
   StateControlCart() { AlwaysCopyToNew(); }
+  
   virtual ~StateControlCart() {}
 
+  /// Execute the state control behavior
   void Run(Agent* agent) override;
 };
 
 }  // namespace bdm
 
-#endif  // CART_CELL_H_
+#endif
