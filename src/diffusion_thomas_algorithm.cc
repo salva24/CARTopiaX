@@ -22,6 +22,7 @@
 #include "core/simulation.h"
 #include "hyperparams.h"
 #include "tumor_cell.h"
+#include "cart_cell.h"
 
 namespace bdm {
 
@@ -260,6 +261,13 @@ void DiffusionThomasAlgorithm::ComputeConsumptionsSecretions() {
   //in a future version of BioDynaMo this should be parallelized getting the agents inside each chemical voxel and trating each voxel independently.
   rm->ForEachAgent([this, current_time](bdm::Agent* agent) {
     if (auto* cell = dynamic_cast<TumorCell*>(agent)) {
+      // Handle TumorCell agents
+      const auto& pos = cell->GetPosition();
+      real_t conc = this->GetValue(pos);
+      real_t new_conc = cell->ConsumeSecreteSubstance(GetContinuumId(),conc);
+      this->ChangeConcentrationBy(pos, new_conc - conc, InteractionMode::kAdditive, false);
+    } else if (auto* cell = dynamic_cast<CartCell*>(agent)) {
+      // Handle CartCell agents
       const auto& pos = cell->GetPosition();
       real_t conc = GetValue(pos);
       real_t new_conc = cell->ConsumeSecreteSubstance(GetContinuumId(),conc);
