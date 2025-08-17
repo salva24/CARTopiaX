@@ -64,7 +64,7 @@ CartCell::CartCell(const Real3& position) {
 
 // Cart cells can move if they are alive and not attached to a tumor cell
 bool CartCell::DoesCellMove() {
-  return (state_ == CartCellState::kAlive && !attached_to_tumor_cell_); 
+  return state_ == CartCellState::kAlive && !attached_to_tumor_cell_; 
 }
 
 
