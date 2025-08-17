@@ -85,7 +85,7 @@ biodynamo run
 **Option 2:**  
 Directly from the build directory:
 ```bash
-./build/cart_tumor
+./build/CARTopiaX
 ```
 
 ---
