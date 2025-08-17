@@ -49,7 +49,7 @@ By adjusting biological and therapeutic parameters, the model enables **in silic
 Clone the repository:
 ```bash
 git clone https://github.com/compiler-research/CARTopiaX.git
-cd cart_tumor
+cd CARTopiaX
 ```
 
 ---
