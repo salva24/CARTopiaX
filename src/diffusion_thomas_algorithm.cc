@@ -260,6 +260,7 @@ void DiffusionThomasAlgorithm::ComputeConsumptionsSecretions() {
   real_t current_time = GetSimulatedTime();
   //in a future version of BioDynaMo this should be parallelized getting the agents inside each chemical voxel and trating each voxel independently.
   rm->ForEachAgent([this, current_time](bdm::Agent* agent) {
+    //In the future BioDynaMo's Agent class should be changed to avoid expensive Dynamic Casting. Or maybe at least making a new CellExtended class from which tumor cells and cart cells can be derived.
     if (auto* cell = dynamic_cast<TumorCell*>(agent)) {
       // Handle TumorCell agents
       const auto& pos = cell->GetPosition();

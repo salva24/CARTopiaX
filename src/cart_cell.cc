@@ -202,7 +202,7 @@ real_t CartCell::ConsumeSecreteSubstance(int substance_id, real_t old_concentrat
     // consuming oxygen
     res= (old_concentration + constant1_oxygen_) / constant2_oxygen_;
   } else if (substance_id == immunostimulatory_factor_dgrid_->GetContinuumId()) {
-    // This point should never be reached
+    //CAR-T do not change immunostimulatory factor levels
     res= old_concentration;
 
   } else {
