@@ -39,7 +39,7 @@ CartCell::CartCell(const Real3& position) {
 
 
   // Pointer to oxygen diffusion grid
-  ResourseManager &rm = *Simulation::GetActive()->GetResourceManager();
+  auto &rm = *Simulation::GetActive()->GetResourceManager();
   oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen");
   // Pointer to immunostimulatory_factor diffusion grid
   immunostimulatory_factor_dgrid_ = rm.GetDiffusionGrid("immunostimulatory_factor");

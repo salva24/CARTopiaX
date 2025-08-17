@@ -160,25 +160,7 @@ void DiffusionThomasAlgorithm::Step(real_t dt) {//instead of overwriting Step, i
   }
   DiffuseChemical(dt);
 
-  //This should be done this way instead but there is a bug in BioDynaMo that makes bc_type be "Neumann" no matter what. In future versions of BioDynaMo this should be fixed
-  // auto bc_type = Simulation::GetActive()->GetParam()->diffusion_boundary_condition;
-  // std::cout << bc_type << std::endl;
-  // if (bc_type == "Closed") {
-  //   DiffuseWithClosedEdge(dt);
-  // } else if (bc_type == "Open" ) {
-  //   DiffuseWithOpenEdge(dt);
-  // } else if (bc_type == "Dirichlet") {
-  //   DiffuseWithDirichlet(dt);
-  // } else if (bc_type == "Neumann") {
-  //   DiffuseWithNeumann(dt);
-  // } else if (bc_type == "Periodic") {
-  //   DiffuseWithPeriodic(dt);
-  // } else {
-  //   Log::Error(
-  //       "DiffusionThomasAlgorithm::Diffuse", "Boundary condition of type '",
-  //       bc_type,
-  //       "' is not implemented. Defaulting to 'closed' boundary condition");
-  // }
+  //This should be done considering different border cases instead of using the dirichlet_border_ flag. However, there is a bug in BioDynaMo that makes bc_type be "Neumann" no matter what. In future versions of BioDynaMo this should be fixed
 
 }
 
