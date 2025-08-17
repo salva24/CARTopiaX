@@ -29,9 +29,8 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
   auto* b = static_cast<const Cell*>(rhs);
 
   // Ignore self-interaction
-  if (a->GetUid() == b->GetUid()) {
+  if (a->GetUid() == b->GetUid())
     return {0.0, 0.0, 0.0, 0.0};
-  }
 
   Real3 displacement = a->GetPosition() - b->GetPosition();
 
