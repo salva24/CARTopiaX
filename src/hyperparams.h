@@ -26,10 +26,11 @@
 
 namespace bdm {
 
+///This file contains hyperparameters used in the simulation. Change: In a future version it needs to be changed into a params file with no need to be recompiled
 
-
-
+///
 /// TumorCell Hyperparameters
+///
 
 /// Rate of secretion of immunostimulatory factor of tumor cells per minute
 constexpr real_t kRateSecretionImmunostimulatoryFactor= 10.0; 
@@ -80,6 +81,7 @@ constexpr real_t kVolumeRelaxarionRateFluidNecroticLysed = 0.050/60.0;
 ///
 /// General Hyperparameters
 ///
+
 /// Seed for random number generation
 constexpr int kSeed =3; 
 

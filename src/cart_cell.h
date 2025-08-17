@@ -36,6 +36,7 @@ namespace bdm {
 /// during its lifecycle in the simulation.
 enum class CartCellState : int {
   kAlive=0,///< Living cell state - the cell is alive and functioning normally
+
   kApoptotic=1///< Apoptotic phase - the cell is undergoing programmed cell death characterized by cell shrinkage and controlled death
 };
 
@@ -204,7 +205,7 @@ class CartCell : public Cell {
 /// Behavior class for controlling CAR-T cell state transitions
 /// 
 /// This behavior handles the state control logic for CAR-T cells, managing
-/// transitions between different cell states such as alive and apoptotic phases.
+/// transitions between different cell states: alive and apoptotic phases.
 /// It inherits from the base Behavior class and implements the Run method to
 /// execute the state control logic during simulation steps.
 struct StateControlCart : public Behavior {
