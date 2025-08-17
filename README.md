@@ -93,7 +93,7 @@ Directly from the build directory:
 
 ## Results
 
-Data about tumor growth and diffrent types of cells population is output in ./output/final_data.csv
+Data about tumor growth and diffrent types of cell populations is output in ./output/final_data.csv
 
 To visualize the results in paraview use:
 ```bash
