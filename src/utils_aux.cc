@@ -138,4 +138,17 @@ void OutputSummary::operator()() {
   }
 }
 
+//Function to generate a random direction unitary vector
+Real3 GenerateRandomDirection() {
+  auto* rnd= Simulation::GetActive()->GetRandom();
+  // Generate a random direction vector
+  double theta = kTwicePi * rnd->Uniform(0.0, 1.0);
+  double phi = Math::kPi * rnd->Uniform(0.0, 1.0);
+
+  double sin_phi = std::sin(phi);
+  double cos_phi = std::cos(phi);
+
+  return {sin_phi*std::cos(theta), sin_phi*std::sin(theta), cos_phi};
+}
+
 }  // namespace bdm

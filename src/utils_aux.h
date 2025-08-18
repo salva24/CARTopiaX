@@ -66,6 +66,11 @@ namespace bdm {
   ///   - Current tumor radius in micrometers
   std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, real_t> ComputeNumberTumorCellsAndRadius();
 
+  /// Generates a random direction unitary vector
+  ///
+  /// @return A 3D vector representing a random direction
+  Real3 GenerateRandomDirection();
+
   /// Operation for outputting simulation summary data to CSV files
   /// 
   /// This operation collects and outputs summary statistics about the simulation

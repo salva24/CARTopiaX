@@ -108,6 +108,9 @@ constexpr int kBoundedSpaceLength = 1000;
 /// Initial radius of the spherical tumor (group of cancer cells) in micrometers
 constexpr real_t kInitialRadiusTumor = 150; 
 
+///Do not modify this line: Twice Pi
+constexpr real_t kTwicePi=2.*Math::kPi;
+
 
 constexpr real_t kVolumeRelaxarionRateCytoplasmApoptotic = 1.0/60.0;
 constexpr real_t kVolumeRelaxarionRateNucleusApoptotic = 0.35/60.0;
@@ -190,6 +193,18 @@ constexpr real_t kDefaultVolumeNucleusCartCell = 540.0;
 /// Default fraction of fluid volume in a new CAR-T cell
 constexpr real_t kDefaultFractionFluidCartCell = 0.75; 
 
+/// Motility parameters
+/// Average persistence time before CAR-T cell moves
+constexpr real_t kPersistenceTimeCart = 10; // 10 minutes
+///Higher bias (\in [0,1]) makes CAR-T movement more directed toward immunostimulatory factor source; while a bias of 0 makes the movement random
+constexpr real_t kMigrationBiasCart = 0.5; //0.5
+/// Migration speed
+constexpr real_t kMigrationSpeedCart = 5.0;
+
+///Do not modify this line:  1-kMigrationBiasCart
+constexpr real_t kMigrationOneMinusBiasCart = 1.0 - kMigrationBiasCart;
+/// Do not modify this line:  probability of a CAR-T cell to migrate in a given mechanical time step
+constexpr real_t kMotilityProbability = kDtMechanics / kPersistenceTimeCart;
 
 }  // namespace bdm
 

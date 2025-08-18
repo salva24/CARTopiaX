@@ -129,6 +129,8 @@ void CartCell::ChangeVolumeExponentialRelaxationEquation(real_t relaxation_rate_
 Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
                             real_t squared_radius, real_t dt) {
 
+  auto* sim = Simulation::GetActive();
+
   // real_t h = dt;
   Real3 movement_at_next_step{0, 0, 0};
   // this should be chaged in a future version of BioDynaMo in order to have a cleaner code instead of hardcoding it here
@@ -145,7 +147,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   // away and agreagate the velocities
   uint64_t non_zero_neighbor_forces = 0;
   if (!IsStatic()) {
-    auto* ctxt = Simulation::GetActive()->GetExecutionContext();
+    auto* ctxt = sim->GetExecutionContext();
     auto calculate_neighbor_forces =
         L2F([&](Agent* neighbor, real_t squared_distance) {
           auto neighbor_force = force->Calculate(this, neighbor);
@@ -165,14 +167,39 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   }
 
   //--------------------------------------------
-
-  //Still in progress
-  Real3 motility{0, 0, 0};
-
+  //CAR-T self motility (in case of migration)
+  //--------------------------------------------
+  Real3 current_position = GetPosition();
+  
+  Real3 motility;
   if (DoesCellMove()){
     //compute motility
+    auto* rnd= sim->GetRandom();
+    if (rnd->Uniform(0.0, 1.0) < kMotilityProbability) {
+      //random direction as unitary vector
+      Real3 random_direction = GenerateRandomDirection();
+      Real3 direction_to_immunostimulatory_factor;
+      // returns normalized gradient towards the immunostimulatory factor source
+      immunostimulatory_factor_dgrid_->GetGradient(current_position, &direction_to_immunostimulatory_factor,true);  
+      // motility = bias * direction_to_immunostimulatory_factor + (1-bias)*random_direction
+      motility = kMigrationBiasCart * direction_to_immunostimulatory_factor + kMigrationOneMinusBiasCart * random_direction;
+      // Convert to unit direction
+      motility.Normalize();
+      // Scale by migration speed and add to the velocity from the pushing/adhesive forces
+      translation_velocity_on_point_mass += motility * kMigrationSpeedCart;
+    }
   }
 
+  //--------------------------------------------
+  //CAR-T adhesion to victim cell
+  //--------------------------------------------
+  if (state_ == CartCellState::kAlive) {//If cell is not apoptotic
+    if (attached_to_tumor_cell_) {//attached to tumor cell
+      //try to kill the cancer cell or let it scape
+    } else {//not attached yet
+      //see if a tumor cell is nearby
+    }
+  }
 
 
 
