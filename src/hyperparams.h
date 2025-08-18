@@ -63,7 +63,14 @@ constexpr real_t kDefaultVolumeNewTumorCell = 2494.0;
 constexpr real_t kDefaultVolumeNucleusTumorCell = 540.0; 
 /// Default fraction of fluid volume in a new tumor cell
 constexpr real_t kDefaultFractionFluidTumorCell = 0.75; 
-
+/// Average adhesion time in minutes for Tumor Cell under CAR-T attack before escaping
+constexpr real_t kAdhesionTime = 60.0;
+/// Min oncoprotein level to be killed by a CAR-T cell
+constexpr real_t kOncoproteinLimit = 0.5;
+/// Max oncoprotein level
+constexpr real_t kOncoproteinSaturation = 2.0;
+///Do not modify this line: difference between saturation and limit
+constexpr real_t kOncoproteinDifference = kOncoproteinSaturation - kOncoproteinLimit;
 
 ///volume relaxation rate (min^-1) for each state
 constexpr real_t kVolumeRelaxarionRateAliveCytoplasm =0.13/60.;// 0.27/ 60.0;
@@ -193,6 +200,9 @@ constexpr real_t kDefaultVolumeNucleusCartCell = 540.0;
 /// Default fraction of fluid volume in a new CAR-T cell
 constexpr real_t kDefaultFractionFluidCartCell = 0.75; 
 
+/// How often a CAR-T cell tries to kill an attached cancer cell
+constexpr real_t kKillRateCart = 0.06667; // 1/min
+
 /// Motility parameters
 /// Average persistence time before CAR-T cell moves
 constexpr real_t kPersistenceTimeCart = 10; // 10 minutes
@@ -201,10 +211,12 @@ constexpr real_t kMigrationBiasCart = 0.5; //0.5
 /// Migration speed
 constexpr real_t kMigrationSpeedCart = 5.0;
 
-///Do not modify this line:  1-kMigrationBiasCart
+/// Do not modify this line:  1-kMigrationBiasCart
 constexpr real_t kMigrationOneMinusBiasCart = 1.0 - kMigrationBiasCart;
 /// Do not modify this line:  probability of a CAR-T cell to migrate in a given mechanical time step
 constexpr real_t kMotilityProbability = kDtMechanics / kPersistenceTimeCart;
+/// Do not modify this line:  probability of a Tumor cell to escape in a given mechanical time step
+constexpr real_t kProbabilityEscape = kDtMechanics / ( kAdhesionTime + 1e-15 );
 
 }  // namespace bdm
 

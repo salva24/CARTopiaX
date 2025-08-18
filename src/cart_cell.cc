@@ -170,12 +170,11 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   //CAR-T self motility (in case of migration)
   //--------------------------------------------
   Real3 current_position = GetPosition();
-  
+  auto* rng= sim->GetRandom();
   Real3 motility;
   if (DoesCellMove()){
     //compute motility
-    auto* rnd= sim->GetRandom();
-    if (rnd->Uniform(0.0, 1.0) < kMotilityProbability) {
+    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {
       //random direction as unitary vector
       Real3 random_direction = GenerateRandomDirection();
       Real3 direction_to_immunostimulatory_factor;
@@ -195,19 +194,18 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   //--------------------------------------------
   if (state_ == CartCellState::kAlive) {//If cell is not apoptotic
     if (attached_to_tumor_cell_) {//attached to tumor cell
-      //try to kill the cancer cell or let it scape
+      //try to kill the cancer cell and in case of failure see if it manages to scape
+      if (!TryToInduceApoptosis() && rng->Uniform(0.0, 1.0) < kProbabilityEscape) {
+        //the cancer cell succeded to escape
+        attached_cell_->SetAttachedToCart(false);
+        attached_cell_ = nullptr;
+        attached_to_tumor_cell_=false;
+      }
+      
     } else {//not attached yet
       //see if a tumor cell is nearby
     }
   }
-
-
-
-
-
-
-
-
 
   //--------------------------------------------
   // Two step Adams-Bashforth approximation of the time derivative for position
@@ -220,6 +218,34 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
 
   // Displacement
   return movement_at_next_step;
+}
+
+//Try to induce apoptosis
+bool CartCell::TryToInduceApoptosis() {
+  // If there is no attached cell (this should not happen)
+  if (!attached_to_tumor_cell_)
+    return false;
+
+  //factor of how high is the oncoprotein levelof the cancer cell
+	real_t scale_factor = (attached_cell_->GetOncoproteinLevel()-kOncoproteinLimit)/kOncoproteinDifference;
+	// Clamp scale_factor to be in [0,1]
+  if( scale_factor > 1.0 )
+	  scale_factor = 1.0;
+  // If oncoprotein level is lower than the limit the cancer cell does not become apoptotic
+  if( scale_factor < 0.0 )
+	  scale_factor = 0.0;
+  //CAR-T success of killing probability: aggressive cancer cells are more likely to be killed
+  bool succeeded =  Simulation::GetActive()->GetRandom()->Uniform(0.0, 1.0) < kKillRateCart * scale_factor * kDtMechanics;
+  
+	if(succeeded){
+    //The CAR-T has succeeded to induce apoptosis on the Cancer Cell
+    attached_cell_->StartApoptosis();
+    attached_cell_->SetAttachedToCart(false);
+    attached_cell_ = nullptr;
+    attached_to_tumor_cell_=false;
+	}
+
+  return succeeded;
 }
 
 //Compute new oxygen or immunostimulatory factor concentration after consumption/ secretion
@@ -274,7 +300,8 @@ void StateControlCart::Run(Agent* agent) {
         if (sim->GetRandom()->Uniform(1.0) < kDtCycle/std::max(cell->GetCurrentLiveTime(), 1e-10)) { // Probability of death= 1/CurrentLiveTime, avoiding division by 0
           //the cell Dies
           cell->SetState(CartCellState::kApoptotic);
-          cell->SetTimerState(0);  // Reset timer_state, it should be 0 anyway
+          // Reset timer_state, it should be 0 anyway
+          cell->SetTimerState(0);  
           // Set target volume to 0 (the cell will shrink)
           cell->SetTargetCytoplasmSolid(0.0); 
           cell->SetTargetNucleusSolid(0.0); 
@@ -282,8 +309,10 @@ void StateControlCart::Run(Agent* agent) {
           cell->SetTargetRelationCytoplasmNucleus(0.0);
           //Reduce oxygen consumption
           cell->SetOxygenConsumptionRate(cell->GetOxygenConsumptionRate()*kReductionConsumptionDeadCells);
-          cell->ComputeConstantsConsumptionSecretion(); // Update constants for all Consumption of oxygen
-          if (cell->IsAttachedToTumorCell()) {// Detach from tumor cell if it was attached
+          // Update constants for all Consumption of oxygen
+          cell->ComputeConstantsConsumptionSecretion(); 
+          // Detach from tumor cell if it was attached
+          if (cell->IsAttachedToTumorCell()) {
             cell->GetAttachedCell()->SetAttachedToCart(false);
             cell->SetAttachedCell(nullptr);
             cell->SetAttachedToTumorCell(false);

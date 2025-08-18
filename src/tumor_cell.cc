@@ -279,6 +279,29 @@ void TumorCell::ComputeConstantsConsumptionSecretion() {
   constant2_immunostimulatory_factor_ = 1 + kDtSubstances * (new_volume/ kVoxelVolume) * (immunostimulatory_factor_secretion_rate_);
 }
 
+void TumorCell::StartApoptosis(){
+  // If the cell is already dead, do nothing
+  if (type_ == 5) {return;}
+  
+  // The cell Dies
+  SetState(CartCellState::kApoptotic);
+  // Reset timer_state
+  SetTimerState(0);  
+  // Set target volume to 0 (the cell shrinks)
+  SetTargetCytoplasmSolid(0.0);
+  SetTargetNucleusSolid(0.0);
+  SetTargetFractionFluid(0.0);
+  SetTargetRelationCytoplasmNucleus(0.0);
+  //Reduce oxygen consumption
+  SetOxygenConsumptionRate(GetOxygenConsumptionRate()*kReductionConsumptionDeadCells);
+  //Stop Immunostimulatory Factor Secretion
+  SetImmunostimulatoryFactorSecretionRate(0.0);
+  // Update constants for consumption/secretion differential equation solving
+  ComputeConstantsConsumptionSecretion(); 
+  // Set type to 5 to indicate dead cell
+  SetType(5);
+}
+
 /// Main behavior executed at each simulation step
 void StateControlGrowProliferate::Run(Agent* agent) {
 
@@ -435,16 +458,9 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         break;
       }
       case TumorCellState::kApoptotic:{
-        //CHANGE write this in the function that causes apoptosis
-        // //Stop Secretion and reduce consumption
-        //   for (auto* beh : cell->GetAllBehaviors()) {
-        //     if (auto* c = dynamic_cast<Consumption*>(beh)) {c->SetQuantity(c->GetQuantity()*kReductionConsumptionDeadCells);}// Reduce consumption rate
-        //     else if (auto* s = dynamic_cast<SecretionWithSaturation*>(beh)) {s->SetQuantity(0);} // Stop secretion of immunostimulatory factor
-        //   } 
-        // cell->SetType(5); // Set type to 5 to indicate dead cell
 
         cell->SetTimerState(cell->GetTimerState() + kDtCycle);  // Increase timer_state to track time in this state (kDtCycle minutes per step)
-        //volume change CHANGe check if it should indeed be reduced to 0 
+        
         // The cell shrinks
         cell->ChangeVolumeExponentialRelaxationEquation(kVolumeRelaxarionRateCytoplasmApoptotic,
                                                         kVolumeRelaxarionRateNucleusApoptotic,

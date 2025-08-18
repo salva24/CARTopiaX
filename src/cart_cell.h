@@ -143,6 +143,13 @@ class CartCell : public Cell {
   /// These constants are used in the consumption/secretion differential equations.
   void ComputeConstantsConsumptionSecretion();
 
+  ///Try to induce apoptosis
+  ///
+  ///Tries stochastically to induce apoptosis in the attached tumor cell and in case of success induces the apoptosis
+  ///
+  /// @return true if apoptosis was induced, false otherwise
+  bool TryToInduceApoptosis();
+
  private:
   /// Current state of the CAR-T cell
   CartCellState state_;

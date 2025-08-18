@@ -159,6 +159,11 @@ class TumorCell : public Cell {
   /// These constants are used in the consumption/secretion differential equations.
   void ComputeConstantsConsumptionSecretion();
 
+  ///Start apoptosis
+  ///
+  /// This function is called when the tumor cell is induced to apoptosis by a CAR-T cell.
+  void StartApoptosis();
+
  private:
   /// Current state of the tumor cell
   TumorCellState state_;
