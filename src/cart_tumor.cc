@@ -35,6 +35,7 @@ int Simulate(int argc, const char** argv) {
     param->min_bound = -kBoundedSpaceLength/2;
     param->max_bound = kBoundedSpaceLength/2;  // Cube of 1000x1000x1000 centered at origin
     param->simulation_time_step = kDt;
+    param->statistics = kOutputPerformanceStatistics;//for outputing performance statistics
   };
   
   Simulation simulation(argc, argv, set_param);

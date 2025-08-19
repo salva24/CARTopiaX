@@ -92,6 +92,9 @@ constexpr real_t kVolumeRelaxarionRateFluidNecroticLysed = 0.050/60.0;
 /// Seed for random number generation
 constexpr int kSeed =3; 
 
+/// Output Performance Statistics
+constexpr bool kOutputPerformanceStatistics = true;
+
 /// 0.01 minutes time step for substances secretion/consumption
 constexpr real_t kDtSubstances = 0.01; 
 /// 0.1 minutes time step for the cell mechanics
