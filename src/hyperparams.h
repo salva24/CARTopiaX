@@ -210,6 +210,8 @@ constexpr real_t kPersistenceTimeCart = 10; // 10 minutes
 constexpr real_t kMigrationBiasCart = 0.5; //0.5
 /// Migration speed
 constexpr real_t kMigrationSpeedCart = 5.0;
+///Elastic constant
+constexpr real_t kElasticConstantCart = 0.01;
 
 /// Do not modify this line:  1-kMigrationBiasCart
 constexpr real_t kMigrationOneMinusBiasCart = 1.0 - kMigrationBiasCart;

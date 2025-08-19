@@ -19,6 +19,7 @@
  */
 
 #include "cart_cell.h"
+#include "core/environment/uniform_grid_environment.h"
 
 namespace bdm {
 
@@ -145,9 +146,9 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   //--------------------------------------------
   // We check for every neighbor object if they touch us, i.e. push us
   // away and agreagate the velocities
+  auto* ctxt = sim->GetExecutionContext();
   uint64_t non_zero_neighbor_forces = 0;
   if (!IsStatic()) {
-    auto* ctxt = sim->GetExecutionContext();
     auto calculate_neighbor_forces =
         L2F([&](Agent* neighbor, real_t squared_distance) {
           auto neighbor_force = force->Calculate(this, neighbor);
@@ -193,6 +194,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   //CAR-T adhesion to victim cell
   //--------------------------------------------
   if (state_ == CartCellState::kAlive) {//If cell is not apoptotic
+
     if (attached_to_tumor_cell_) {//attached to tumor cell
       //try to kill the cancer cell and in case of failure see if it manages to scape
       if (!TryToInduceApoptosis() && rng->Uniform(0.0, 1.0) < kProbabilityEscape) {
@@ -201,10 +203,35 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
         attached_cell_ = nullptr;
         attached_to_tumor_cell_=false;
       }
-      
-    } else {//not attached yet
-      //see if a tumor cell is nearby
     }
+    //CHANGE
+    //Compute adhesion forces towards the tumor cells and check for a new attachment
+    Agent* closest_target = nullptr;
+    real_t min_sq_dist = std::numeric_limits<real_t>::max();
+    auto calculate_elastic_displacement =
+      L2F([&](Agent* neighbor, real_t squared_distance) {
+        Real3 displac = neighbor->GetPosition()-current_position;
+        if (std::strcmp(neighbor->GetTypeName(), "TumorCell") == 0) {
+          //movement towards the tumor cells
+          translation_velocity_on_point_mass[0] += displac[0] * kElasticConstantCart;
+          translation_velocity_on_point_mass[1] += displac[1] * kElasticConstantCart;
+          translation_velocity_on_point_mass[2] += displac[2] * kElasticConstantCart;
+          //Look for the closest target if the cell is not attached
+          if (!attached_to_tumor_cell_ && squared_distance < min_sq_dist){
+            closest_target = neighbor;
+            min_sq_dist = squared_distance;
+          }
+        }
+      });
+    ctxt->ForEachNeighbor(calculate_elastic_displacement, *this, 900.);//CHANGE squared radius
+
+    // Attach to the closest tumor cell if found
+    if (auto* victim = dynamic_cast<TumorCell*>(closest_target)) {
+      attached_to_tumor_cell_ = true;
+      attached_cell_ = victim;
+      attached_cell_->SetAttachedToCart(true);
+    }
+
   }
 
   //--------------------------------------------
@@ -234,7 +261,7 @@ bool CartCell::TryToInduceApoptosis() {
   // If oncoprotein level is lower than the limit the cancer cell does not become apoptotic
   if( scale_factor < 0.0 )
 	  scale_factor = 0.0;
-  //CAR-T success of killing probability: aggressive cancer cells are more likely to be killed
+  //CAR-T success of killing probability: aggressive cancer cells (high oncoprotein level) are more likely to be killed
   bool succeeded =  Simulation::GetActive()->GetRandom()->Uniform(0.0, 1.0) < kKillRateCart * scale_factor * kDtMechanics;
   
 	if(succeeded){

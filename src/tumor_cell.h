@@ -74,8 +74,8 @@ class TumorCell : public Cell {
   void SetTimerState(int timer_state) { timer_state_ = timer_state; }
   int GetTimerState() const { return timer_state_; }
 
-  void SetOncoproteineLevel(real_t level);
-  real_t GetOncoproteineLevel() const { return oncoproteine_level_; }  
+  void SetOncoproteinLevel(real_t level);
+  real_t GetOncoproteinLevel() const { return oncoprotein_level_; }  
 
   void SetFluidFraction(real_t fluid_fraction) { fluid_fraction_ = fluid_fraction; }
   real_t GetFluidFraction() const { return fluid_fraction_; }
@@ -178,7 +178,7 @@ class TumorCell : public Cell {
   DiffusionGrid* immunostimulatory_factor_dgrid_;
   
   /// Level of oncoprotein expression
-  real_t oncoproteine_level_;
+  real_t oncoprotein_level_;
   
   /// Transition random rate between states:
   /// Affects the probability of transitioning and depends on the individual cell.

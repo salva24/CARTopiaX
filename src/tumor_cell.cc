@@ -36,8 +36,8 @@ TumorCell::TumorCell(const Real3& position) {
   SetTargetNucleusSolid(kDefaultVolumeNucleusTumorCell*(1-kDefaultFractionFluidTumorCell)); // Set target nucleus solid volume to real_t
   SetTargetCytoplasmSolid((kDefaultVolumeNewTumorCell - kDefaultVolumeNucleusTumorCell) * (1 - kDefaultFractionFluidTumorCell)); // Set target cytoplasm solid volume to real_t
 
-  SetOncoproteineLevel(SamplePositiveGaussian(kOncoproteinMean,kOncoproteinStandardDeviation)); // Set initial oncoproteine level with a truncated normal distribution
-  // SetOncoproteineLevel(1.); //Debug
+  SetOncoproteinLevel(SamplePositiveGaussian(kOncoproteinMean,kOncoproteinStandardDeviation)); // Set initial oncoprotein level with a truncated normal distribution
+  // SetOncoproteinLevel(1.); //Debug
   oxygen_dgrid_ = Simulation::GetActive()->GetResourceManager()->GetDiffusionGrid("oxygen"); // Pointer to oxygen diffusion grid
   immunostimulatory_factor_dgrid_ = Simulation::GetActive()->GetResourceManager()->GetDiffusionGrid("immunostimulatory_factor"); // Pointer to immunostimulatory_factor diffusion grid
   SetTransformationRandomRate(); // Set state transition random rate
@@ -64,7 +64,7 @@ void TumorCell::Initialize(const NewAgentEvent& event) {
       //diffusion grids
       oxygen_dgrid_ = mother->oxygen_dgrid_;  // Pointer to the oxygen diffusion grid
       immunostimulatory_factor_dgrid_ = mother->immunostimulatory_factor_dgrid_;  // Pointer to the immunostimulatory_factor diffusion grid
-      this->SetOncoproteineLevel(mother->oncoproteine_level_); // inherit oncoproteine level from mother cell
+      this->SetOncoproteinLevel(mother->oncoprotein_level_); // inherit oncoprotein level from mother cell
       this->SetOxygenConsumptionRate(mother->GetOxygenConsumptionRate()); // inherit oxygen consumption rate from mother cell
       this->SetImmunostimulatoryFactorSecretionRate(mother->GetImmunostimulatoryFactorSecretionRate()); // inherit immunostimulatory factor secretion rate from mother cell
 
@@ -94,8 +94,8 @@ void TumorCell::Initialize(const NewAgentEvent& event) {
   }
 }
 
-void TumorCell::SetOncoproteineLevel(real_t level) { 
-  oncoproteine_level_ = level; //oncoproteine_level_
+void TumorCell::SetOncoproteinLevel(real_t level) { 
+  oncoprotein_level_ = level; //oncoprotein_level_
     //cell type
     if (level >= 1.5) {//between 1.5 and 2.0
       type_ = 1;
@@ -284,7 +284,7 @@ void TumorCell::StartApoptosis(){
   if (type_ == 5) {return;}
   
   // The cell Dies
-  SetState(CartCellState::kApoptotic);
+  SetState(TumorCellState::kApoptotic);
   // Reset timer_state
   SetTimerState(0);  
   // Set target volume to 0 (the cell shrinks)
@@ -362,22 +362,22 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         }
         // double multiplier1 = multiplier; //Debug
 
-        
-        final_rate_transition= cell->GetTransformationRandomRate() * multiplier * cell->GetOncoproteineLevel(); // Calculate the rate of state change based on oxygen level and oncoproteine (min^-1)
-        
+
+        final_rate_transition= cell->GetTransformationRandomRate() * multiplier * cell->GetOncoproteinLevel(); // Calculate the rate of state change based on oxygen level and oncoprotein (min^-1)
+
         //Debug
         // int current_time = sim->GetScheduler()->GetSimulatedSteps()* kDt; // Get the current time step in minutes
         // std::ofstream file("output/simulation_data_mine" + std::to_string(current_time/(12*60)) + ".csv", std::ios::app);
         // if (file.is_open()) {
         // file  << oxygen_level << "," 
-        //      << cell->GetOncoproteineLevel() << ","
+        //      << cell->GetOncoproteinLevel() << ","
         //      <<cell->GetTransformationRandomRate()<< "," 
         //      << final_rate_transition << "\n";
         // }
         //End Debug
 
             //Debug Debug Output params
-        // std::ofstream file2("output/params_o2_oncoproteine.csv", std::ios::app);
+        // std::ofstream file2("output/params_o2_oncoprotein.csv", std::ios::app);
         // if (file2.is_open()) {
 
         //   // Write data to CSV file
@@ -404,7 +404,7 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         // }
 
         
-        // final_rate_transition= cell->GetTransformationRandomRate() * multiplier * cell->GetOncoproteineLevel(); // Calculate the rate of state change based on oxygen level and oncoproteine (min^-1)
+        // final_rate_transition= cell->GetTransformationRandomRate() * multiplier * cell->GetOncoproteinLevel(); // Calculate the rate of state change based on oxygen level and oncoprotein (min^-1)
         
         real_t time_to_wait=1e100; // Set a very large time to avoid division by zero
         if (final_rate_transition > 0) {
