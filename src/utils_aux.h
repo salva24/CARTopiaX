@@ -57,36 +57,50 @@ namespace bdm {
   /// of each type and the overall radius of the tumor mass.
   /// 
   /// @return Tuple containing:
+  ///   - Total number of tumor cells
   ///   - Number of type 1 tumor cells (most aggressive)
   ///   - Number of type 2 tumor cells
   ///   - Number of type 3 tumor cells  
   ///   - Number of type 4 tumor cells (least aggressive)
   ///   - Number of type 5 tumor cells (dead)
-  ///   - Total number of tumor cells
+  ///   - Number of living CAR-T cells (not apoptotic)
   ///   - Current tumor radius in micrometers
-  std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, real_t> ComputeNumberTumorCellsAndRadius();
+  std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t> ComputeNumberTumorCellsAndRadius();
 
   /// Generates a random direction unitary vector
   ///
   /// @return A 3D vector representing a random direction
   Real3 GenerateRandomDirection();
 
+  /// Spawns a Dosage of CAR-T cells around the tumor
+  /// 
+  /// Called automatically by the simulation scheduler at the specified frequency.
+  /// Spawns a dosage of CAR-T cells around the tumor following the map kTreatment where
+  ///   - The key represents the day of treatment (starting from day 0).
+  ///   - The value represents the number of CAR-T cells administered on that day.
+  struct SpawnCart : public StandaloneOperationImpl {
+    BDM_OP_HEADER(SpawnCart);
+
+    /// Frequency of output (every N simulation steps)
+    uint64_t frequency_ = 1;
+
+    void operator()() override;
+  };
+
+  /// Register SpawnCart operation with CPU as compute target
+  inline BDM_REGISTER_OP(SpawnCart, "SpawnCart", kCpu);
+
+
   /// Operation for outputting simulation summary data to CSV files
   /// 
   /// This operation collects and outputs summary statistics about the simulation
-  /// state to CSV files for post-processing and analysis. It includes information
-  /// about cell populations, tumor characteristics, and other relevant metrics.
+  /// state to "output/final_data.csv" for post-processing and analysis.
   struct OutputSummary : public StandaloneOperationImpl {
     BDM_OP_HEADER(OutputSummary);
 
     /// Frequency of output (every N simulation steps)
     uint64_t frequency_ = 1;
 
-    /// Collects current simulation data and writes it to CSV files
-    /// 
-    /// Called automatically by the simulation scheduler at the specified frequency.
-    /// Gathers statistics about cell populations, tumor radius, and other metrics,
-    /// then outputs them to appropriately named CSV files for analysis.
     void operator()() override;
   };
 

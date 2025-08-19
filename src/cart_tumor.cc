@@ -108,6 +108,13 @@ int Simulate(int argc, const char** argv) {
   ctxt->AddAgent(cart_cell);
   //End Debug
 
+  //Treatment administration operation
+  auto* treatment_op = new bdm::Operation("SpawnCart");
+  //checks if there are is a dosage to spawn every day
+  treatment_op->frequency_ = kStepsOneDay;
+  treatment_op->AddOperationImpl(bdm::kCpu, new bdm::SpawnCart());
+  scheduler->ScheduleOp(treatment_op);
+
   //OutputSummary operation
   auto* summary_op = new bdm::Operation("OutputSummary");
   // Set the interval for outputting CSV files

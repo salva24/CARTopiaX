@@ -216,12 +216,26 @@ constexpr real_t kMigrationSpeedCart = 5.0;
 ///Elastic constant
 constexpr real_t kElasticConstantCart = 0.01;
 
+/// Treatment Dosages
+///
+/// Specifies the CAR-T cell infusion schedule as a map where:
+///   - The key represents the day of treatment (starting from day 0).
+///   - The value represents the number of CAR-T cells administered on that day.
+/// Example: On day 0 and day 8, 3964 CAR-T cells are introduced (matching the initial tumor cell count).
+inline std::map<size_t, size_t> kTreatment = {
+    {0, 3964},  // Day 0: administer 3964 CAR-T cells
+    {8, 3964}   // Day 8: administer 3964 CAR-T cells
+};
+
 /// Do not modify this line:  1-kMigrationBiasCart
 constexpr real_t kMigrationOneMinusBiasCart = 1.0 - kMigrationBiasCart;
 /// Do not modify this line:  probability of a CAR-T cell to migrate in a given mechanical time step
 constexpr real_t kMotilityProbability = kDtMechanics / kPersistenceTimeCart;
 /// Do not modify this line:  probability of a Tumor cell to escape in a given mechanical time step
 constexpr real_t kProbabilityEscape = kDtMechanics / ( kAdhesionTime + 1e-15 );
+/// Do not modify this line: Steps in one day
+constexpr size_t kStepsOneDay = 24*60/kDt;
+
 
 }  // namespace bdm
 
