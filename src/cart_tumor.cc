@@ -48,8 +48,7 @@ int Simulate(int argc, const char** argv) {
 
   auto* env = dynamic_cast<UniformGridEnvironment*>(Simulation::GetActive()->GetEnvironment());
   // Fix the box length for the uniform grid environment
-  // env->SetBoxLength(kLengthBoxMechanics); //Debug Uncomment
-  env->SetBoxLength(30.); //Debug
+  env->SetBoxLength(kLengthBoxMechanics);
 
   // Define Substances
   auto* rm = Simulation::GetActive()->GetResourceManager();
@@ -100,7 +99,10 @@ int Simulate(int argc, const char** argv) {
   //   ctxt->AddAgent(tumor_cell);
   // }
   //Debug
-  CartCell* cart_cell = new CartCell({0, 0, 0});
+  TumorCell* tumor_cell = new TumorCell({0,0,0});
+  tumor_cell->AddBehavior(new StateControlGrowProliferate());
+  ctxt->AddAgent(tumor_cell);
+  CartCell* cart_cell = new CartCell({100,100,100});
   cart_cell->AddBehavior(new StateControlCart());
   ctxt->AddAgent(cart_cell);
   //End Debug

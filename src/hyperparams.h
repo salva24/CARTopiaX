@@ -109,7 +109,7 @@ constexpr int kOutputCsvInterval = 12*60/kDt;
 
 
 /// Total simulation time in minutes (30 days)
-constexpr int kTotalMinutesToSimulate = 30*24*60; 
+constexpr int kTotalMinutesToSimulate = 30*24*60; //30*24*60
 /// Length of the bounded space in micrometers
 constexpr int kBoundedSpaceLength = 1000; 
 /// Initial radius of the spherical tumor (group of cancer cells) in micrometers

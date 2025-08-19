@@ -204,7 +204,6 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
         attached_to_tumor_cell_=false;
       }
     }
-    //CHANGE
     //Compute adhesion forces towards the tumor cells and check for a new attachment
     Agent* closest_target = nullptr;
     real_t min_sq_dist = std::numeric_limits<real_t>::max();
@@ -223,7 +222,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
           }
         }
       });
-    ctxt->ForEachNeighbor(calculate_elastic_displacement, *this, 900.);//CHANGE squared radius
+    ctxt->ForEachNeighbor(calculate_elastic_displacement, *this, squared_radius);
 
     // Attach to the closest tumor cell if found
     if (auto* victim = dynamic_cast<TumorCell*>(closest_target)) {
