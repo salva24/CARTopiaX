@@ -93,20 +93,11 @@ int Simulate(int argc, const char** argv) {
 
   // One spherical tumor of radius kInitialRadiusTumor in the center of the simulation space
   std::vector<Real3> positions=CreateSphereOfTumorCells(kInitialRadiusTumor);//positions of the cells
-  //Debug: it needs to be unccommented
-  // for (const auto& pos : positions) {
-  //   TumorCell* tumor_cell = new TumorCell(pos);
-  //   tumor_cell->AddBehavior(new StateControlGrowProliferate());
-  //   ctxt->AddAgent(tumor_cell);
-  // }
-  //Debug
-  TumorCell* tumor_cell = new TumorCell({0,0,0});
-  tumor_cell->AddBehavior(new StateControlGrowProliferate());
-  ctxt->AddAgent(tumor_cell);
-  CartCell* cart_cell = new CartCell({100,100,100});
-  cart_cell->AddBehavior(new StateControlCart());
-  ctxt->AddAgent(cart_cell);
-  //End Debug
+  for (const auto& pos : positions) {
+    TumorCell* tumor_cell = new TumorCell(pos);
+    tumor_cell->AddBehavior(new StateControlGrowProliferate());
+    ctxt->AddAgent(tumor_cell);
+  }
 
   //Treatment administration operation
   auto* treatment_op = new bdm::Operation("SpawnCart");
