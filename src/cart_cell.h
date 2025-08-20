@@ -143,12 +143,21 @@ class CartCell : public Cell {
   /// These constants are used in the consumption/secretion differential equations.
   void ComputeConstantsConsumptionSecretion();
 
+  /// Try to get attached to a tumor cell
+  ///
+  /// @param victim The tumor cell to which the CAR-T cell tries to attach
+  /// @param squared_distance The squared distance between the CAR-T cell and the tumor cell
+  /// @param rng Pointer to the random number generator
+  /// Attempts to attach the CAR-T cell to a selected tumor cell.
+  void TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Random* rng);
+
   ///Try to induce apoptosis
   ///
   ///Tries stochastically to induce apoptosis in the attached tumor cell and in case of success induces the apoptosis
   ///
+  /// @param rng Pointer to the random number generator
   /// @return true if apoptosis was induced, false otherwise
-  bool TryToInduceApoptosis();
+  bool TryToInduceApoptosis(Random* rng);
 
  private:
   /// Current state of the CAR-T cell

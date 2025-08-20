@@ -130,6 +130,16 @@ void CartCell::ChangeVolumeExponentialRelaxationEquation(real_t relaxation_rate_
 Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
                             real_t squared_radius, real_t dt) {
 
+  //Debug CAR-T positions
+  Real3 position = GetPosition();
+	std::ofstream file("output/positions_cart.csv", std::ios::app);
+	if (file.is_open()) {
+	file  << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << "," 
+		<< position[0] << "," << position[1] << "," << position[2] << ", norm:" << position.Norm() << "\n";
+	}
+  //End Debug
+
+
   auto* sim = Simulation::GetActive();
 
   // real_t h = dt;
@@ -147,25 +157,18 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   // We check for every neighbor object if they touch us, i.e. push us
   // away and agreagate the velocities
   auto* ctxt = sim->GetExecutionContext();
-  uint64_t non_zero_neighbor_forces = 0;
   if (!IsStatic()) {
     auto calculate_neighbor_forces =
         L2F([&](Agent* neighbor, real_t squared_distance) {
           auto neighbor_force = force->Calculate(this, neighbor);
-          if (neighbor_force[0] != 0 || neighbor_force[1] != 0 ||
-              neighbor_force[2] != 0) {
-            non_zero_neighbor_forces++;
-            translation_velocity_on_point_mass[0] += neighbor_force[0];
-            translation_velocity_on_point_mass[1] += neighbor_force[1];
-            translation_velocity_on_point_mass[2] += neighbor_force[2];
-          }
+          translation_velocity_on_point_mass[0] += neighbor_force[0];
+          translation_velocity_on_point_mass[1] += neighbor_force[1];
+          translation_velocity_on_point_mass[2] += neighbor_force[2];
         });
     ctxt->ForEachNeighbor(calculate_neighbor_forces, *this, squared_radius);
-
-    if (non_zero_neighbor_forces > 1) {
-      SetStaticnessNextTimestep(false);
-    }
   }
+  // std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"velocity: " << translation_velocity_on_point_mass[0] <<", "<< translation_velocity_on_point_mass[1] <<", "<< translation_velocity_on_point_mass[2] <<", norm "<< translation_velocity_on_point_mass.Norm() << std::endl;//Debug
+
 
   //--------------------------------------------
   //CAR-T self motility (in case of migration)
@@ -175,7 +178,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   Real3 motility;
   if (DoesCellMove()){
     //compute motility
-    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {
+    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {//Debug Uncomment
       //random direction as unitary vector
       Real3 random_direction = GenerateRandomDirection();
       Real3 direction_to_immunostimulatory_factor;
@@ -184,10 +187,14 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
       // motility = bias * direction_to_immunostimulatory_factor + (1-bias)*random_direction
       motility = kMigrationBiasCart * direction_to_immunostimulatory_factor + kMigrationOneMinusBiasCart * random_direction;
       // Convert to unit direction
-      motility.Normalize();
+      if (motility[0]*motility[0] + motility[1]*motility[1] + motility[2]*motility[2] > 0)
+        motility.Normalize();
       // Scale by migration speed and add to the velocity from the pushing/adhesive forces
       translation_velocity_on_point_mass += motility * kMigrationSpeedCart;
+      std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"velocity afet motility: " << translation_velocity_on_point_mass[0] <<", "<< translation_velocity_on_point_mass[1] <<", "<< translation_velocity_on_point_mass[2] <<", norm "<< translation_velocity_on_point_mass.Norm() << std::endl;//Debug
     }
+    
+
   }
 
   //--------------------------------------------
@@ -197,39 +204,32 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
 
     if (attached_to_tumor_cell_) {//attached to tumor cell
       //try to kill the cancer cell and in case of failure see if it manages to scape
-      if (!TryToInduceApoptosis() && rng->Uniform(0.0, 1.0) < kProbabilityEscape) {
+      if (rng->Uniform(0.0, 1.0) < kProbabilityEscape && !TryToInduceApoptosis(rng)) {
         //the cancer cell succeded to escape
         attached_cell_->SetAttachedToCart(false);
         attached_cell_ = nullptr;
         attached_to_tumor_cell_=false;
       }
     }
+
     //Compute adhesion forces towards the tumor cells and check for a new attachment
-    Agent* closest_target = nullptr;
-    real_t min_sq_dist = std::numeric_limits<real_t>::max();
     auto calculate_elastic_displacement =
       L2F([&](Agent* neighbor, real_t squared_distance) {
+
         Real3 displac = neighbor->GetPosition()-current_position;
-        if (std::strcmp(neighbor->GetTypeName(), "TumorCell") == 0) {
+        if (TumorCell* cancer_cell = dynamic_cast<TumorCell*>(neighbor)) {
+          // std::cout <<Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"Movement towards tumor cell: " << displac[0]*kElasticConstantCart << std::endl;//Debug
           //movement towards the tumor cells
           translation_velocity_on_point_mass[0] += displac[0] * kElasticConstantCart;
           translation_velocity_on_point_mass[1] += displac[1] * kElasticConstantCart;
           translation_velocity_on_point_mass[2] += displac[2] * kElasticConstantCart;
-          //Look for the closest target if the cell is not attached
-          if (!attached_to_tumor_cell_ && squared_distance < min_sq_dist){
-            closest_target = neighbor;
-            min_sq_dist = squared_distance;
-          }
+
+          //If the CAR-T has not succeeded in attaching to a tumor cell yet, it tries again
+          if (!attached_to_tumor_cell_)
+            TryToGetAttachedTo(cancer_cell, displac[0]*displac[0] + displac[1]*displac[1] + displac[2]*displac[2], rng);
         }
       });
     ctxt->ForEachNeighbor(calculate_elastic_displacement, *this, squared_radius);
-
-    // Attach to the closest tumor cell if found
-    if (auto* victim = dynamic_cast<TumorCell*>(closest_target)) {
-      attached_to_tumor_cell_ = true;
-      attached_cell_ = victim;
-      attached_cell_->SetAttachedToCart(true);
-    }
 
   }
 
@@ -246,8 +246,41 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   return movement_at_next_step;
 }
 
+// Try to get attached to a tumor cell
+void TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Random* rng){
+  //If the tumor cell is not already attached to a CAR-T cell, is not dead and is not too far away.
+  if(!victim->IsAttachedToCart() && !victim->IsDead() && squared_distance < kSquaredMaxAdhesionDistanceCart) {
+
+    //factor of how high is the oncoprotein level of the cancer cell
+    real_t oncoprotein_scale_factor = (victim->GetOncoproteinLevel()-kOncoproteinLimit)/kOncoproteinDifference;
+    // Clamp scale_factor to be in [0,1]
+    if( oncoprotein_scale_factor > 1.0 )
+      oncoprotein_scale_factor = 1.0;
+    // If oncoprotein level is lower than the limit the cancer cell does not get detected
+    if( oncoprotein_scale_factor <= 0.0 ){
+      oncoprotein_scale_factor = 0.0;
+      // the probability is going to be 0 so return the function is the most efficient
+      return;
+    }
+
+    //factor of how far the cancer cell is
+    real_t distance_scale_factor= (kMaxAdhesionDistanceCart-std::sqrt(squared_distance))/kDifferenceCartAdhesionDistances;
+    //Clamp scale_factor to be in [0,1]. We already checked that it is > 0 because squared_distance < kSquaredMaxAdhesionDistanceCart 
+    if( distance_scale_factor > 1.0 )
+      distance_scale_factor = 1.0;
+
+    if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {
+      attached_to_tumor_cell_ = true;
+      attached_cell_ = victim;
+      attached_cell_->SetAttachedToCart(true);
+    }
+  }
+    
+  return;
+}
+
 //Try to induce apoptosis
-bool CartCell::TryToInduceApoptosis() {
+bool CartCell::TryToInduceApoptosis(Random* rng) {
   // If there is no attached cell (this should not happen)
   if (!attached_to_tumor_cell_)
     return false;
@@ -261,7 +294,7 @@ bool CartCell::TryToInduceApoptosis() {
   if( scale_factor < 0.0 )
 	  scale_factor = 0.0;
   //CAR-T success of killing probability: aggressive cancer cells (high oncoprotein level) are more likely to be killed
-  bool succeeded =  Simulation::GetActive()->GetRandom()->Uniform(0.0, 1.0) < kKillRateCart * scale_factor * kDtMechanics;
+  bool succeeded =  rng->Uniform(0.0, 1.0) < kKillRateCart * scale_factor * kDtMechanics;
   
 	if(succeeded){
     //The CAR-T has succeeded to induce apoptosis on the Cancer Cell
@@ -355,7 +388,6 @@ void StateControlCart::Run(Agent* agent) {
         cell->ChangeVolumeExponentialRelaxationEquation(kVolumeRelaxarionRateCytoplasmApoptotic,
                                                 kVolumeRelaxarionRateNucleusApoptotic,
                                                 kVolumeRelaxarionRateFluidApoptotic);
-                                                
         if (kTimeApoptosis < cell->GetTimerState()) { // If the timer_state exceeds the time to transition (this is a fixed duration transition)
           //remove the cell from the simulation
           auto* ctxt = sim->GetExecutionContext();

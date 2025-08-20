@@ -115,6 +115,8 @@ class TumorCell : public Cell {
 
   real_t GetTargetTotalVolume();
 
+  bool IsDead() const { return type_ == 5; }
+
   /// Returns the diffusion grid for oxygen
   DiffusionGrid* GetOxygenDiffusionGrid() const { return oxygen_dgrid_; }
   /// Returns the diffusion grid for immunostimulatory factors

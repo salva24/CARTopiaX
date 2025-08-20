@@ -205,12 +205,18 @@ constexpr real_t kDefaultFractionFluidCartCell = 0.75;
 
 /// How often a CAR-T cell tries to kill an attached cancer cell
 constexpr real_t kKillRateCart = 0.06667; // 1/min
+/// How often a CAR-T cell tries to attach to a cancer cell
+constexpr real_t kAdhesionRateCart = 0.2; // 1/min
+/// Maximum adhesion distance between CAR-T and tumor cells
+constexpr real_t kMaxAdhesionDistanceCart = 18.0;//micrometers
+/// Minimum adhesion distance between CAR-T and tumor cells
+constexpr real_t kMinAdhesionDistanceCart = 14.0;//micrometers
 
 /// Motility parameters
 /// Average persistence time before CAR-T cell moves
 constexpr real_t kPersistenceTimeCart = 10; // 10 minutes
 ///Higher bias (\in [0,1]) makes CAR-T movement more directed toward immunostimulatory factor source; while a bias of 0 makes the movement random
-constexpr real_t kMigrationBiasCart = 0.5; //0.5
+constexpr real_t kMigrationBiasCart = 0.5;
 /// Migration speed
 constexpr real_t kMigrationSpeedCart = 5.0;
 ///Elastic constant
@@ -223,8 +229,8 @@ constexpr real_t kElasticConstantCart = 0.01;
 ///   - The value represents the number of CAR-T cells administered on that day.
 /// Example: On day 0 and day 8, 3964 CAR-T cells are introduced (matching the initial tumor cell count).
 inline std::map<size_t, size_t> kTreatment = {
-    {0, 3957},  // Day 0: administer 3957 CAR-T cells
-    {8, 3957}   // Day 8: administer 3957 CAR-T cells
+    {0, 0},  // Day 0: administer 3957 CAR-T cells
+    {8, 0}   // Day 8: administer 3957 CAR-T cells
 };
 
 /// Do not modify this line:  1-kMigrationBiasCart
@@ -235,6 +241,10 @@ constexpr real_t kMotilityProbability = kDtMechanics / kPersistenceTimeCart;
 constexpr real_t kProbabilityEscape = kDtMechanics / ( kAdhesionTime + 1e-15 );
 /// Do not modify this line: Steps in one day
 constexpr size_t kStepsOneDay = 24*60/kDt;
+/// Do not modify this line: maximum adhesion distance squared
+constexpr real_t kSquaredMaxAdhesionDistanceCart = kMaxAdhesionDistanceCart*kMaxAdhesionDistanceCart;
+/// Do not modify this line: difference between min and max adhesion distance
+constexpr real_t kDifferenceCartAdhesionDistances = kMaxAdhesionDistanceCart - kMinAdhesionDistanceCart;
 
 
 }  // namespace bdm
