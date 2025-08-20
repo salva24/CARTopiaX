@@ -131,12 +131,12 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
                             real_t squared_radius, real_t dt) {
 
   //Debug CAR-T positions
-  Real3 position = GetPosition();
-	std::ofstream file("output/positions_cart.csv", std::ios::app);
-	if (file.is_open()) {
-	file  << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << "," 
-		<< position[0] << "," << position[1] << "," << position[2] << ", norm:" << position.Norm() << "\n";
-	}
+  // Real3 position = GetPosition();
+	// std::ofstream file("output/positions_cart.csv", std::ios::app);
+	// if (file.is_open()) {
+	// file  << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << "," 
+	// 	<< position[0] << "," << position[1] << "," << position[2] << ", norm:" << position.Norm() << "\n";
+	// }
   //End Debug
 
 
@@ -178,7 +178,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   Real3 motility;
   if (DoesCellMove()){
     //compute motility
-    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {//Debug Uncomment
+    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {
       //random direction as unitary vector
       Real3 random_direction = GenerateRandomDirection();
       Real3 direction_to_immunostimulatory_factor;
@@ -191,7 +191,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
         motility.Normalize();
       // Scale by migration speed and add to the velocity from the pushing/adhesive forces
       translation_velocity_on_point_mass += motility * kMigrationSpeedCart;
-      std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"velocity afet motility: " << translation_velocity_on_point_mass[0] <<", "<< translation_velocity_on_point_mass[1] <<", "<< translation_velocity_on_point_mass[2] <<", norm "<< translation_velocity_on_point_mass.Norm() << std::endl;//Debug
+      // std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"velocity afet motility: " << translation_velocity_on_point_mass[0] <<", "<< translation_velocity_on_point_mass[1] <<", "<< translation_velocity_on_point_mass[2] <<", norm "<< translation_velocity_on_point_mass.Norm() << std::endl;//Debug
     }
     
 
@@ -247,7 +247,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
 }
 
 // Try to get attached to a tumor cell
-void TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Random* rng){
+void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Random* rng){
   //If the tumor cell is not already attached to a CAR-T cell, is not dead and is not too far away.
   if(!victim->IsAttachedToCart() && !victim->IsDead() && squared_distance < kSquaredMaxAdhesionDistanceCart) {
 
@@ -269,6 +269,7 @@ void TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Random* rng)
     if( distance_scale_factor > 1.0 )
       distance_scale_factor = 1.0;
 
+    // It tries to attach the CAR-T cell to the tumor cell with probability kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics
     if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {
       attached_to_tumor_cell_ = true;
       attached_cell_ = victim;
