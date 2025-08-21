@@ -208,7 +208,7 @@ void OutputSummary::operator()() {
       size_t total_num_tumor_cells;
       size_t num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead,num_alive_cart;
       real_t tumor_radius;
-      std::tie(total_num_tumor_cells, num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead, num_alive_cart, tumor_radius) = ComputeNumberTumorCellsAndRadius("output/oxygen_oncoprotein" + std::to_string(current_step*kDt/(12*60)) + ".csv");      
+      std::tie(total_num_tumor_cells, num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead, num_alive_cart, tumor_radius) = ComputeNumberTumorCellsAndRadius("output/oxygen_oncoprotein" + std::to_string(static_cast<int>(current_step*kDt/(12*60))) + ".csv");
       real_t total_num_cells=simulation->GetResourceManager()->GetNumAgents();
 
       //If a dosage is administred this exact time the numbers are not seen in 
