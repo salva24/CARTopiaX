@@ -249,7 +249,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
 // Try to get attached to a tumor cell
 void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Random* rng){
   //If the tumor cell is not already attached to a CAR-T cell, is not dead and is not too far away.
-  if(!victim->IsAttachedToCart() && !victim->IsDead() && squared_distance < kSquaredMaxAdhesionDistanceCart) {
+  if(!victim->IsAttachedToCart()&& !victim->IsDead() && squared_distance < kSquaredMaxAdhesionDistanceCart) {
 
     //factor of how high is the oncoprotein level of the cancer cell
     real_t oncoprotein_scale_factor = (victim->GetOncoproteinLevel()-kOncoproteinLimit)/kOncoproteinDifference;
@@ -271,9 +271,15 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
 
     // It tries to attach the CAR-T cell to the tumor cell with probability kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics
     if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {
-      attached_to_tumor_cell_ = true;
-      attached_cell_ = victim;
-      attached_cell_->SetAttachedToCart(true);
+      //avoid race condition. Only one cell can be attached to the tumor cell.
+      #pragma omp critical {
+        //We need to check again if the victim is not attached to a CAR-T cell yet. This could be made more efficiently with a semaphore for each cancer cell
+        if (!victim->IsAttachedToCart()){
+          attached_to_tumor_cell_ = true;
+          attached_cell_ = victim;
+          attached_cell_->SetAttachedToCart(true);
+        }
+      }
     }
   }
     

@@ -366,14 +366,14 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         final_rate_transition= cell->GetTransformationRandomRate() * multiplier * cell->GetOncoproteinLevel(); // Calculate the rate of state change based on oxygen level and oncoprotein (min^-1)
 
         //Debug
-        // int current_time = sim->GetScheduler()->GetSimulatedSteps()* kDt; // Get the current time step in minutes
-        // std::ofstream file("output/simulation_data_mine" + std::to_string(current_time/(12*60)) + ".csv", std::ios::app);
-        // if (file.is_open()) {
-        // file  << oxygen_level << "," 
-        //      << cell->GetOncoproteinLevel() << ","
-        //      <<cell->GetTransformationRandomRate()<< "," 
-        //      << final_rate_transition << "\n";
-        // }
+        int current_time = sim->GetScheduler()->GetSimulatedSteps()* kDt; // Get the current time step in minutes
+        std::ofstream file("output/simulation_data_mine" + std::to_string(current_time/(12*60)) + ".csv", std::ios::app);
+        if (file.is_open()) {
+        file  << oxygen_level << "," 
+             << cell->GetOncoproteinLevel() << ","
+             <<cell->GetTransformationRandomRate()<< "," 
+             << final_rate_transition << "\n";
+        }
         //End Debug
 
             //Debug Debug Output params
