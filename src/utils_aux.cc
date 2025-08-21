@@ -154,7 +154,7 @@ void SpawnCart::operator()() {
     });
 
     //the car-t spawns at least 50 micrometers away from the tumor
-    real_t minimum_squared_radius= std::sqrt(max_dist_sq)+50;
+    real_t minimum_squared_radius= std::sqrt(max_dist_sq)+50;//Debug uncomment
     minimum_squared_radius *=minimum_squared_radius;
 
     //for generating car-t positions

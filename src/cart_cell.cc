@@ -204,7 +204,8 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
 
     if (attached_to_tumor_cell_) {//attached to tumor cell
       //try to kill the cancer cell and in case of failure see if it manages to scape
-      if (rng->Uniform(0.0, 1.0) < kProbabilityEscape && !TryToInduceApoptosis(rng)) {
+      // the conditions need to be in this order so that the cell always tries to induce apoptosis
+      if (!TryToInduceApoptosis(rng) && rng->Uniform(0.0, 1.0) < kProbabilityEscape) {
         //the cancer cell succeded to escape
         attached_cell_->SetAttachedToCart(false);
         attached_cell_ = nullptr;
@@ -237,7 +238,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   // Two step Adams-Bashforth approximation of the time derivative for position
   // position(t + dt) ≈ position(t) + dt * [ 1.5 * velocity(t) - 0.5 * velocity(t - dt) ]
   //--------------------------------------------
-  movement_at_next_step += translation_velocity_on_point_mass * kDnew + older_velocity_ * kDold;
+  // movement_at_next_step += translation_velocity_on_point_mass * kDnew + older_velocity_ * kDold;//Debug Uncomment
 
 
   older_velocity_ = translation_velocity_on_point_mass;
@@ -248,6 +249,16 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
 
 // Try to get attached to a tumor cell
 void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Random* rng){
+    // std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << std::endl;//Debug
+
+  // //Debug
+  // real_t current_time = Simulation::GetActive()->GetScheduler()->GetSimulatedTime(); // Get the current time step in minutes
+  // std::ofstream file("output/cart_adhesion.csv", std::ios::app);
+  // if (file.is_open()) {
+  // file  << current_time<< " probability "<<  <<"\n";
+  // }
+  // //End Debug
+
   //If the tumor cell is not already attached to a CAR-T cell, is not dead and is not too far away.
   if(!victim->IsAttachedToCart()&& !victim->IsDead() && squared_distance < kSquaredMaxAdhesionDistanceCart) {
 
@@ -269,13 +280,26 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
     if( distance_scale_factor > 1.0 )
       distance_scale_factor = 1.0;
 
+    
+    // distance_scale_factor=1;//Debug
+      
+    // //Debug
+    // real_t current_time = Simulation::GetActive()->GetScheduler()->GetSimulatedTime(); // Get the current time step in minutes
+    // std::ofstream file("output/cart_adhesion.csv", std::ios::app);
+    // if (file.is_open()) {
+    // file  << current_time<< " probability "<< kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics <<"\n";
+    // }
+    //End Debug
+
     // It tries to attach the CAR-T cell to the tumor cell with probability kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics
-    if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {
+    // if (rng->Uniform(0.0, 1.0) < 10) {//Debug
+    if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {//Debug uncomment
       //avoid race condition. Only one cell can be attached to the tumor cell.
       #pragma omp critical
       {
         //We need to check again if the victim is not attached to a CAR-T cell yet. This could be made more efficiently with a semaphore for each cancer cell
         if (!victim->IsAttachedToCart()){
+        // std::cout << "Attaching at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << std::endl;//Debug
           attached_to_tumor_cell_ = true;
           attached_cell_ = victim;
           attached_cell_->SetAttachedToCart(true);
@@ -289,6 +313,7 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
 
 //Try to induce apoptosis
 bool CartCell::TryToInduceApoptosis(Random* rng) {
+  // std::cout << "Trying to induce apoptosis at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << std::endl;//Debug
   // If there is no attached cell (this should not happen)
   if (!attached_to_tumor_cell_)
     return false;
@@ -299,11 +324,22 @@ bool CartCell::TryToInduceApoptosis(Random* rng) {
   if( scale_factor > 1.0 )
 	  scale_factor = 1.0;
   // If oncoprotein level is lower than the limit the cancer cell does not become apoptotic
-  if( scale_factor < 0.0 )
+  if( scale_factor < 0.0 ){
 	  scale_factor = 0.0;
+    // the probability is going to be 0 so return the function is the most efficient
+    return false;
+  }
   //CAR-T success of killing probability: aggressive cancer cells (high oncoprotein level) are more likely to be killed
   bool succeeded =  rng->Uniform(0.0, 1.0) < kKillRateCart * scale_factor * kDtMechanics;
   
+    //Debug
+    // real_t current_time = Simulation::GetActive()->GetScheduler()->GetSimulatedTime(); // Get the current time step in minutes
+    // std::ofstream file("output/cart_killing.csv", std::ios::app);
+    // if (file.is_open()) {
+    // file  << current_time<< " probability "<< kKillRateCart * scale_factor * kDtMechanics <<"\n";
+    // }
+    // //End Debug
+
 	if(succeeded){
     //The CAR-T has succeeded to induce apoptosis on the Cancer Cell
     attached_cell_->StartApoptosis();

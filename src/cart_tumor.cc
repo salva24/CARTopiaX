@@ -99,10 +99,10 @@ int Simulate(int argc, const char** argv) {
     ctxt->AddAgent(tumor_cell);
   }
   // //Debug
-  // CartCell* cart_cell = new CartCell({350.,0.,0.});
+  // CartCell* cart_cell = new CartCell({0.,0.,0.});
   // cart_cell->AddBehavior(new StateControlCart());
   // ctxt->AddAgent(cart_cell);
-  // //end Debug
+  //end Debug
 
   //Treatment administration operation
   auto* treatment_op = new bdm::Operation("SpawnCart");
