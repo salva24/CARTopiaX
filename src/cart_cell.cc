@@ -272,7 +272,8 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
     // It tries to attach the CAR-T cell to the tumor cell with probability kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics
     if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {
       //avoid race condition. Only one cell can be attached to the tumor cell.
-      #pragma omp critical {
+      #pragma omp critical
+      {
         //We need to check again if the victim is not attached to a CAR-T cell yet. This could be made more efficiently with a semaphore for each cancer cell
         if (!victim->IsAttachedToCart()){
           attached_to_tumor_cell_ = true;

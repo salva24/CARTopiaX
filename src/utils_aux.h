@@ -54,8 +54,10 @@ namespace bdm {
   /// Compute tumor statistics and characteristics
   /// 
   /// Analyzes the current tumor population to compute the number of tumor cells
-  /// of each type and the overall radius of the tumor mass.
+  /// of each type and the overall radius of the tumor mass. In addition, it outputs 
+  /// the oxygen and oncoprotein levels of each tumor cell to a CSV file.
   /// 
+  /// @param file_name Name of the file to output oxygen and oncoprotein levels
   /// @return Tuple containing:
   ///   - Total number of tumor cells
   ///   - Number of type 1 tumor cells (most aggressive)
@@ -65,7 +67,7 @@ namespace bdm {
   ///   - Number of type 5 tumor cells (dead)
   ///   - Number of living CAR-T cells (not apoptotic)
   ///   - Current tumor radius in micrometers
-  std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t> ComputeNumberTumorCellsAndRadius();
+  std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t> ComputeNumberTumorCellsAndRadius(const std::string& file_name);
 
   /// Generates a random direction unitary vector
   ///

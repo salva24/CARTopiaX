@@ -67,8 +67,8 @@ std::vector<Real3> CreateSphereOfTumorCells(real_t sphere_radius) {
     return positions;
 }
 
-//Function to compute the number of tumor cells of each type and the radius of the tumor
-std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t> ComputeNumberTumorCellsAndRadius() {
+//Function to compute the number of tumor cells of each type and the radius of the tumor. In adition it outputs the oxygen and oncoprotein levels of the cells
+std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t> ComputeNumberTumorCellsAndRadius(const std::string& file_name) {
   auto* rm = Simulation::GetActive()->GetResourceManager();
   size_t total_num_tumor_cells = 0;
   size_t num_tumor_cells_type1 = 0;
@@ -80,14 +80,29 @@ std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t> Compu
 
   real_t max_dist_sq = 0.0;
 
+  std::ofstream file_oxy_oncopr(file_name, std::ios::app);
+
+  auto* oxygen_diffusion_grid = rm->GetDiffusionGrid("oxygen");
+
+
   rm->ForEachAgent([&](const Agent* agent) {
     if (auto* tumor_cell = dynamic_cast<const TumorCell*>(agent)) {
       total_num_tumor_cells++;
       const auto& pos = agent->GetPosition();
+
+      //computing tumor radius
       real_t dist_sq = pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2];
       if (dist_sq > max_dist_sq) {
         max_dist_sq = dist_sq;
       }
+
+      //store oxygen and oncoprotein levels 
+      if (file_oxy_oncopr.is_open()) {
+      file_oxy_oncopr  <<  oxygen_diffusion_grid->GetValue(pos) << "," 
+            << tumor_cell->GetOncoproteinLevel() << "\n";
+      }
+
+
 
       // Count tumor cells by type
       switch (tumor_cell->GetType()) {
@@ -110,12 +125,12 @@ std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t> Compu
 void SpawnCart::operator()() {
   auto* simulation = Simulation::GetActive();
   auto* scheduler = simulation->GetScheduler();
-
+  auto current_step = scheduler->GetSimulatedSteps();
   //This function only executes each day
-  if (scheduler->GetSimulatedSteps() % frequency_ != 0)
+  if (current_step % frequency_ != 0)
     return;
   //See if there is any dosage to apply in this day
-  size_t current_day = scheduler->GetSimulatedTime()/ (60.0*24);
+  size_t current_day = current_step*kDt/ (60.0*24);
   size_t cells_to_spawn=0;
 
   if (kTreatment.find(current_day) != kTreatment.end())
@@ -160,7 +175,6 @@ void SpawnCart::operator()() {
           pz = rng->Uniform(min_b, max_b);
           radi_sq = px*px + py*py + pz*pz;
       }while(minimum_squared_radius > radi_sq);
-
       //spawn CAR-T
       cart = new CartCell({px,py,pz});
       cart->AddBehavior(new StateControlCart());
@@ -178,6 +192,7 @@ void OutputSummary::operator()() {
   auto current_step = scheduler->GetSimulatedSteps();
 
   if (current_step % frequency_ == 0) {
+
     std::ofstream file("output/final_data.csv", std::ios::app);
     if (file.is_open()) {
       if (current_step == 0) {
@@ -185,7 +200,7 @@ void OutputSummary::operator()() {
       }
 
       // Calculate time in days, hours, minutes
-      double total_minutes = scheduler->GetSimulatedTime();
+      double total_minutes = current_step*kDt;
       double total_hours = total_minutes / 60.0;
       double total_days = total_hours / 24.0;
 
@@ -193,7 +208,7 @@ void OutputSummary::operator()() {
       size_t total_num_tumor_cells;
       size_t num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead,num_alive_cart;
       real_t tumor_radius;
-      std::tie(total_num_tumor_cells, num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead, num_alive_cart, tumor_radius) = ComputeNumberTumorCellsAndRadius();      
+      std::tie(total_num_tumor_cells, num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead, num_alive_cart, tumor_radius) = ComputeNumberTumorCellsAndRadius("output/oxygen_oncoprotein" + std::to_string(current_step*kDt/(12*60)) + ".csv");      
       real_t total_num_cells=simulation->GetResourceManager()->GetNumAgents();
 
       //If a dosage is administred this exact time the numbers are not seen in 
