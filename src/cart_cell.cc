@@ -238,7 +238,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   // Two step Adams-Bashforth approximation of the time derivative for position
   // position(t + dt) ≈ position(t) + dt * [ 1.5 * velocity(t) - 0.5 * velocity(t - dt) ]
   //--------------------------------------------
-  // movement_at_next_step += translation_velocity_on_point_mass * kDnew + older_velocity_ * kDold;//Debug Uncomment
+  movement_at_next_step += translation_velocity_on_point_mass * kDnew + older_velocity_ * kDold;
 
 
   older_velocity_ = translation_velocity_on_point_mass;

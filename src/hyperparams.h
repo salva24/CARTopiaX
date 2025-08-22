@@ -24,6 +24,8 @@
 #include <map>
 #include <string>
 
+#include "core/real_t.h"
+
 namespace bdm {
 
 ///This file contains hyperparameters used in the simulation. Change: In a future version it needs to be changed into a params file with no need to be recompiled
