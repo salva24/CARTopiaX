@@ -216,6 +216,8 @@ class CartCell : public Cell {
   /// Pointer to the attached tumor cell
   TumorCell* attached_cell_;
 
+  TumorCell* attached_cell_debug_;//Debug
+
 };
 
 /// Behavior class for controlling CAR-T cell state transitions

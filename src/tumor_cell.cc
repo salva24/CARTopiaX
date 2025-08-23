@@ -95,6 +95,7 @@ void TumorCell::Initialize(const NewAgentEvent& event) {
 }
 
 void TumorCell::SetOncoproteinLevel(real_t level) { 
+  // std::cout << "Setting oncoprotein level :" << type_ << std::endl;//Debug
   oncoprotein_level_ = level; //oncoprotein_level_
     //cell type
     if (level >= 1.5) {//between 1.5 and 2.0
@@ -196,7 +197,7 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(real_t relaxation_rate
 
 //compute Displacement
 Real3 TumorCell::CalculateDisplacement(const InteractionForce* force,
-                            real_t squared_radius, real_t dt) {
+                            real_t squared_radius, real_t dt) {  
 
   Real3 movement_at_next_step{0, 0, 0};
   // this should be chaged in a future version of BioDynaMo in order to have a cleaner code instead of hardcoding it here
@@ -227,7 +228,6 @@ Real3 TumorCell::CalculateDisplacement(const InteractionForce* force,
       SetStaticnessNextTimestep(false);
     }
   }
-
   // Two step Adams-Bashforth approximation of the time derivative for position
   // position(t + dt) ≈ position(t) + dt * [ 1.5 * velocity(t) - 0.5 * velocity(t - dt) ]
   movement_at_next_step += translation_velocity_on_point_mass * kDnew + older_velocity_ * kDold;
@@ -280,11 +280,14 @@ void TumorCell::ComputeConstantsConsumptionSecretion() {
 }
 
 void TumorCell::StartApoptosis(){
+
+  std::cout << "Starting apoptosis at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<" IsDead():" << IsDead() << std::endl;//Debug
   // If the cell is already dead, do nothing
-  if (type_ == 5) {return;}
-  
+  if (IsDead()) {return;}
+
   // The cell Dies
   SetState(TumorCellState::kApoptotic);
+
   // Reset timer_state
   SetTimerState(0);  
   // Set target volume to 0 (the cell shrinks)
@@ -300,6 +303,7 @@ void TumorCell::StartApoptosis(){
   ComputeConstantsConsumptionSecretion(); 
   // Set type to 5 to indicate dead cell
   SetType(5);
+  std::cout << "Cell type set to 5 (dead) at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<" "<< IsDead()<< std::endl;//Debug
 }
 
 /// Main behavior executed at each simulation step
@@ -321,11 +325,15 @@ void StateControlGrowProliferate::Run(Agent* agent) {
   // // End Debug
 
   if (auto* cell = dynamic_cast<TumorCell*>(agent)) {
+  // std::cout << "control tumor"<<std::endl;//Debug
+
 
     if (cell->IsAttachedToCart()) {
       // If the cell is attached to a cart, skip the state control and growth
       return;
     }
+  // std::cout << "contr ol g tum"<<std::endl;//Debug
+
     // Oxygen levels
     Real3 current_position = cell->GetPosition();
     auto* oxygen_dgrid = cell->GetOxygenDiffusionGrid();  // Pointer to the oxygen diffusion grid
@@ -342,7 +350,6 @@ void StateControlGrowProliferate::Run(Agent* agent) {
     {
       case TumorCellState::kAlive:{//the cell is growing to real_t its size before mitosis
         cell->SetTimerState(cell->GetTimerState() + kDtCycle);  // Increase timer_state to track time in this state (kDtCycle minutes per step)
-
         
         if (ShouldEnterNecrosis(oxygen_level, cell)) { // Enter necrosis if oxygen level is too low
           return; // Exit the function to prevent further processing
@@ -458,6 +465,8 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         break;
       }
       case TumorCellState::kApoptotic:{
+        std::cout << "apoptotic: timer_state=" << cell->GetTimerState()<< " total time=" << kTimeApoptosis << std::endl;
+
 
         cell->SetTimerState(cell->GetTimerState() + kDtCycle);  // Increase timer_state to track time in this state (kDtCycle minutes per step)
         
@@ -465,6 +474,8 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         cell->ChangeVolumeExponentialRelaxationEquation(kVolumeRelaxarionRateCytoplasmApoptotic,
                                                         kVolumeRelaxarionRateNucleusApoptotic,
                                                         kVolumeRelaxarionRateFluidApoptotic);
+
+
         if (kTimeApoptosis < cell->GetTimerState()) { // If the timer_state exceeds the time to transition (this is a fixed duration transition)
           //remove the cell from the simulation
           auto* ctxt = sim->GetExecutionContext();

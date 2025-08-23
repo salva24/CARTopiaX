@@ -145,11 +145,11 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
 
 
   // return{0.,0.,0.,0.};//debug
-  
 
-  return {2*force_magnitude * displacement[0],
-          2*force_magnitude * displacement[1],
-          2*force_magnitude * displacement[2],
+  // std::cout<< force_magnitude << std::endl;//Debug
+  return {force_magnitude * displacement[0],
+          force_magnitude * displacement[1],
+          force_magnitude * displacement[2],
           0.0};  // 4th component is unused
 }
 
