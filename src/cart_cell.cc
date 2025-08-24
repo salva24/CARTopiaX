@@ -152,29 +152,10 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   Real3 translation_velocity_on_point_mass{0, 0, 0};
 
   //--------------------------------------------
-  //Adhesion and repulsion forces
-  //--------------------------------------------
-  // We check for every neighbor object if they touch us, i.e. push us
-  // away and agreagate the velocities
-  auto* ctxt = sim->GetExecutionContext();
-  if (!IsStatic()) {
-    auto calculate_neighbor_forces =
-        L2F([&](Agent* neighbor, real_t squared_distance) {
-          auto neighbor_force = force->Calculate(this, neighbor);
-          // std::cout << "Neighbor force: " << neighbor_force[0] << std::endl;//Debug
-          translation_velocity_on_point_mass[0] += neighbor_force[0];
-          translation_velocity_on_point_mass[1] += neighbor_force[1];
-          translation_velocity_on_point_mass[2] += neighbor_force[2];
-        });
-    ctxt->ForEachNeighbor(calculate_neighbor_forces, *this, squared_radius);
-  }
-  // std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"velocity: " << translation_velocity_on_point_mass[0] <<", "<< translation_velocity_on_point_mass[1] <<", "<< translation_velocity_on_point_mass[2] <<", norm "<< translation_velocity_on_point_mass.Norm() << std::endl;//Debug
-
-
-  //--------------------------------------------
   //CAR-T self motility (in case of migration)
   //--------------------------------------------
   Real3 current_position = GetPosition();
+  auto* ctxt = sim->GetExecutionContext();
   auto* rng= sim->GetRandom();
   Real3 motility;
   if (DoesCellMove()){
@@ -199,7 +180,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   }
 
   //--------------------------------------------
-  //CAR-T adhesion to victim cell
+  //CAR-T killing or victim cell escaping
   //--------------------------------------------
   auto* rm = sim->GetResourceManager();
   if (state_ == CartCellState::kAlive) {//If cell is not apoptotic
@@ -218,10 +199,22 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
       }
     }
 
-    //CHANGE: merge this for loop to the other for loop in order to increase efficiency
-    //Compute adhesion forces towards the tumor cells and check for a new attachment
-    auto calculate_elastic_displacement =
+    //--------------------------------------------
+    //CAR-T adhesion to victim cell
+    //--------------------------------------------
+    //Compute forces between the cells and check for a new attachment
+    auto calculate_forces_and_elastic_displacement =
       L2F([&](Agent* neighbor, real_t squared_distance) {
+        //Adhesion repulsion forces between cells
+        // We check for every neighbor object if they touch us, i.e. push us
+        // away and aggregate the velocities
+        auto neighbor_force = force->Calculate(this, neighbor);
+        // std::cout << "Neighbor force: " << neighbor_force[0] << std::endl;//Debug
+        translation_velocity_on_point_mass[0] += neighbor_force[0];
+        translation_velocity_on_point_mass[1] += neighbor_force[1];
+        translation_velocity_on_point_mass[2] += neighbor_force[2];
+
+        //CAR-T adhesion to new victim cell
         Real3 displac = neighbor->GetPosition()-current_position;
         if (TumorCell* cancer_cell = dynamic_cast<TumorCell*>(neighbor)) {
             // std::cout <<Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"Movement towards tumor cell: " << displac[0]*kElasticConstantCart << std::endl;//Debug
@@ -235,7 +228,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
             TryToGetAttachedTo(cancer_cell, displac[0]*displac[0] + displac[1]*displac[1] + displac[2]*displac[2], rng);
         }
       });
-    ctxt->ForEachNeighbor(calculate_elastic_displacement, *this, squared_radius);
+    ctxt->ForEachNeighbor(calculate_forces_and_elastic_displacement, *this, squared_radius);
 
   }
 
