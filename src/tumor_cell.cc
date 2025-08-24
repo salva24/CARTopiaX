@@ -37,7 +37,7 @@ TumorCell::TumorCell(const Real3& position) {
   SetTargetCytoplasmSolid((kDefaultVolumeNewTumorCell - kDefaultVolumeNucleusTumorCell) * (1 - kDefaultFractionFluidTumorCell)); // Set target cytoplasm solid volume to real_t
 
   SetOncoproteinLevel(SamplePositiveGaussian(kOncoproteinMean,kOncoproteinStandardDeviation)); // Set initial oncoprotein level with a truncated normal distribution
-  // SetOncoproteinLevel(1.); //Debug
+  SetOncoproteinLevel(0.1); //Debug
   auto* rm = Simulation::GetActive()->GetResourceManager();
   oxygen_dgrid_ = rm->GetDiffusionGrid("oxygen"); // Pointer to oxygen diffusion grid
   immunostimulatory_factor_dgrid_ = rm->GetDiffusionGrid("immunostimulatory_factor"); // Pointer to immunostimulatory_factor diffusion grid
@@ -199,7 +199,14 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(real_t relaxation_rate
 //compute Displacement
 Real3 TumorCell::CalculateDisplacement(const InteractionForce* force,
                             real_t squared_radius, real_t dt) {  
-
+  //Debug TumorCell positions
+  // Real3 position = GetPosition();
+	// std::ofstream file("output/positions_tumor_cell.csv", std::ios::app);
+	// if (file.is_open()) {
+	// file  << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << "," 
+	// 	<< position[0] << "," << position[1] << "," << position[2] << ", norm:" << position.Norm() << "\n";
+	// }
+  //End Debug
   Real3 movement_at_next_step{0, 0, 0};
   // this should be chaged in a future version of BioDynaMo in order to have a cleaner code instead of hardcoding it here
   squared_radius=kSquaredMaxDistanceNeighborsForce;

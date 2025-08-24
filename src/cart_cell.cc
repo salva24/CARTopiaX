@@ -22,6 +22,7 @@
 #include "core/environment/uniform_grid_environment.h"
 
 namespace bdm {
+long double CartCell::acumulator_probabilities(0.0L);  //Debug
 
 CartCell::CartCell(const Real3& position) {
   SetPosition(position);
@@ -160,7 +161,8 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   Real3 motility;
   if (DoesCellMove()){
     //compute motility
-    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {
+    // if (true) {
+    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {//Debug uncomment
       //random direction as unitary vector
       Real3 random_direction = GenerateRandomDirection();
       Real3 direction_to_immunostimulatory_factor;
@@ -171,8 +173,8 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
       // Convert to unit direction
       if (motility[0]*motility[0] + motility[1]*motility[1] + motility[2]*motility[2] > 0)
         motility.Normalize();
-      // Scale by migration speed and add to the velocity from the pushing/adhesive forces
-      translation_velocity_on_point_mass += motility * kMigrationSpeedCart;
+      // Scale by migration speed and add to the velocity
+      translation_velocity_on_point_mass += motility * kMigrationSpeedCart;//Debug uncomment
       // std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"velocity afet motility: " << translation_velocity_on_point_mass[0] <<", "<< translation_velocity_on_point_mass[1] <<", "<< translation_velocity_on_point_mass[2] <<", norm "<< translation_velocity_on_point_mass.Norm() << std::endl;//Debug
     }
     
@@ -219,17 +221,24 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
         if (TumorCell* cancer_cell = dynamic_cast<TumorCell*>(neighbor)) {
             // std::cout <<Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"Movement towards tumor cell: " << displac[0]*kElasticConstantCart << std::endl;//Debug
           //movement towards the tumor cells
-          translation_velocity_on_point_mass[0] += displac[0] * kElasticConstantCart;
-          translation_velocity_on_point_mass[1] += displac[1] * kElasticConstantCart;
-          translation_velocity_on_point_mass[2] += displac[2] * kElasticConstantCart;
+          real_t sq_norm_displac = displac[0]*displac[0] + displac[1]*displac[1] + displac[2]*displac[2];
+          //Debug uncomment
+          //The cart moves towards the tumor cell only if they are not touching already
+          //If they are two close the only force affecting is the adhesion force to avoid 
+          //CAR-T non-stop pushing tumor cells
+          if (sq_norm_displac > kMaxSquaredDistanceCartMovingTowardsTumorCell) {
+            translation_velocity_on_point_mass[0] += displac[0] * kElasticConstantCart;
+            translation_velocity_on_point_mass[1] += displac[1] * kElasticConstantCart;
+            translation_velocity_on_point_mass[2] += displac[2] * kElasticConstantCart;
+          }
 
           //If the CAR-T has not succeeded in attaching to a tumor cell yet, it tries again
           if (!attached_to_tumor_cell_)//Debug uncomment
-            TryToGetAttachedTo(cancer_cell, displac[0]*displac[0] + displac[1]*displac[1] + displac[2]*displac[2], rng);
+            TryToGetAttachedTo(cancer_cell, sq_norm_displac, rng);
         }
       });
     ctxt->ForEachNeighbor(calculate_forces_and_elastic_displacement, *this, squared_radius);
-
+    // std::cout << "Translation velocity on point mass: " << squared_radius << std::endl;//Debug
   }
 
   //--------------------------------------------
@@ -288,6 +297,14 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
     // file  << current_time<< " probability "<< kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics <<"\n";
     // }
     //End Debug
+
+    //Debug
+    #pragma omp critical
+    {
+      acumulator_probabilities += kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics;
+    }
+    //ENd Debug
+
 
     // It tries to attach the CAR-T cell to the tumor cell with probability kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics
     if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {//Debug uncomment

@@ -217,6 +217,11 @@ class CartCell : public Cell {
   /// ID of the attached tumor cell
   AgentUid attached_cell_id_;
 
+  //Debug
+  public:
+    static long double acumulator_probabilities;
+    static long double GetAccumulatedProbabilities() { return acumulator_probabilities; }
+
 };
 
 /// Behavior class for controlling CAR-T cell state transitions

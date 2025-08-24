@@ -93,14 +93,14 @@ int Simulate(int argc, const char** argv) {
 
   // One spherical tumor of radius kInitialRadiusTumor in the center of the simulation space
   std::vector<Real3> positions=CreateSphereOfTumorCells(kInitialRadiusTumor);//positions of the cells
-  // positions={{10.,0.,0.}};//Debug
+  // positions= {{-19.5336,-19.5336,-19.5336}};//Debug
   for (const auto& pos : positions) {
     TumorCell* tumor_cell = new TumorCell(pos);
     tumor_cell->AddBehavior(new StateControlGrowProliferate());
     ctxt->AddAgent(tumor_cell);
   }
   // //Debug
-  // CartCell* cart_cell = new CartCell({0.,0.,0.});
+  // CartCell* cart_cell = new CartCell({-10.443,-10.443,-10.443});
   // cart_cell->AddBehavior(new StateControlCart());
   // ctxt->AddAgent(cart_cell);
   // //end Debug
@@ -123,6 +123,20 @@ int Simulate(int argc, const char** argv) {
   //simulate kTotalMinutesToSimulate minutes including the last minute 
   scheduler->Simulate(1+kTotalMinutesToSimulate/kDt);
   std::cout << "Simulation completed successfully!" << std::endl;
+
+  //Debug
+  std::cout << "Final accumulated probability: " 
+          << std::setprecision(30) << CartCell::acumulator_probabilities 
+          << std::endl;
+  // Write the final value to a file
+  std::ofstream file("output/final_accumulated_probability.txt");
+  if (file.is_open()) {
+    file << std::setprecision(30) << CartCell::acumulator_probabilities;
+    file.close();
+  }
+
+
+
   return 0;
 }
 
