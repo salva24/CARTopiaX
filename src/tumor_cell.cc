@@ -38,8 +38,9 @@ TumorCell::TumorCell(const Real3& position) {
 
   SetOncoproteinLevel(SamplePositiveGaussian(kOncoproteinMean,kOncoproteinStandardDeviation)); // Set initial oncoprotein level with a truncated normal distribution
   // SetOncoproteinLevel(1.); //Debug
-  oxygen_dgrid_ = Simulation::GetActive()->GetResourceManager()->GetDiffusionGrid("oxygen"); // Pointer to oxygen diffusion grid
-  immunostimulatory_factor_dgrid_ = Simulation::GetActive()->GetResourceManager()->GetDiffusionGrid("immunostimulatory_factor"); // Pointer to immunostimulatory_factor diffusion grid
+  auto* rm = Simulation::GetActive()->GetResourceManager();
+  oxygen_dgrid_ = rm->GetDiffusionGrid("oxygen"); // Pointer to oxygen diffusion grid
+  immunostimulatory_factor_dgrid_ = rm->GetDiffusionGrid("immunostimulatory_factor"); // Pointer to immunostimulatory_factor diffusion grid
   SetTransformationRandomRate(); // Set state transition random rate
   attached_to_cart_ = false; // Initially not attached to a cart
 
@@ -281,7 +282,7 @@ void TumorCell::ComputeConstantsConsumptionSecretion() {
 
 void TumorCell::StartApoptosis(){
 
-  std::cout << "Starting apoptosis at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<" IsDead():" << IsDead() << std::endl;//Debug
+  // std::cout << "Starting apoptosis at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<" IsDead():" << IsDead() << std::endl;//Debug
   // If the cell is already dead, do nothing
   if (IsDead()) {return;}
 
@@ -303,7 +304,7 @@ void TumorCell::StartApoptosis(){
   ComputeConstantsConsumptionSecretion(); 
   // Set type to 5 to indicate dead cell
   SetType(5);
-  std::cout << "Cell type set to 5 (dead) at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<" "<< IsDead()<< std::endl;//Debug
+  // std::cout << "Cell type set to 5 (dead) at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<" "<< IsDead()<< std::endl;//Debug
 }
 
 /// Main behavior executed at each simulation step
@@ -465,8 +466,6 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         break;
       }
       case TumorCellState::kApoptotic:{
-        std::cout << "apoptotic: timer_state=" << cell->GetTimerState()<< " total time=" << kTimeApoptosis << std::endl;
-
 
         cell->SetTimerState(cell->GetTimerState() + kDtCycle);  // Increase timer_state to track time in this state (kDtCycle minutes per step)
         
