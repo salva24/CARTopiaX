@@ -22,7 +22,7 @@
 #include "core/environment/uniform_grid_environment.h"
 
 namespace bdm {
-long double CartCell::acumulator_probabilities(0.0L);  //Debug
+// long double CartCell::acumulator_probabilities(0.0L);  //Debug
 
 CartCell::CartCell(const Real3& position) {
   SetPosition(position);
@@ -299,10 +299,10 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
     //End Debug
 
     //Debug
-    #pragma omp critical
-    {
-      acumulator_probabilities += kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics;
-    }
+    // #pragma omp critical
+    // {
+    //   acumulator_probabilities += kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics;
+    // }
     //ENd Debug
 
 

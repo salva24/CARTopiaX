@@ -37,7 +37,7 @@ TumorCell::TumorCell(const Real3& position) {
   SetTargetCytoplasmSolid((kDefaultVolumeNewTumorCell - kDefaultVolumeNucleusTumorCell) * (1 - kDefaultFractionFluidTumorCell)); // Set target cytoplasm solid volume to real_t
 
   SetOncoproteinLevel(SamplePositiveGaussian(kOncoproteinMean,kOncoproteinStandardDeviation)); // Set initial oncoprotein level with a truncated normal distribution
-  SetOncoproteinLevel(0.1); //Debug
+  // SetOncoproteinLevel(1.); //Debug
   auto* rm = Simulation::GetActive()->GetResourceManager();
   oxygen_dgrid_ = rm->GetDiffusionGrid("oxygen"); // Pointer to oxygen diffusion grid
   immunostimulatory_factor_dgrid_ = rm->GetDiffusionGrid("immunostimulatory_factor"); // Pointer to immunostimulatory_factor diffusion grid

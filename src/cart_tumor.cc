@@ -124,16 +124,16 @@ int Simulate(int argc, const char** argv) {
   scheduler->Simulate(1+kTotalMinutesToSimulate/kDt);
   std::cout << "Simulation completed successfully!" << std::endl;
 
-  //Debug
-  std::cout << "Final accumulated probability: " 
-          << std::setprecision(30) << CartCell::acumulator_probabilities 
-          << std::endl;
-  // Write the final value to a file
-  std::ofstream file("output/final_accumulated_probability.txt");
-  if (file.is_open()) {
-    file << std::setprecision(30) << CartCell::acumulator_probabilities;
-    file.close();
-  }
+  // //Debug
+  // std::cout << "Final accumulated probability: " 
+  //         << std::setprecision(30) << CartCell::acumulator_probabilities 
+  //         << std::endl;
+  // // Write the final value to a file
+  // std::ofstream file("output/final_accumulated_probability.txt");
+  // if (file.is_open()) {
+  //   file << std::setprecision(30) << CartCell::acumulator_probabilities;
+  //   file.close();
+  // }
 
 
 
