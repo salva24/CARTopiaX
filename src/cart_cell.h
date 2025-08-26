@@ -91,8 +91,8 @@ class CartCell : public Cell {
   real_t GetCurrentLiveTime() const { return current_live_time_; }
   void SetCurrentLiveTime(real_t time) { current_live_time_ = time; }
 
-  AgentUid GetAttachedCellId() const { return attached_cell_id_; }
-  void SetAttachedCellId(AgentUid cell_id) { attached_cell_id_ = cell_id; }
+  bdm::AgentPointer<TumorCell> GetAttachedCellPointer() const { return attached_cell_ptr_; }
+  void SetAttachedCellPointer(bdm::AgentPointer<TumorCell> cell_ptr) { attached_cell_ptr_ = cell_ptr; }
 
   /// Returns whether the cell moves by its own
   bool DoesCellMove();
@@ -158,7 +158,7 @@ class CartCell : public Cell {
   /// @param attached_cell The tumor cell to which the CAR-T cell is attached
   /// @param rng Pointer to the random number generator
   /// @return true if apoptosis was induced, false otherwise
-  bool TryToInduceApoptosis(TumorCell* attached_cell, Random* rng);
+  bool TryToInduceApoptosis(bdm::AgentPointer<TumorCell> attached_cell, Random* rng);
 
  private:
   /// Current state of the CAR-T cell
@@ -214,8 +214,8 @@ class CartCell : public Cell {
   /// Constant 2 for oxygen consumption/secretion differential equation solution
   real_t constant2_oxygen_;
   
-  /// ID of the attached tumor cell
-  AgentUid attached_cell_id_;
+  /// Pointer to the attached tumor cell
+  bdm::AgentPointer<TumorCell> attached_cell_ptr_;
 
   //Debug
   public:

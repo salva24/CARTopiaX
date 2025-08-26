@@ -47,8 +47,8 @@ CartCell::CartCell(const Real3& position) {
   immunostimulatory_factor_dgrid_ = rm->GetDiffusionGrid("immunostimulatory_factor");
   // Initially not attached to a tumor cell
   attached_to_tumor_cell_ = false; 
-  // Initialize attached cell id
-  attached_cell_id_ = bdm::AgentUid();
+  // Initialize attached cell pointer
+  attached_cell_ptr_ = nullptr;
 
   // Initialize the velocity of the cell in the previous step to zero
   older_velocity_ = {0, 0, 0};
@@ -184,19 +184,17 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   //--------------------------------------------
   //CAR-T killing or victim cell escaping
   //--------------------------------------------
-  auto* rm = sim->GetResourceManager();
   if (state_ == CartCellState::kAlive) {//If cell is not apoptotic
 
     if (attached_to_tumor_cell_) {//attached to tumor cell
-      TumorCell* attached_cell = dynamic_cast<TumorCell*>(rm->GetAgent(attached_cell_id_));
       // try to kill the cancer cell and in case of failure see if it manages to scape
       // the order needs to be this one because it should try to kill before seeing if it scapes 
-      if (TryToInduceApoptosis(attached_cell,rng) || rng->Uniform(0.0, 1.0) < kProbabilityEscape) {//Debug Uncomment 
+      if (TryToInduceApoptosis(attached_cell_ptr_,rng) || rng->Uniform(0.0, 1.0) < kProbabilityEscape) {//Debug Uncomment 
         //the cancer cell is detached
-        attached_cell->SetAttachedToCart(false);
+        attached_cell_ptr_->SetAttachedToCart(false);
         // std::cout << "Detaching at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << " IsDead():" << attached_cell->IsDead() << std::endl;//Debug
         //empty ID
-        attached_cell_id_ = bdm::AgentUid();
+        attached_cell_ptr_ = nullptr;
         attached_to_tumor_cell_ = false;
       }
     }
@@ -315,7 +313,7 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
         if (!victim->IsAttachedToCart()){
         // std::cout << "Attaching at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << std::endl;//Debug
           attached_to_tumor_cell_ = true;
-          attached_cell_id_ = victim->GetUid();
+          attached_cell_ptr_ = victim->GetAgentPtr<TumorCell>();
           victim->SetAttachedToCart(true);
         }
       }
@@ -326,7 +324,7 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
 }
 
 //Try to induce apoptosis
-bool CartCell::TryToInduceApoptosis(TumorCell* attached_cell,Random* rng) {
+bool CartCell::TryToInduceApoptosis(bdm::AgentPointer<TumorCell> attached_cell, Random* rng) {
   // If there is no attached cell (this should not happen)
 
   if (!attached_to_tumor_cell_)
@@ -428,8 +426,8 @@ void StateControlCart::Run(Agent* agent) {
           cell->ComputeConstantsConsumptionSecretion(); 
           // Detach from tumor cell if it was attached
           if (cell->IsAttachedToTumorCell()) {
-            dynamic_cast<TumorCell*>(sim->GetResourceManager()->GetAgent(cell->GetAttachedCellId()))->SetAttachedToCart(false);
-            cell->SetAttachedCellId(bdm::AgentUid());
+            cell->GetAttachedCellPointer()->SetAttachedToCart(false);
+            cell->SetAttachedCellPointer(nullptr);
             cell->SetAttachedToTumorCell(false);
           }
         } else{
