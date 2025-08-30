@@ -203,7 +203,7 @@ constexpr real_t kDefaultFractionFluidCartCell = 0.75;
 /// How often a CAR-T cell tries to kill an attached cancer cell
 constexpr real_t kKillRateCart = 0.06667; // 1/min
 /// How often a CAR-T cell tries to attach to a cancer cell
-constexpr real_t kAdhesionRateCart = 0.2*0.5; // 1/min
+constexpr real_t kAdhesionRateCart = 0.2 * 0.1; // 1/min
 /// Maximum adhesion distance between CAR-T and tumor cells
 constexpr real_t kMaxAdhesionDistanceCart = 18.0;//micrometers
 /// Minimum adhesion distance between CAR-T and tumor cells
@@ -226,7 +226,7 @@ constexpr real_t kElasticConstantCart = 0.01;
 ///   - The value represents the number of CAR-T cells administered on that day.
 /// Example: On day 0 and day 8, 3964 CAR-T cells are introduced (matching the initial tumor cell count).
 inline std::map<size_t, size_t> kTreatment = {//Debug
-    {0, 3957},  // Day 0: administer 3957 CAR-T cells
+    {0, 3963},  // Day 0: administer 3957 CAR-T cells
     // {8, 3957}   // Day 8: administer 3957 CAR-T cells
 };
 

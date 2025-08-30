@@ -94,12 +94,53 @@ int Simulate(int argc, const char** argv) {
   // One spherical tumor of radius kInitialRadiusTumor in the center of the simulation space
   std::vector<Real3> positions=CreateSphereOfTumorCells(kInitialRadiusTumor);//positions of the cells
   // positions= {{-19.5336,-19.5336,-19.5336}};//Debug
-  for (const auto& pos : positions) {
-    TumorCell* tumor_cell = new TumorCell(pos);
-    tumor_cell->AddBehavior(new StateControlGrowProliferate());
-    ctxt->AddAgent(tumor_cell);
-  }
-  // //Debug
+
+  //Debug
+    std::ifstream infile("cell_positions.csv");
+    if (!infile.is_open()) {
+      std::cerr << "Error: Could not open cell_positions.csv" << std::endl;
+    } else {
+      std::string line;
+      // Skip the header line
+      std::getline(infile, line);
+      while (std::getline(infile, line)) {
+        std::istringstream iss(line);
+        std::string token;
+        std::vector<double> coords;
+        double oncopr = 0.0;
+
+        // Parse x, y, z
+        for (int i = 0; i < 3; ++i) {
+          if (!std::getline(iss, token, ',')) break;
+          coords.push_back(std::stod(token));
+        }
+        // Parse oncopr
+        if (std::getline(iss, token, ',')) {
+          oncopr = std::stod(token);
+        }
+
+        if (coords.size() == 3) {
+          TumorCell* tumor_cell = new TumorCell({coords[0], coords[1], coords[2]});
+          tumor_cell->SetOncoproteinLevel(oncopr);
+          tumor_cell->AddBehavior(new StateControlGrowProliferate());
+          ctxt->AddAgent(tumor_cell);
+        }
+      }
+      infile.close();
+    }
+  //End Debug
+
+
+
+  // //Debug Uncomment
+  // for (const auto& pos : positions) {
+  //   TumorCell* tumor_cell = new TumorCell(pos);
+  //   tumor_cell->AddBehavior(new StateControlGrowProliferate());
+  //   ctxt->AddAgent(tumor_cell);
+  // }
+  // //End Debug
+
+  //Debug
   // CartCell* cart_cell = new CartCell({-10.443,-10.443,-10.443});
   // cart_cell->AddBehavior(new StateControlCart());
   // ctxt->AddAgent(cart_cell);
