@@ -217,11 +217,6 @@ class CartCell : public Cell {
   /// Pointer to the attached tumor cell
   bdm::AgentPointer<TumorCell> attached_cell_ptr_;
 
-  //Debug
-  public:
-    static long double acumulator_probabilities;
-    static long double GetAccumulatedProbabilities() { return acumulator_probabilities; }
-
 };
 
 /// Behavior class for controlling CAR-T cell state transitions

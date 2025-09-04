@@ -96,49 +96,45 @@ int Simulate(int argc, const char** argv) {
   // positions= {{-19.5336,-19.5336,-19.5336}};//Debug
 
   //Debug
-    std::ifstream infile("cell_positions.csv");
-    if (!infile.is_open()) {
-      std::cerr << "Error: Could not open cell_positions.csv" << std::endl;
-    } else {
-      std::string line;
-      // Skip the header line
-      std::getline(infile, line);
-      while (std::getline(infile, line)) {
-        std::istringstream iss(line);
-        std::string token;
-        std::vector<double> coords;
-        double oncopr = 0.0;
+    // std::ifstream infile("cell_positions.csv");
+    // if (!infile.is_open()) {
+    //   std::cerr << "Error: Could not open cell_positions.csv" << std::endl;
+    // } else {
+    //   std::string line;
+    //   // Skip the header line
+    //   std::getline(infile, line);
+    //   while (std::getline(infile, line)) {
+    //     std::istringstream iss(line);
+    //     std::string token;
+    //     std::vector<double> coords;
+    //     double oncopr = 0.0;
 
-        // Parse x, y, z
-        for (int i = 0; i < 3; ++i) {
-          if (!std::getline(iss, token, ',')) break;
-          coords.push_back(std::stod(token));
-        }
-        // Parse oncopr
-        if (std::getline(iss, token, ',')) {
-          oncopr = std::stod(token);
-        }
+    //     // Parse x, y, z
+    //     for (int i = 0; i < 3; ++i) {
+    //       if (!std::getline(iss, token, ',')) break;
+    //       coords.push_back(std::stod(token));
+    //     }
+    //     // Parse oncopr
+    //     if (std::getline(iss, token, ',')) {
+    //       oncopr = std::stod(token);
+    //     }
 
-        if (coords.size() == 3) {
-          TumorCell* tumor_cell = new TumorCell({coords[0], coords[1], coords[2]});
-          tumor_cell->SetOncoproteinLevel(oncopr);
-          tumor_cell->AddBehavior(new StateControlGrowProliferate());
-          ctxt->AddAgent(tumor_cell);
-        }
-      }
-      infile.close();
-    }
+    //     if (coords.size() == 3) {
+    //       TumorCell* tumor_cell = new TumorCell({coords[0], coords[1], coords[2]});
+    //       tumor_cell->SetOncoproteinLevel(oncopr);
+    //       tumor_cell->AddBehavior(new StateControlGrowProliferate());
+    //       ctxt->AddAgent(tumor_cell);
+    //     }
+    //   }
+    //   infile.close();
+    // }
   //End Debug
 
-
-
-  // //Debug Uncomment
-  // for (const auto& pos : positions) {
-  //   TumorCell* tumor_cell = new TumorCell(pos);
-  //   tumor_cell->AddBehavior(new StateControlGrowProliferate());
-  //   ctxt->AddAgent(tumor_cell);
-  // }
-  // //End Debug
+  for (const auto& pos : positions) {
+    TumorCell* tumor_cell = new TumorCell(pos);
+    tumor_cell->AddBehavior(new StateControlGrowProliferate());
+    ctxt->AddAgent(tumor_cell);
+  }
 
   //Debug
   // CartCell* cart_cell = new CartCell({-10.443,-10.443,-10.443});
@@ -165,16 +161,16 @@ int Simulate(int argc, const char** argv) {
   scheduler->Simulate(1+kTotalMinutesToSimulate/kDt);
   std::cout << "Simulation completed successfully!" << std::endl;
 
-  //Debug
-  std::cout << "Final accumulated probability: " 
-          << std::setprecision(30) << CartCell::acumulator_probabilities 
-          << std::endl;
-  // Write the final value to a file
-  std::ofstream file("output/final_accumulated_probability.txt");
-  if (file.is_open()) {
-    file << std::setprecision(30) << CartCell::acumulator_probabilities;
-    file.close();
-  }
+  // //Debug
+  // std::cout << "Final accumulated probability: " 
+  //         << std::setprecision(30) << CartCell::acumulator_probabilities 
+  //         << std::endl;
+  // // Write the final value to a file
+  // std::ofstream file("output/final_accumulated_probability.txt");
+  // if (file.is_open()) {
+  //   file << std::setprecision(30) << CartCell::acumulator_probabilities;
+  //   file.close();
+  // }
 
 
 
