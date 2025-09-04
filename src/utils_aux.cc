@@ -94,16 +94,12 @@ std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t, real_
         max_dist_sq = dist_sq;
       }
 
-      // Acumulate oncoprotein levels
-      acumulator_oncoprotein += tumor_cell->GetOncoproteinLevel();
-
-
-      // Count tumor cells by type
+      // Count tumor cells by type and accumulate oncoprotein levels if the cell is alive
       switch (tumor_cell->GetType()) {
-        case 1: num_tumor_cells_type1++; break;
-        case 2: num_tumor_cells_type2++; break;
-        case 3: num_tumor_cells_type3++; break;
-        case 4: num_tumor_cells_type4++; break;
+        case 1: acumulator_oncoprotein += tumor_cell->GetOncoproteinLevel(); num_tumor_cells_type1++; break;
+        case 2: acumulator_oncoprotein += tumor_cell->GetOncoproteinLevel(); num_tumor_cells_type2++; break;
+        case 3: acumulator_oncoprotein += tumor_cell->GetOncoproteinLevel(); num_tumor_cells_type3++; break;
+        case 4: acumulator_oncoprotein += tumor_cell->GetOncoproteinLevel(); num_tumor_cells_type4++; break;
         case 5: num_tumor_cells_type5_dead++; break;
         default: break;
       }
