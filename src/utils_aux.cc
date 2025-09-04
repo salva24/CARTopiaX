@@ -19,6 +19,7 @@
  */
 #include "utils_aux.h"
 #include "cart_cell.h"
+#include <sys/stat.h>
 
 
 namespace bdm {
@@ -69,6 +70,13 @@ std::vector<Real3> CreateSphereOfTumorCells(real_t sphere_radius) {
 
 //Function to compute the number of tumor cells of each type and the radius of the tumor. In adition it outputs the oxygen and oncoprotein levels of the cells
 std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t> ComputeNumberTumorCellsAndRadius(const std::string& file_name) {
+  // Crear carpeta si no existe
+  std::string dir = "output";
+  struct stat info;
+  if (stat(dir.c_str(), &info) != 0) {
+    mkdir(dir.c_str(), 0777);
+  }
+
   auto* rm = Simulation::GetActive()->GetResourceManager();
   size_t total_num_tumor_cells = 0;
   size_t num_tumor_cells_type1 = 0;
