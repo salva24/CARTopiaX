@@ -250,6 +250,11 @@ const real_t kRadiusTumorCell = std::cbrt(kDefaultVolumeNewTumorCell * 3. / (4. 
 ///Do not change this line: radius cart cell
 const real_t kRadiusCartCell = std::cbrt(kDefaultVolumeNewCartCell * 3. / (4. *  Math::kPi));
 
+//Do not change this line: maximum squared distance to avoid CAR-T pushing tumor cells
+//If a CAR-T and a Tumor Cell are closer than this distance, the CAR-T cell will only move to the tumor cell with the adhesion forces
+//(radiusCART + radiusTumorCell + 0.1 to avoid numerical errors)**2
+const real_t kMaxSquaredDistanceCartMovingTowardsTumorCell = std::pow(kRadiusCartCell + kRadiusTumorCell + 1, 2);
+
 ///Max Distance for considering two cells as neighbours for force calculations in μm
 ///Do not change this line
 const real_t kSquaredMaxDistanceNeighborsForce = std::pow( 0.1+ 2* std::max(kRadiusTumorCell, kRadiusCartCell) * kMaxRelativeAdhesionDistance,2);// (twice biggest cell radius (in case to cells tha maximum size encounter each other) times kMaxRelativeAdhesionDistance + 0.1 to avoid mismatch because of numerical errors)**2
