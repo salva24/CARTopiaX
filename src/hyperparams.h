@@ -227,7 +227,7 @@ constexpr real_t kElasticConstantCart = 0.01;
 /// Example: On day 0 and day 8, 3964 CAR-T cells are introduced (matching the initial tumor cell count).
 inline std::map<size_t, size_t> kTreatment = {//Debug
     {0, 3957},  // Day 0: administer 3957 CAR-T cells
-    // {8, 3957}   // Day 8: administer 3957 CAR-T cells
+    {8, 3957}   // Day 8: administer 3957 CAR-T cells
 };
 
 /// Do not modify this line:  1-kMigrationBiasCart
