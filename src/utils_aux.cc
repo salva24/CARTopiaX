@@ -68,10 +68,12 @@ std::vector<Real3> CreateSphereOfTumorCells(real_t sphere_radius) {
     return positions;
 }
 
-//Function to compute the number of tumor cells of each type, the radius of the tumor and the average oncoprotein level.
-std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t, real_t> AnalyzeTumor() {
+//Function to compute the number of tumor cells of each type, the radius of the tumor, the average oncoprotein level and the average oxygen level of the cancer cells.
+std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t, real_t, real_t> AnalyzeTumor() {
 
   auto* rm = Simulation::GetActive()->GetResourceManager();
+  auto* oxygen_dgrid = rm->GetDiffusionGrid("oxygen");
+
   size_t total_num_tumor_cells = 0;
   size_t num_tumor_cells_type1 = 0;
   size_t num_tumor_cells_type2 = 0;
@@ -82,11 +84,15 @@ std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t, real_
 
   real_t max_dist_sq = 0.0;
   real_t acumulator_oncoprotein=0.0;
+  real_t acumulator_oxygen_cancer_cells=0.0;
 
   rm->ForEachAgent([&](const Agent* agent) {
     if (auto* tumor_cell = dynamic_cast<const TumorCell*>(agent)) {
       total_num_tumor_cells++;
       const auto& pos = agent->GetPosition();
+
+      // Accumulate oxygen level for average calculation
+      acumulator_oxygen_cancer_cells += oxygen_dgrid->GetValue(pos);
 
       //computing tumor radius
       real_t dist_sq = pos[0]*pos[0] + pos[1]*pos[1] + pos[2]*pos[2];
@@ -108,8 +114,10 @@ std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t, real_
         num_alive_cart++;
     }
   });
-  real_t average_oncoprotein = (total_num_tumor_cells > 0) ? (acumulator_oncoprotein / total_num_tumor_cells) : 0.0;
-  return {total_num_tumor_cells, num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead, num_alive_cart,std::sqrt(max_dist_sq), average_oncoprotein};
+  int total_alive_cells = num_tumor_cells_type1 + num_tumor_cells_type2 + num_tumor_cells_type3 + num_tumor_cells_type4;
+  real_t average_oncoprotein = (total_alive_cells > 0) ? (acumulator_oncoprotein / total_alive_cells) : 0.0;
+  real_t average_oxygen_cancer_cells = (total_num_tumor_cells > 0) ? (acumulator_oxygen_cancer_cells / total_num_tumor_cells) : 0.0;
+  return {total_num_tumor_cells, num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead, num_alive_cart,std::sqrt(max_dist_sq), average_oncoprotein, average_oxygen_cancer_cells};
 }
 
 // Function to spawn CAR-T cell dosages
@@ -187,7 +195,7 @@ void OutputSummary::operator()() {
     std::ofstream file("output/final_data.csv", std::ios::app);
     if (file.is_open()) {
       if (current_step == 0) {
-        file << "total_days,total_hours,total_minutes,tumor_radius,num_cells,num_tumor_cells,tumor_cells_type1,tumor_cells_type2,tumor_cells_type3,tumor_cells_type4,tumor_cells_type5_dead,num_alive_cart, average_oncoprotein\n";// Header for CSV file
+        file << "total_days,total_hours,total_minutes,tumor_radius,num_cells,num_tumor_cells,tumor_cells_type1,tumor_cells_type2,tumor_cells_type3,tumor_cells_type4,tumor_cells_type5_dead,num_alive_cart, average_oncoprotein, average_oxygen_cancer_cells\n";// Header for CSV file
       }
 
       // Calculate time in days, hours, minutes
@@ -198,8 +206,8 @@ void OutputSummary::operator()() {
       // Count total cells, tumor cells of each type and tumor radius
       size_t total_num_tumor_cells;
       size_t num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead,num_alive_cart;
-      real_t tumor_radius, average_oncoprotein;
-      std::tie(total_num_tumor_cells, num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead, num_alive_cart, tumor_radius, average_oncoprotein) = AnalyzeTumor();
+      real_t tumor_radius, average_oncoprotein, average_oxygen_cancer_cells;
+      std::tie(total_num_tumor_cells, num_tumor_cells_type1, num_tumor_cells_type2, num_tumor_cells_type3, num_tumor_cells_type4, num_tumor_cells_type5_dead, num_alive_cart, tumor_radius, average_oncoprotein, average_oxygen_cancer_cells) = AnalyzeTumor();
       real_t total_num_cells=simulation->GetResourceManager()->GetNumAgents();
 
       //If a dosage is administred this exact time the numbers are not seen in 
@@ -226,7 +234,8 @@ void OutputSummary::operator()() {
        << num_tumor_cells_type4 << ","
        << num_tumor_cells_type5_dead << ","
        << num_alive_cart << ","
-       << average_oncoprotein << "\n";
+       << average_oncoprotein << ","
+       << average_oxygen_cancer_cells << "\n";
     }
   }
 }

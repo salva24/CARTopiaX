@@ -219,15 +219,11 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
             // std::cout <<Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"Movement towards tumor cell: " << displac[0]*kElasticConstantCart << std::endl;//Debug
           //movement towards the tumor cells
           real_t sq_norm_displac = displac[0]*displac[0] + displac[1]*displac[1] + displac[2]*displac[2];
-          //Debug uncomment
-          //The cart moves towards the tumor cell only if they are not touching already
-          //If they are two close the only force affecting is the adhesion force to avoid 
-          //CAR-T non-stop pushing tumor cells
-          if (sq_norm_displac > kMaxSquaredDistanceCartMovingTowardsTumorCell) {
-            translation_velocity_on_point_mass[0] += displac[0] * kElasticConstantCart;
-            translation_velocity_on_point_mass[1] += displac[1] * kElasticConstantCart;
-            translation_velocity_on_point_mass[2] += displac[2] * kElasticConstantCart;
-          }
+          
+          //The cart moves towards the tumor cell
+          translation_velocity_on_point_mass[0] += displac[0] * kElasticConstantCart;
+          translation_velocity_on_point_mass[1] += displac[1] * kElasticConstantCart;
+          translation_velocity_on_point_mass[2] += displac[2] * kElasticConstantCart;
 
           //If the CAR-T has not succeeded in attaching to a tumor cell yet, it tries again
           if (!attached_to_tumor_cell_)//Debug uncomment

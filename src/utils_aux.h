@@ -67,7 +67,8 @@ namespace bdm {
   ///   - Number of living CAR-T cells (not apoptotic)
   ///   - Current tumor radius in micrometers
   ///   - Average oncoprotein level across all tumor cells
-  std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t, real_t> AnalyzeTumor();
+  ///   - Average oxygen level across all tumor cells
+  std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t, real_t, real_t> AnalyzeTumor();
 
   /// Generates a random direction unitary vector
   ///
