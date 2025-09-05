@@ -55,7 +55,7 @@ namespace bdm {
   /// 
   /// Analyzes the current tumor population to compute the number of tumor cells
   /// of each type and the overall radius of the tumor mass. In addition, it computes
-  /// the average oncoprotein level across all tumor cells.
+  /// the average oncoprotein level and oxygen across all tumor cells.
   /// 
   /// @return Tuple containing:
   ///   - Total number of tumor cells
