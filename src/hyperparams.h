@@ -203,7 +203,7 @@ constexpr real_t kDefaultFractionFluidCartCell = 0.75;
 /// How often a CAR-T cell tries to kill an attached cancer cell
 constexpr real_t kKillRateCart = 0.06667; // 1/min
 /// How often a CAR-T cell tries to attach to a cancer cell
-constexpr real_t kAdhesionRateCart = 0.0085; // 1/min
+constexpr real_t kAdhesionRateCart = 0.2;//0.0092//0.0085; // 1/min
 /// Maximum adhesion distance between CAR-T and tumor cells
 constexpr real_t kMaxAdhesionDistanceCart = 18.0;//micrometers
 /// Minimum adhesion distance between CAR-T and tumor cells
@@ -220,7 +220,7 @@ constexpr real_t kMigrationSpeedCart = 5.0;
 constexpr real_t kElasticConstantCart = 0.01;
 
 /// Probability of a CAR-T cell to keep pushing a tumor cell when they are very close
-constexpr real_t kProbabilityPushing = 0.2;
+// constexpr real_t kProbabilityPushing = 0.2;//Debug
 
 /// Treatment Dosages
 ///
