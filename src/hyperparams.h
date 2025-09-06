@@ -219,6 +219,9 @@ constexpr real_t kMigrationSpeedCart = 5.0;
 ///Elastic constant
 constexpr real_t kElasticConstantCart = 0.01;
 
+/// Probability of a CAR-T cell to keep pushing a tumor cell when they are very close
+constexpr real_t kProbabilityPushing = 0.1;
+
 /// Treatment Dosages
 ///
 /// Specifies the CAR-T cell infusion schedule as a map where:
