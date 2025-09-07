@@ -57,7 +57,7 @@ CartCell::CartCell(const Real3& position) {
 
   //Add Consumption and Secretion
   // Set default oxygen consumption rate
-  SetOxygenConsumptionRate(kDefaultOxygenConsumption);
+  SetOxygenConsumptionRate(kDefaultOxygenConsumptionCarT);
   // Compute constants for all ConsumptionSecretion of Oxygen
   ComputeConstantsConsumptionSecretion();
 

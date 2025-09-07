@@ -192,6 +192,8 @@ const real_t kLengthBoxMechanics =22; // Length of the box for mechanics in micr
 /// CAR-T Cell Hyperparameters
 ///
 constexpr real_t kAverageMaximumTimeUntillApoptosisCart= kDtCycle* 10.0 * 24.0 * 60.0;
+/// Default oxygen consumption rate of CAR-T cell
+constexpr real_t kDefaultOxygenConsumptionCarT = 1.0; 
 ///Volume parameters
 /// Default total volume of a new CAR-T cell in μm³
 constexpr real_t kDefaultVolumeNewCartCell = 2494.0; 
