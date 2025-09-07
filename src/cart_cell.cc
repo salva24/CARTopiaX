@@ -217,7 +217,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
         Real3 displac = neighbor->GetPosition()-current_position;
 
         if (TumorCell* cancer_cell = dynamic_cast<TumorCell*>(neighbor)) {
-          if(cancer_cell->GetBoxIdx() == this->GetBoxIdx()){//Debug//debug
+          // if(cancer_cell->GetBoxIdx() == this->GetBoxIdx()){//Debug//debug
           // std::cout <<Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"Movement towards tumor cell: " << displac[0]*kElasticConstantCart << std::endl;//Debug
           //movement towards the tumor cells
           real_t sq_norm_displac = displac[0]*displac[0] + displac[1]*displac[1] + displac[2]*displac[2];
@@ -226,16 +226,16 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
           //If they are too close the only force affecting is the adhesion force to avoid 
           //CAR-T non-stop pushing tumor cells. In case of being closer than kMaxSquaredDistanceCartMovingTowardsTumorCell
           //there is a probability kProbabilityPushing for the CAR-T to keep pushing the tumor cell
-          // if (sq_norm_displac > kMaxSquaredDistanceCartMovingTowardsTumorCell || rng->Uniform(0.0, 1.0) < kProbabilityPushing) {//Debug
+          if (sq_norm_displac > kMaxSquaredDistanceCartMovingTowardsTumorCell) {// || rng->Uniform(0.0, 1.0) < kProbabilityPushing) {//Debug
             translation_velocity_on_point_mass[0] += displac[0] * kElasticConstantCart;
             translation_velocity_on_point_mass[1] += displac[1] * kElasticConstantCart;
             translation_velocity_on_point_mass[2] += displac[2] * kElasticConstantCart;
-          // }
+          }
 
           //If the CAR-T has not succeeded in attaching to a tumor cell yet, it tries again
           if (!attached_to_tumor_cell_)//Debug uncomment
             TryToGetAttachedTo(cancer_cell, sq_norm_displac, rng);
-        }//Debug
+        // }//Debug
         }
       });
     ctxt->ForEachNeighbor(calculate_forces_and_elastic_displacement, *this, squared_radius);

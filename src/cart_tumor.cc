@@ -50,7 +50,7 @@ int Simulate(int argc, const char** argv) {
   auto* env = dynamic_cast<UniformGridEnvironment*>(Simulation::GetActive()->GetEnvironment());
   // Fix the box length for the uniform grid environment
   env->SetBoxLength(kLengthBoxMechanics);
-  env->SetBoxLength(30); //Debug
+  // env->SetBoxLength(30); //Debug
 
 
   // Define Substances
