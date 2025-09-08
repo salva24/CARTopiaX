@@ -36,7 +36,8 @@ TumorCell::TumorCell(const Real3& position) {
   SetTargetNucleusSolid(kDefaultVolumeNucleusTumorCell*(1-kDefaultFractionFluidTumorCell)); // Set target nucleus solid volume to real_t
   SetTargetCytoplasmSolid((kDefaultVolumeNewTumorCell - kDefaultVolumeNucleusTumorCell) * (1 - kDefaultFractionFluidTumorCell)); // Set target cytoplasm solid volume to real_t
 
-  SetOncoproteinLevel(SamplePositiveGaussian(kOncoproteinMean,kOncoproteinStandardDeviation)); // Set initial oncoprotein level with a truncated normal distribution
+  SetOncoproteinLevel(SamplePositiveGaussian(kOncoproteinMean,kOncoproteinStandardDeviation)); // Set initial oncoprotein level with a truncated normal distribution 
+  SetOncoproteinLevel(0.75);//Debug
   // SetOncoproteinLevel(1.); //Debug
   auto* rm = Simulation::GetActive()->GetResourceManager();
   oxygen_dgrid_ = rm->GetDiffusionGrid("oxygen"); // Pointer to oxygen diffusion grid

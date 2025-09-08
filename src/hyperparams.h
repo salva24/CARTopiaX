@@ -114,7 +114,7 @@ constexpr int kOutputCsvInterval = 12*60/kDt;
 
 
 /// Total simulation time in minutes (30 days)
-constexpr int kTotalMinutesToSimulate = 30*24*60; //30*24*60
+constexpr int kTotalMinutesToSimulate = 500; //30*24*60
 /// Length of the bounded space in micrometers
 constexpr int kBoundedSpaceLength = 1000; 
 /// Initial radius of the spherical tumor (group of cancer cells) in micrometers
@@ -215,7 +215,7 @@ constexpr real_t kMinAdhesionDistanceCart = 14.0;//micrometers
 /// Average persistence time before CAR-T cell moves
 constexpr real_t kPersistenceTimeCart = 10; // 10 minutes
 ///Higher bias (\in [0,1]) makes CAR-T movement more directed toward immunostimulatory factor source; while a bias of 0 makes the movement random
-constexpr real_t kMigrationBiasCart = 0.5;
+constexpr real_t kMigrationBiasCart = 1.;//0.5;//DEBUG
 /// Migration speed
 constexpr real_t kMigrationSpeedCart = 5.0;
 ///Elastic constant
@@ -231,8 +231,8 @@ constexpr real_t kElasticConstantCart = 0.01;
 ///   - The value represents the number of CAR-T cells administered on that day.
 /// Example: On day 0 and day 8, 3964 CAR-T cells are introduced (matching the initial tumor cell count).
 inline std::map<size_t, size_t> kTreatment = {//Debug
-    {0, 3963},  // Day 0: administer 3957 CAR-T cells
-    {8, 3963}   // Day 8: administer 3957 CAR-T cells
+    {0, 0},  // Day 0: administer 3957 CAR-T cells
+    {8, 0}   // Day 8: administer 3957 CAR-T cells
 };
 
 /// Do not modify this line:  1-kMigrationBiasCart
