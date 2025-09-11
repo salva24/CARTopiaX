@@ -92,7 +92,7 @@ constexpr real_t kVolumeRelaxarionRateFluidNecroticLysed = 0.050/60.0;
 ///
 
 /// Seed for random number generation
-constexpr int kSeed =3; 
+constexpr int kSeed =1; 
 
 /// Output Performance Statistics
 constexpr bool kOutputPerformanceStatistics = true;
@@ -192,6 +192,8 @@ const real_t kLengthBoxMechanics =22; // Length of the box for mechanics in micr
 /// CAR-T Cell Hyperparameters
 ///
 constexpr real_t kAverageMaximumTimeUntillApoptosisCart= kDtCycle* 10.0 * 24.0 * 60.0;
+/// Default oxygen consumption rate of CAR-T cell
+constexpr real_t kDefaultOxygenConsumptionCarT = 1.0; 
 ///Volume parameters
 /// Default total volume of a new CAR-T cell in μm³
 constexpr real_t kDefaultVolumeNewCartCell = 2494.0; 
@@ -203,7 +205,7 @@ constexpr real_t kDefaultFractionFluidCartCell = 0.75;
 /// How often a CAR-T cell tries to kill an attached cancer cell
 constexpr real_t kKillRateCart = 0.06667; // 1/min
 /// How often a CAR-T cell tries to attach to a cancer cell
-constexpr real_t kAdhesionRateCart = 0.0092; // 1/min
+constexpr real_t kAdhesionRateCart = 0.013;//0.2;//0.0092//0.0085; // 1/min
 /// Maximum adhesion distance between CAR-T and tumor cells
 constexpr real_t kMaxAdhesionDistanceCart = 18.0;//micrometers
 /// Minimum adhesion distance between CAR-T and tumor cells
@@ -219,12 +221,15 @@ constexpr real_t kMigrationSpeedCart = 5.0;
 ///Elastic constant
 constexpr real_t kElasticConstantCart = 0.01;
 
+/// Probability of a CAR-T cell to keep pushing a tumor cell when they are very close
+// constexpr real_t kProbabilityPushing = 0.2;//Debug
+
 /// Treatment Dosages
 ///
 /// Specifies the CAR-T cell infusion schedule as a map where:
 ///   - The key represents the day of treatment (starting from day 0).
 ///   - The value represents the number of CAR-T cells administered on that day.
-/// Example: On day 0 and day 8, 3964 CAR-T cells are introduced (matching the initial tumor cell count).
+/// Example: On day 0 and day 8, 3957 CAR-T cells are introduced (matching the initial tumor cell count).
 inline std::map<size_t, size_t> kTreatment = {//Debug
     {0, 3957},  // Day 0: administer 3957 CAR-T cells
     {8, 3957}   // Day 8: administer 3957 CAR-T cells
