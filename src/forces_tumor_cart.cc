@@ -47,8 +47,6 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
   double radius_a = a->GetDiameter() / 2.0;
   double radius_b = b->GetDiameter() / 2.0;
   double R = radius_a + radius_b;
-  // R=16.8254;//Debug
-  // std::cout << "Debug: R = " << R << ", distance = " << distance << std::endl;// Debug output
   double temp_r = 0.0;
 
   const TumorCell* a_tumor = dynamic_cast<const TumorCell*>(a);
@@ -62,8 +60,6 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
     temp_r *= temp_r;
 
     double repulsion;
-  // std::cout << "temp_r = " << temp_r<< std::endl;// Debug output
-
     
     if (a_tumor && b_tumor) {// two tumor cells
       repulsion = kRepulsionTumorTumor;//std::sqrt(kRepulsionTumorTumor * kRepulsionTumorTumor);
@@ -73,28 +69,19 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
       repulsion = std::sqrt(kRepulsionCartTumor *
                             kRepulsionTumorCart);
     }
-  // std::cout << "repulsion = " << repulsion<< std::endl;// Debug output
 
     temp_r *= repulsion;
   }
 
-  // std::cout << "temp_r after repulsion = " << temp_r<< std::endl;// Debug output
-
 
   // Adhesion
   double max_interaction_distance = kMaxRelativeAdhesionDistance * R;
-  // max_interaction_distance=21.0318;//Debug
-  // std::cout << "max_interaction_distance = " << max_interaction_distance << std::endl;// Debug output
-
 
   if (distance < max_interaction_distance) {
     // 1 - d/S
     double temp_a = 1.0 - distance / max_interaction_distance; 
     // (1-d/S)^2
     temp_a *= temp_a;
-
-    // std::cout << "temp_a = " << temp_a << std::endl;// Debug output
-
 
     double adhesion;
     if (a_tumor && b_tumor) {// two tumor cells
@@ -106,13 +93,8 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
                             kAdhesionTumorCart);
     }
 
-    // std::cout << "adhesion = " << adhesion << std::endl;// Debug output
-
-
     temp_a *= adhesion;
     temp_r -= temp_a;
-
-    // std::cout << "temp_a after adhesion= " << temp_a << std::endl;// Debug output
 
   }
 
@@ -122,31 +104,6 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
   double force_magnitude = temp_r / distance;
 
 
-
-      //Debug Output volcities
-    // std::ofstream file("output/intercation_velocities.csv", std::ios::app);
-    // if (file.is_open()) {
-      
-    //   double total_minutes = Simulation::GetActive()->GetScheduler()->GetSimulatedTime();
-    //   Real3 position = a->GetPosition();
-    //   // Write data to CSV file
-    //   file << total_minutes << ",position"
-    //    << position[0] << ","
-    //    << position[1] << ","
-    //    << position[2] << ",displacement"
-    //     << displacement[0] << ","
-    //     << displacement[1] << ","
-    //     << displacement[2] << ",distance"
-    //     << distance << ",force_magnitude"
-    //     << force_magnitude << ",temp_r"
-    //    << temp_r << "\n";
-    // }
-    // End Debug Output
-
-
-  // return{0.,0.,0.,0.};//debug
-
-  // std::cout<< force_magnitude << std::endl;//Debug
   return {force_magnitude * displacement[0],
           force_magnitude * displacement[1],
           force_magnitude * displacement[2],

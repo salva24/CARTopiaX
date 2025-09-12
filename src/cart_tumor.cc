@@ -50,8 +50,6 @@ int Simulate(int argc, const char** argv) {
   auto* env = dynamic_cast<UniformGridEnvironment*>(Simulation::GetActive()->GetEnvironment());
   // Fix the box length for the uniform grid environment
   env->SetBoxLength(kLengthBoxMechanics);
-  // env->SetBoxLength(30); //Debug
-
 
   // Define Substances
   auto* rm = Simulation::GetActive()->GetResourceManager();
@@ -95,58 +93,12 @@ int Simulate(int argc, const char** argv) {
 
   // One spherical tumor of radius kInitialRadiusTumor in the center of the simulation space
   std::vector<Real3> positions=CreateSphereOfTumorCells(kInitialRadiusTumor);//positions of the cells
-  // positions= {{-19.5336,-19.5336,-19.5336}};//Debug
 
-  // //Debug
-  //   std::ifstream infile("cell_positions.csv");
-  //   if (!infile.is_open()) {
-  //     std::cerr << "Error: Could not open cell_positions.csv" << std::endl;
-  //   } else {
-  //     std::string line;
-  //     // Skip the header line
-  //     std::getline(infile, line);
-  //     while (std::getline(infile, line)) {
-  //       std::istringstream iss(line);
-  //       std::string token;
-  //       std::vector<double> coords;
-  //       double oncopr = 0.0;
-
-  //       // Parse x, y, z
-  //       for (int i = 0; i < 3; ++i) {
-  //         if (!std::getline(iss, token, ',')) break;
-  //         coords.push_back(std::stod(token));
-  //       }
-  //       // Parse oncopr
-  //       if (std::getline(iss, token, ',')) {
-  //         oncopr = std::stod(token);
-  //       }
-
-  //       if (coords.size() == 3) {
-  //         TumorCell* tumor_cell = new TumorCell({coords[0], coords[1], coords[2]});
-  //         tumor_cell->SetOncoproteinLevel(oncopr);
-  //         tumor_cell->AddBehavior(new StateControlGrowProliferate());
-  //         ctxt->AddAgent(tumor_cell);
-  //       }
-  //     }
-  //     infile.close();
-  //   }
-  //End Debug
-
-
-  // Debug uncomment
   for (const auto& pos : positions) {
     TumorCell* tumor_cell = new TumorCell(pos);
     tumor_cell->AddBehavior(new StateControlGrowProliferate());
     ctxt->AddAgent(tumor_cell);
   }
-  //ENd Debug uncomment
-
-
-  //Debug
-  // CartCell* cart_cell = new CartCell({-10.443,-10.443,-10.443});
-  // cart_cell->AddBehavior(new StateControlCart());
-  // ctxt->AddAgent(cart_cell);
-  // //end Debug
 
   //Treatment administration operation
   auto* treatment_op = new bdm::Operation("SpawnCart");
@@ -166,19 +118,6 @@ int Simulate(int argc, const char** argv) {
   //simulate kTotalMinutesToSimulate minutes including the last minute 
   scheduler->Simulate(1+kTotalMinutesToSimulate/kDt);
   std::cout << "Simulation completed successfully!" << std::endl;
-
-  // //Debug
-  // std::cout << "Final accumulated probability: " 
-  //         << std::setprecision(30) << CartCell::acumulator_probabilities 
-  //         << std::endl;
-  // // Write the final value to a file
-  // std::ofstream file("output/final_accumulated_probability.txt");
-  // if (file.is_open()) {
-  //   file << std::setprecision(30) << CartCell::acumulator_probabilities;
-  //   file.close();
-  // }
-
-
 
   return 0;
 }

@@ -127,18 +127,7 @@ void CartCell::ChangeVolumeExponentialRelaxationEquation(real_t relaxation_rate_
 }
 
 //compute Displacement
-Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
-                            real_t squared_radius, real_t dt) {
-
-  //Debug CAR-T positions
-  // Real3 position = GetPosition();
-	// std::ofstream file("output/positions_cart.csv", std::ios::app);
-	// if (file.is_open()) {
-	// file  << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << "," 
-	// 	<< position[0] << "," << position[1] << "," << position[2] << ", norm:" << position.Norm() << "\n";
-	// }
-  //End Debug
-
+Real3 CartCell::CalculateDisplacement(const InteractionForce* force, real_t squared_radius, real_t dt) {
 
   auto* sim = Simulation::GetActive();
 
@@ -160,8 +149,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
   Real3 motility;
   if (DoesCellMove()){
     //compute motility
-    // if (true) {
-    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {//Debug uncomment
+    if (rng->Uniform(0.0, 1.0) < kMotilityProbability) {
       //random direction as unitary vector
       Real3 random_direction = GenerateRandomDirection();
       Real3 direction_to_immunostimulatory_factor;
@@ -173,8 +161,7 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
       if (motility[0]*motility[0] + motility[1]*motility[1] + motility[2]*motility[2] > 0)
         motility.Normalize();
       // Scale by migration speed and add to the velocity
-      translation_velocity_on_point_mass += motility * kMigrationSpeedCart;//Debug uncomment
-      // std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"velocity afet motility: " << translation_velocity_on_point_mass[0] <<", "<< translation_velocity_on_point_mass[1] <<", "<< translation_velocity_on_point_mass[2] <<", norm "<< translation_velocity_on_point_mass.Norm() << std::endl;//Debug
+      translation_velocity_on_point_mass += motility * kMigrationSpeedCart;
     }
     
 
@@ -188,10 +175,9 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
     if (attached_to_tumor_cell_) {//attached to tumor cell
       // try to kill the cancer cell and in case of failure see if it manages to scape
       // the order needs to be this one because it should try to kill before seeing if it scapes 
-      if (TryToInduceApoptosis(attached_cell_ptr_,rng) || rng->Uniform(0.0, 1.0) < kProbabilityEscape) {//Debug Uncomment 
+      if (TryToInduceApoptosis(attached_cell_ptr_,rng) || rng->Uniform(0.0, 1.0) < kProbabilityEscape) {
         //the cancer cell is detached
         attached_cell_ptr_->SetAttachedToCart(false);
-        // std::cout << "Detaching at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << " IsDead():" << attached_cell->IsDead() << std::endl;//Debug
         //empty ID
         attached_cell_ptr_ = nullptr;
         attached_to_tumor_cell_ = false;
@@ -208,7 +194,6 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
         // We check for every neighbor object if they touch us, i.e. push us
         // away and aggregate the velocities
         auto neighbor_force = force->Calculate(this, neighbor);
-        // std::cout << "Neighbor force: " << neighbor_force[0] << std::endl;//Debug
         translation_velocity_on_point_mass[0] += neighbor_force[0];
         translation_velocity_on_point_mass[1] += neighbor_force[1];
         translation_velocity_on_point_mass[2] += neighbor_force[2];
@@ -217,8 +202,6 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
         Real3 displac = neighbor->GetPosition()-current_position;
 
         if (TumorCell* cancer_cell = dynamic_cast<TumorCell*>(neighbor)) {
-          // if(cancer_cell->GetBoxIdx() == this->GetBoxIdx()){//Debug//debug
-          // std::cout <<Simulation::GetActive()->GetScheduler()->GetSimulatedTime() <<"Movement towards tumor cell: " << displac[0]*kElasticConstantCart << std::endl;//Debug
           //movement towards the tumor cells
           real_t sq_norm_displac = displac[0]*displac[0] + displac[1]*displac[1] + displac[2]*displac[2];
           
@@ -226,20 +209,18 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
           //If they are too close the only force affecting is the adhesion force to avoid 
           //CAR-T non-stop pushing tumor cells. In case of being closer than kMaxSquaredDistanceCartMovingTowardsTumorCell
           //there is a probability kProbabilityPushing for the CAR-T to keep pushing the tumor cell
-          if (sq_norm_displac > kMaxSquaredDistanceCartMovingTowardsTumorCell) {// || rng->Uniform(0.0, 1.0) < kProbabilityPushing) {//Debug
+          if (sq_norm_displac > kMaxSquaredDistanceCartMovingTowardsTumorCell) {
             translation_velocity_on_point_mass[0] += displac[0] * kElasticConstantCart;
             translation_velocity_on_point_mass[1] += displac[1] * kElasticConstantCart;
             translation_velocity_on_point_mass[2] += displac[2] * kElasticConstantCart;
           }
 
           //If the CAR-T has not succeeded in attaching to a tumor cell yet, it tries again
-          if (!attached_to_tumor_cell_)//Debug uncomment
+          if (!attached_to_tumor_cell_)
             TryToGetAttachedTo(cancer_cell, sq_norm_displac, rng);
-        // }//Debug
         }
       });
     ctxt->ForEachNeighbor(calculate_forces_and_elastic_displacement, *this, squared_radius);
-    // std::cout << "Translation velocity on point mass: " << squared_radius << std::endl;//Debug
   }
 
   //--------------------------------------------
@@ -257,16 +238,6 @@ Real3 CartCell::CalculateDisplacement(const InteractionForce* force,
 
 // Try to get attached to a tumor cell
 void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Random* rng){
-    // std::cout << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << std::endl;//Debug
-  // std::cout << "Trying to attach at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << " is dead: " << victim->IsDead()<< " type: " << victim->GetType() << std::endl;//Debug
-  // //Debug
-  // real_t current_time = Simulation::GetActive()->GetScheduler()->GetSimulatedTime(); // Get the current time step in minutes
-  // std::ofstream file("output/cart_adhesion.csv", std::ios::app);
-  // if (file.is_open()) {
-  // file  << current_time<< " probability "<<  <<"\n";
-  // }
-  // //End Debug
-
   //If the tumor cell is not already attached to a CAR-T cell, is not dead and is not too far away.
   if(!victim->IsAttachedToCart()&& !victim->IsDead() && squared_distance < kSquaredMaxAdhesionDistanceCart) {
 
@@ -288,33 +259,13 @@ void CartCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance, Ra
     if( distance_scale_factor > 1.0 )
       distance_scale_factor = 1.0;
 
-    
-    // distance_scale_factor=1;//Debug
-      
-    // //Debug
-    // real_t current_time = Simulation::GetActive()->GetScheduler()->GetSimulatedTime(); // Get the current time step in minutes
-    // std::ofstream file("output/cart_adhesion.csv", std::ios::app);
-    // if (file.is_open()) {
-    // file  << current_time<< " probability "<< kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics <<"\n";
-    // }
-    //End Debug
-
-    // //Debug
-    // #pragma omp critical
-    // {
-    //   acumulator_probabilities += kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics;
-    // }
-    // // ENd Debug
-
-
     // It tries to attach the CAR-T cell to the tumor cell with probability kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics
-    if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {//Debug uncomment
+    if (rng->Uniform(0.0, 1.0) < kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor * kDtMechanics) {
       //avoid race condition. Only one cell can be attached to the tumor cell.
       #pragma omp critical
       {
         //We need to check again if the victim is not attached to a CAR-T cell yet. This could be made more efficiently with a semaphore for each cancer cell
         if (!victim->IsAttachedToCart()){
-        // std::cout << "Attaching at time: " << Simulation::GetActive()->GetScheduler()->GetSimulatedTime() << std::endl;//Debug
           attached_to_tumor_cell_ = true;
           attached_cell_ptr_ = victim->GetAgentPtr<TumorCell>();
           victim->SetAttachedToCart(true);
@@ -347,14 +298,6 @@ bool CartCell::TryToInduceApoptosis(bdm::AgentPointer<TumorCell> attached_cell, 
   //CAR-T success of killing probability: aggressive cancer cells (high oncoprotein level) are more likely to be killed
   bool succeeded =  rng->Uniform(0.0, 1.0) < kKillRateCart * scale_factor * kDtMechanics;
   
-    //Debug
-    // real_t current_time = Simulation::GetActive()->GetScheduler()->GetSimulatedTime(); // Get the current time step in minutes
-    // std::ofstream file("output/cart_killing.csv", std::ios::app);
-    // if (file.is_open()) {
-    // file  << current_time<< " probability "<< kKillRateCart * scale_factor * kDtMechanics <<"\n";
-    // }
-    // //End Debug
-
   //The CAR-T has succeeded to induce apoptosis on the Cancer Cell
 	if(succeeded)
     attached_cell->StartApoptosis();

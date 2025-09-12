@@ -221,16 +221,13 @@ constexpr real_t kMigrationSpeedCart = 5.0;
 ///Elastic constant
 constexpr real_t kElasticConstantCart = 0.01;
 
-/// Probability of a CAR-T cell to keep pushing a tumor cell when they are very close
-// constexpr real_t kProbabilityPushing = 0.2;//Debug
-
 /// Treatment Dosages
 ///
 /// Specifies the CAR-T cell infusion schedule as a map where:
 ///   - The key represents the day of treatment (starting from day 0).
 ///   - The value represents the number of CAR-T cells administered on that day.
 /// Example: On day 0 and day 8, 3957 CAR-T cells are introduced (matching the initial tumor cell count).
-inline std::map<size_t, size_t> kTreatment = {//Debug
+inline std::map<size_t, size_t> kTreatment = {
     {0, 3957},  // Day 0: administer 3957 CAR-T cells
     {8, 3957}   // Day 8: administer 3957 CAR-T cells
 };
