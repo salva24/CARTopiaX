@@ -92,7 +92,7 @@ constexpr real_t kVolumeRelaxarionRateFluidNecroticLysed = 0.050/60.0;
 ///
 
 /// Seed for random number generation
-constexpr int kSeed =1; 
+constexpr int kSeed =6; 
 
 /// Output Performance Statistics
 constexpr bool kOutputPerformanceStatistics = true;
