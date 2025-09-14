@@ -1,6 +1,6 @@
 # CARTopiaX
 
-This repository provides an **agent-based simulation** of tumour-derived organoids and their interaction with **CAR T-cell therapy**.  
+This repository provides an **agent-based simulation** of tumour-derived organoids and their interaction with **CAR T-cell therapy**.
 Developed as part of Google Summer of Code 2025, the project is released under the **Apache License 2.0**.
 
 The simulation integrates computational modeling and biological insights to explore tumour–immune dynamics and assess treatment outcomes under various scenarios.
@@ -17,6 +17,7 @@ The simulation integrates computational modeling and biological insights to expl
 6. [Visualizing Results](#results)
 7. [Acknowledgments](#acknowledgments)
 8. [License](#license)
+
 
 ---
 
@@ -51,19 +52,20 @@ Clone the repository:
 ```bash
 git clone https://github.com/compiler-research/CARTopiaX.git
 cd CARTopiaX
+
 ```
 
 ---
 
 ## Building the Simulation
 
-**Option 1:**  
+**Option 1:**
 Use BioDynaMo’s build system:
 ```bash
 biodynamo build
 ```
 
-**Option 2:**  
+**Option 2:**
 Manual build:
 ```bash
 mkdir build && cd build
@@ -77,15 +79,16 @@ make -j <number_of_processes>
 
 After building, run the simulation using one of the following methods:
 
-**Option 1:**  
+**Option 1:**
 With BioDynaMo:
 ```bash
 biodynamo run
 ```
 
-**Option 2:**  
+**Option 2:**
 Directly from the build directory:
 ```bash
+
 ./build/CARTopiaX
 ```
 
@@ -98,6 +101,7 @@ Data about tumor growth and diffrent types of cell populations is output in ./ou
 To visualize the results in paraview use:
 ```bash
 paraview ./output/CARTopiaX/CARTopiaX.pvsm
+
 ```
 
 ---
@@ -106,17 +110,17 @@ paraview ./output/CARTopiaX/CARTopiaX.pvsm
 
 This project builds upon the BioDynaMo simulation framework.
 
-> Lukas Breitwieser, Ahmad Hesam, Jean de Montigny, Vasileios Vavourakis, Alexandros Iosif, Jack Jennings, Marcus Kaiser, Marco Manca, Alberto Di Meglio, Zaid Al-Ars, Fons Rademakers, Onur Mutlu, Roman Bauer.  
-> *BioDynaMo: a modular platform for high-performance agent-based simulation*.  
-> Bioinformatics, Volume 38, Issue 2, January 2022, Pages 453–460.  
+> Lukas Breitwieser, Ahmad Hesam, Jean de Montigny, Vasileios Vavourakis, Alexandros Iosif, Jack Jennings, Marcus Kaiser, Marco Manca, Alberto Di Meglio, Zaid Al-Ars, Fons Rademakers, Onur Mutlu, Roman Bauer.
+> *BioDynaMo: a modular platform for high-performance agent-based simulation*.
+> Bioinformatics, Volume 38, Issue 2, January 2022, Pages 453–460.
 > [https://doi.org/10.1093/bioinformatics/btab649](https://doi.org/10.1093/bioinformatics/btab649)
 
-Some of the mathematical models and solver implementations are based on the research of  
+Some of the mathematical models and solver implementations are based on the research of
 Luciana Melina Luque and collaborators, as described in:
 
-> Luque, L.M., Carlevaro, C.M., Rodriguez-Lomba, E. et al.  
-> *In silico study of heterogeneous tumour-derived organoid response to CAR T-cell therapy*.  
-> Scientific Reports 14, 12307 (2024).  
+> Luque, L.M., Carlevaro, C.M., Rodriguez-Lomba, E. et al.
+> *In silico study of heterogeneous tumour-derived organoid response to CAR T-cell therapy*.
+> Scientific Reports 14, 12307 (2024).
 > [https://doi.org/10.1038/s41598-024-63125-5](https://doi.org/10.1038/s41598-024-63125-5)
 
 ---

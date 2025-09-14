@@ -1,5 +1,6 @@
 /*
- * Copyright 2025 compiler-research.org, Salvador de la Torre Gonzalez, Luciana Melina Luque
+ * Copyright 2025 compiler-research.org, Salvador de la Torre Gonzalez, Luciana
+ * Melina Luque
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +22,16 @@
 #ifndef TUMOR_HYPERPARAMS_H_
 #define TUMOR_HYPERPARAMS_H_
 
-#include <map>
-#include <string>
-
 #include "core/real_t.h"
+#include "core/util/math.h"
+#include <cmath>
+#include <cstddef>
 
 namespace bdm {
 
-///This file contains hyperparameters used in the simulation. Change: In a future version it needs to be changed into a params file with no need to be recompiled
-
+/// This file contains hyperparameters used in the simulation. Change: In a
+/// future version it needs to be changed into a params file with no need to be
+/// recompiled
 ///
 /// TumorCell Hyperparameters
 ///
@@ -65,6 +67,10 @@ constexpr real_t kDefaultVolumeNewTumorCell = 2494.0;
 constexpr real_t kDefaultVolumeNucleusTumorCell = 540.0; 
 /// Default fraction of fluid volume in a new tumor cell
 constexpr real_t kDefaultFractionFluidTumorCell = 0.75; 
+/// Average time for transformation Random Rate in hours
+constexpr real_t kAverageTimeTransformationRandomRate = 38.6;
+/// Standard Deviation for transformation Random Rate in hours
+constexpr real_t kStandardDeviationTransformationRandomRate = 3.7;
 /// Average adhesion time in minutes for Tumor Cell under CAR-T attack before escaping
 constexpr real_t kAdhesionTime = 60.0;
 /// Min oncoprotein level to be killed by a CAR-T cell
@@ -75,9 +81,9 @@ constexpr real_t kOncoproteinSaturation = 2.0;
 constexpr real_t kOncoproteinDifference = kOncoproteinSaturation - kOncoproteinLimit;
 
 ///volume relaxation rate (min^-1) for each state
-constexpr real_t kVolumeRelaxarionRateAliveCytoplasm =0.13/60.;// 0.27/ 60.0;
-constexpr real_t kVolumeRelaxarionRateAliveNucleus = 0.22/60.;//0.33/60.
-constexpr real_t kVolumeRelaxarionRateAliveFluid = 1.3/60.;//3.0/60.
+constexpr real_t kVolumeRelaxarionRateAliveCytoplasm =0.13/60.;
+constexpr real_t kVolumeRelaxarionRateAliveNucleus = 0.22/60.;
+constexpr real_t kVolumeRelaxarionRateAliveFluid = 1.3/60.;
 
 constexpr real_t kVolumeRelaxarionRateCytoplasmNecroticSwelling = 0.0032/60.0;
 constexpr real_t kVolumeRelaxarionRateNucleusNecroticSwelling = 0.013/60.;
@@ -86,6 +92,12 @@ constexpr real_t kVolumeRelaxarionRateFluidNecroticSwelling = 0.050/60.0;
 constexpr real_t kVolumeRelaxarionRateCytoplasmNecroticLysed = 0.0032/60.00;
 constexpr real_t kVolumeRelaxarionRateNucleusNecroticLysed = 0.013/60.;
 constexpr real_t kVolumeRelaxarionRateFluidNecroticLysed = 0.050/60.0;
+
+/// Thresholds in oncoprotein levels for differentiating 4 cancer cell types
+constexpr real_t kThresholdCancerCellType1 = 1.5;
+constexpr real_t kThresholdCancerCellType2 = 1.0;
+constexpr real_t kThresholdCancerCellType3 = 0.5;
+constexpr real_t kThresholdCancerCellType4 = 0.0;
 
 ///
 /// General Hyperparameters
@@ -114,7 +126,14 @@ constexpr int kOutputCsvInterval = 12*60/kDt;
 
 
 /// Total simulation time in minutes (30 days)
-constexpr int kTotalMinutesToSimulate = 30*24*60; //30*24*60
+constexpr int kTotalMinutesToSimulate = 30*24*60;
+
+/// Epsilon for avoiding division by 0
+constexpr real_t kEpsilon = 1e-10;
+
+/// kEpsilon distance
+constexpr real_t kEpsilonDistance = 1e-5;
+
 /// Length of the bounded space in micrometers
 constexpr int kBoundedSpaceLength = 1000; 
 /// Initial radius of the spherical tumor (group of cancer cells) in micrometers
@@ -132,31 +151,31 @@ constexpr real_t kTimeApoptosis = 8.6*60;
 /// Reduction of consumption rate of dead cells when they enter necrosis
 constexpr real_t kReductionConsumptionDeadCells= 0.1; 
 
-
+/// Constant for division by 2.0
+constexpr real_t kHalf = 2.0;
 
 ///Chemicals
 /// Number of voxels per axis for the substances grid
-constexpr int kResolutionGridSubstances = 50; //50 // voxels per axis
+constexpr int kResolutionGridSubstances = 50;
 /// Volume of a single voxel in μm³ (do not modify this line)
-constexpr real_t kVoxelVolume = (kBoundedSpaceLength / kResolutionGridSubstances)*(kBoundedSpaceLength / kResolutionGridSubstances)*(kBoundedSpaceLength/ kResolutionGridSubstances); //Do not modify this line
+constexpr real_t kVoxelVolume =
+    (static_cast<real_t>(kBoundedSpaceLength) / kResolutionGridSubstances) *
+    (static_cast<real_t>(kBoundedSpaceLength) / kResolutionGridSubstances) *
+    (static_cast<real_t>(kBoundedSpaceLength) / kResolutionGridSubstances);
 /// Diffusion coefficient of oxygen in μm²/min
-constexpr real_t kDiffusionCoefficientOxygen = 100000; // 100000 micrometers^2/minute
+constexpr real_t kDiffusionCoefficientOxygen = 100000;
 /// Decay constant of oxygen in min⁻¹
-constexpr real_t kDecayConstantOxygen = 0.1; // 0.1 minutes^-1
+constexpr real_t kDecayConstantOxygen = 0.1;
 /// Diffusion coefficient of immunostimulatory factor in μm²/min
-constexpr real_t kDiffusionCoefficientImmunostimulatoryFactor = 1000; // 1000 micrometers^2/minute
+constexpr real_t kDiffusionCoefficientImmunostimulatoryFactor = 1000;
 /// Decay constant of immunostimulatory factor in min⁻¹
-constexpr real_t kDecayConstantImmunostimulatoryFactor = 0.016; // 0.016 minutes^-1
-/// Time step for oxygen diffusion in minutes
-constexpr real_t kTimeStepOxygen = 0.0005; // 0.001 minutes CHANGE
-/// Time step for immunostimulatory factor diffusion in minutes
-constexpr real_t kTimeStepImmunostimulatoryFactor = 0.01; // 0.01 minutes
+constexpr real_t kDecayConstantImmunostimulatoryFactor = 0.016;
 /// Reference level of oxygen at the boundaries in mmHg
-constexpr real_t kOxygenReferenceLevel = 38.; // Reference level of oxygen at the boundaries of the simulation space in mmHg
+constexpr real_t kOxygenReferenceLevel = 38.;
 /// Initial oxygen concentration in each voxel in mmHg
-constexpr real_t kInitialOxygenLevel = 38.0; // Initial voxel concentration of oxygen in mmHg
+constexpr real_t kInitialOxygenLevel = 38.0;
 /// Oxygen saturation in the microenvironment in mmHg
-constexpr real_t kOxygenSaturation = 30.0; //30.0 // Oxygen saturation in mmHg in microenvironment
+constexpr real_t kOxygenSaturation = 30.0;
 ///Forces
 /// Repulsion coeficient between tumor cells
 constexpr real_t kRepulsionTumorTumor = 10.0; 
@@ -186,7 +205,26 @@ constexpr real_t kDnew = 1.5 * kDtMechanics;
 constexpr real_t kDold = -0.5 * kDtMechanics;
 
 ///Do not change this line
-const real_t kLengthBoxMechanics =22; // Length of the box for mechanics in micrometers
+const real_t kLengthBoxMechanics =22;
+
+/// Max Distance for considering two cells as neighbours for force calculations
+/// in μm Do not change this line
+/// (twice biggest cell radius (in case to cells tha maximum size
+/// encounter each other) times kMaxRelativeAdhesionDistance + 0.1 to
+/// avoid mismatch because of numerical errors)**2
+const real_t gKSquaredMaxDistanceNeighborsForce =
+    std::pow(0.1 + std::cbrt(kDefaultVolumeNewTumorCell * 6 / Math::kPi) *
+                       kMaxRelativeAdhesionDistance,
+             2);
+
+/// Large time to avoid division by 0
+constexpr real_t kTimeTooLarge = 1e100;
+
+/// Minutes in an hour
+constexpr real_t kMinutesInAnHour = 60.0;
+/// Hours in a day
+constexpr real_t kHoursInADay = 24.0;
+
 
 ///
 /// CAR-T Cell Hyperparameters
@@ -211,6 +249,9 @@ constexpr real_t kMaxAdhesionDistanceCart = 18.0;//micrometers
 /// Minimum adhesion distance between CAR-T and tumor cells
 constexpr real_t kMinAdhesionDistanceCart = 14.0;//micrometers
 
+/// Minimum distance in micrometers from the tumor for spawning CAR-T cells
+constexpr real_t kMinimumDistanceCarTFromTumor = 50.0;
+
 /// Motility parameters
 /// Average persistence time before CAR-T cell moves
 constexpr real_t kPersistenceTimeCart = 10; // 10 minutes
@@ -228,8 +269,8 @@ constexpr real_t kElasticConstantCart = 0.01;
 ///   - The value represents the number of CAR-T cells administered on that day.
 /// Example: On day 0 and day 8, 3957 CAR-T cells are introduced (matching the initial tumor cell count).
 inline std::map<size_t, size_t> kTreatment = {
-    {0, 3957},  // Day 0: administer 3957 CAR-T cells
-    {8, 3957}   // Day 8: administer 3957 CAR-T cells
+    {0, 3957},
+    {8, 3957}
 };
 
 /// Do not modify this line:  1-kMigrationBiasCart
@@ -256,11 +297,6 @@ const real_t kRadiusCartCell = std::cbrt(kDefaultVolumeNewCartCell * 3. / (4. * 
 //If a CAR-T and a Tumor Cell are closer than this distance, the CAR-T cell will only move to the tumor cell with the adhesion forces
 //(radiusCART + radiusTumorCell + 0.1 to avoid numerical errors)**2
 const real_t kMaxSquaredDistanceCartMovingTowardsTumorCell = std::pow(kRadiusCartCell + kRadiusTumorCell + 1, 2);
-
-///Max Distance for considering two cells as neighbours for force calculations in μm
-///Do not change this line
-const real_t kSquaredMaxDistanceNeighborsForce = std::pow( 0.1+ 2* std::max(kRadiusTumorCell, kRadiusCartCell) * kMaxRelativeAdhesionDistance,2);// (twice biggest cell radius (in case to cells tha maximum size encounter each other) times kMaxRelativeAdhesionDistance + 0.1 to avoid mismatch because of numerical errors)**2
-
 
 
 }  // namespace bdm
