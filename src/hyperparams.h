@@ -26,13 +26,13 @@
 #include "core/util/math.h"
 #include <cmath>
 #include <cstddef>
+#include <map>
 
 namespace bdm {
 
 /// This file contains hyperparameters used in the simulation. Change: In a
 /// future version it needs to be changed into a params file with no need to be
 /// recompiled
-
 ///
 /// TumorCell Hyperparameters
 ///
@@ -69,12 +69,20 @@ constexpr real_t kDefaultVolumeNewTumorCell = 2494.0;
 constexpr real_t kDefaultVolumeNucleusTumorCell = 540.0;
 /// Default fraction of fluid volume in a new tumor cell
 constexpr real_t kDefaultFractionFluidTumorCell = 0.75;
-
 /// Average time for transformation Random Rate in hours
 constexpr real_t kAverageTimeTransformationRandomRate = 38.6;
-
 /// Standard Deviation for transformation Random Rate in hours
 constexpr real_t kStandardDeviationTransformationRandomRate = 3.7;
+/// Average adhesion time in minutes for Tumor Cell under CAR-T attack before
+/// escaping
+constexpr real_t kAdhesionTime = 60.0;
+/// Min oncoprotein level to be killed by a CAR-T cell
+constexpr real_t kOncoproteinLimit = 0.5;
+/// Max oncoprotein level
+constexpr real_t kOncoproteinSaturation = 2.0;
+/// Do not modify this line: difference between saturation and limit
+constexpr real_t kOncoproteinDifference =
+    kOncoproteinSaturation - kOncoproteinLimit;
 
 /// volume relaxation rate (min^-1) for each state
 constexpr real_t kVolumeRelaxarionRateAliveCytoplasm = 0.13 / 60.;
@@ -98,8 +106,12 @@ constexpr real_t kThresholdCancerCellType4 = 0.0;
 ///
 /// General Hyperparameters
 ///
+
 /// Seed for random number generation
-constexpr int kSeed = 3;
+constexpr int kSeed = 1;
+
+/// Output Performance Statistics
+constexpr bool kOutputPerformanceStatistics = true;
 
 /// 0.01 minutes time step for substances secretion/consumption
 constexpr real_t kDtSubstances = 0.01;
@@ -115,21 +127,25 @@ constexpr real_t kDt = kDtMechanics;
 /// computed to avoid errors with fmod
 constexpr int kStepsPerCycle = kDtCycle / kDt;
 
+/// Output little summary each half a day
+constexpr int kOutputCsvInterval = 12 * 60 / kDt;
+
+/// Total simulation time in minutes (30 days)
+constexpr int kTotalMinutesToSimulate = 30 * 24 * 60;
+
 /// Epsilon for avoiding division by 0
 constexpr real_t kEpsilon = 1e-10;
 
 /// kEpsilon distance
 constexpr real_t kEpsilonDistance = 1e-5;
 
-/// Output little summary each half a day
-constexpr int kOutputCsvInterval = 12 * 60 / kDt;
-
-/// Total simulation time in minutes (30 days)
-constexpr int kTotalMinutesToSimulate = 30 * 24 * 60;
 /// Length of the bounded space in micrometers
 constexpr int kBoundedSpaceLength = 1000;
 /// Initial radius of the spherical tumor (group of cancer cells) in micrometers
 constexpr real_t kInitialRadiusTumor = 150;
+
+/// Do not modify this line: Twice Pi
+constexpr real_t kTwicePi = 2. * Math::kPi;
 
 constexpr real_t kVolumeRelaxarionRateCytoplasmApoptotic = 1.0 / 60.0;
 constexpr real_t kVolumeRelaxarionRateNucleusApoptotic = 0.35 / 60.0;
@@ -195,16 +211,8 @@ constexpr real_t kDnew = 1.5 * kDtMechanics;
 /// -0.5)
 constexpr real_t kDold = -0.5 * kDtMechanics;
 
-/// Large time to avoid division by 0
-constexpr real_t kTimeTooLarge = 1e100;
-
-/// Minutes in an hour
-constexpr real_t kMinutesInAnHour = 60.0;
-/// Hours in a day
-constexpr real_t kHoursInADay = 24.0;
-
 /// Do not change this line
-const size_t gKLengthBoxMechanics = 22;
+const real_t gKLengthBoxMechanics = 22;
 
 /// Max Distance for considering two cells as neighbours for force calculations
 /// in μm Do not change this line
@@ -216,11 +224,21 @@ const real_t gKSquaredMaxDistanceNeighborsForce =
                        kMaxRelativeAdhesionDistance,
              2);
 
+/// Large time to avoid division by 0
+constexpr real_t kTimeTooLarge = 1e100;
+
+/// Minutes in an hour
+constexpr real_t kMinutesInAnHour = 60.0;
+/// Hours in a day
+constexpr real_t kHoursInADay = 24.0;
+
 ///
 /// CAR-T Cell Hyperparameters
 ///
 constexpr real_t kAverageMaximumTimeUntillApoptosisCart =
     kDtCycle * 10.0 * 24.0 * 60.0;
+/// Default oxygen consumption rate of CAR-T cell
+constexpr real_t kDefaultOxygenConsumptionCarT = 1.0;
 /// Volume parameters
 ///  Default total volume of a new CAR-T cell in μm³
 constexpr real_t kDefaultVolumeNewCarTCell = 2494.0;
@@ -228,6 +246,75 @@ constexpr real_t kDefaultVolumeNewCarTCell = 2494.0;
 constexpr real_t kDefaultVolumeNucleusCarTCell = 540.0;
 /// Default fraction of fluid volume in a new CAR-T cell
 constexpr real_t kDefaultFractionFluidCarTCell = 0.75;
+
+/// How often a CAR-T cell tries to kill an attached cancer cell
+constexpr real_t kKillRateCart = 0.06667;  // 1/min
+/// How often a CAR-T cell tries to attach to a cancer cell
+constexpr real_t kAdhesionRateCart = 0.013;  // 1/min
+/// Maximum adhesion distance between CAR-T and tumor cells
+constexpr real_t kMaxAdhesionDistanceCart = 18.0;  // micrometers
+/// Minimum adhesion distance between CAR-T and tumor cells
+constexpr real_t kMinAdhesionDistanceCart = 14.0;  // micrometers
+
+/// Minimum distance in micrometers from the tumor for spawning CAR-T cells
+constexpr real_t kMinimumDistanceCarTFromTumor = 50.0;
+
+/// Motility parameters
+/// Average persistence time before CAR-T cell moves
+constexpr real_t kPersistenceTimeCart = 10;  // 10 minutes
+/// Higher bias (\in [0,1]) makes CAR-T movement more directed toward
+/// immunostimulatory factor source; while a bias of 0 makes the movement random
+constexpr real_t kMigrationBiasCart = 0.5;
+/// Migration speed
+constexpr real_t kMigrationSpeedCart = 5.0;
+/// Elastic constant
+constexpr real_t kElasticConstantCart = 0.01;
+
+/// Treatment Dosages
+///
+/// Specifies the CAR-T cell infusion schedule as a map where:
+///   - The key represents the day of treatment (starting from day 0).
+///   - The value represents the number of CAR-T cells administered on that day.
+/// Example: On day 0 and day 8, 3957 CAR-T cells are introduced (matching the
+/// initial tumor cell count).
+// FIXME: add this parameters in an external no recompiled file which will also
+// avoid cppcoreguidelines-avoid-magic-numbers warning
+inline const std::map<size_t, size_t> gKTreatment = {
+    {0, 3957},
+    {8,
+     3957}};  // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
+/// Do not modify this line:  1-kMigrationBiasCart
+constexpr real_t kMigrationOneMinusBiasCart = 1.0 - kMigrationBiasCart;
+/// Do not modify this line:  probability of a CAR-T cell to migrate in a given
+/// mechanical time step
+constexpr real_t kMotilityProbability = kDtMechanics / kPersistenceTimeCart;
+/// Do not modify this line:  probability of a Tumor cell to escape in a given
+/// mechanical time step
+constexpr real_t kProbabilityEscape = kDtMechanics / (kAdhesionTime + 1e-15);
+/// Do not modify this line: Steps in one day
+constexpr size_t kStepsOneDay = 24 * 60 / kDt;
+/// Do not modify this line: maximum adhesion distance squared
+constexpr real_t kSquaredMaxAdhesionDistanceCart =
+    kMaxAdhesionDistanceCart * kMaxAdhesionDistanceCart;
+/// Do not modify this line: difference between min and max adhesion distance
+constexpr real_t kDifferenceCartAdhesionDistances =
+    kMaxAdhesionDistanceCart - kMinAdhesionDistanceCart;
+
+/// Do not change this line: radius tumor cell
+const real_t gKRadiusTumorCell =
+    std::cbrt(kDefaultVolumeNewTumorCell * 3. / (4. * Math::kPi));
+
+/// Do not change this line: radius cart cell
+const real_t gKRadiusCarTCell =
+    std::cbrt(kDefaultVolumeNewCarTCell * 3. / (4. * Math::kPi));
+
+// Do not change this line: maximum squared distance to avoid CAR-T pushing
+// tumor cells If a CAR-T and a Tumor Cell are closer than this distance, the
+// CAR-T cell will only move to the tumor cell with the adhesion forces
+//(radiusCART + radiusTumorCell + 0.1 to avoid numerical errors)**2
+const real_t gKMaxSquaredDistanceCartMovingTowardsTumorCell =
+    std::pow(gKRadiusCarTCell + gKRadiusTumorCell + 1, 2);
 
 }  // namespace bdm
 

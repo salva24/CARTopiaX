@@ -26,11 +26,14 @@
 #include "core/agent/cell_division_event.h"
 #include "core/agent/new_agent_event.h"
 #include "core/container/math_array.h"
+#include "core/diffusion/diffusion_grid.h"
 #include "core/functor.h"
 #include "core/interaction_force.h"
 #include "core/real_t.h"
 #include "core/resource_manager.h"
+#include "core/simulation.h"
 #include "core/util/log.h"
+#include "core/util/random.h"
 #include <algorithm>
 #include <cstdint>
 #include <stdexcept>
@@ -63,16 +66,15 @@ TumorCell::TumorCell(const Real3& position) {
       (kDefaultVolumeNewTumorCell - kDefaultVolumeNucleusTumorCell) *
       (1 - kDefaultFractionFluidTumorCell));
 
-  // Set initial oncoproteine level with a truncated normal distribution
-  SetOncoproteineLevel(
+  // Set initial oncoprotein level with a truncated normal distribution
+  SetOncoproteinLevel(
       SamplePositiveGaussian(kOncoproteinMean, kOncoproteinStandardDeviation));
+  ResourceManager* rm = Simulation::GetActive()->GetResourceManager();
   // Pointer to oxygen diffusion grid
-  oxygen_dgrid_ =
-      Simulation::GetActive()->GetResourceManager()->GetDiffusionGrid("oxygen");
+  oxygen_dgrid_ = rm->GetDiffusionGrid("oxygen");
   // Pointer to immunostimulatory_factor diffusion grid
   immunostimulatory_factor_dgrid_ =
-      Simulation::GetActive()->GetResourceManager()->GetDiffusionGrid(
-          "immunostimulatory_factor");
+      rm->GetDiffusionGrid("immunostimulatory_factor");
   // Set state transition random rate
   SetTransformationRandomRate();
 
@@ -103,8 +105,8 @@ void TumorCell::Initialize(const NewAgentEvent& event) {
       oxygen_dgrid_ = mother->oxygen_dgrid_;
       // Pointer to the immunostimulatory_factor diffusion grid
       immunostimulatory_factor_dgrid_ = mother->immunostimulatory_factor_dgrid_;
-      // inherit oncoproteine level from mother cell
-      this->SetOncoproteineLevel(mother->oncoproteine_level_);
+      // inherit oncoprotein level from mother cell
+      this->SetOncoproteinLevel(mother->oncoprotein_level_);
       // inherit oxygen consumption from mother cell
       this->SetOxygenConsumptionRate(mother->GetOxygenConsumptionRate());
       // inherit immunostimulatory factor secretion rate from mother cell
@@ -142,8 +144,8 @@ void TumorCell::Initialize(const NewAgentEvent& event) {
   }
 }
 
-void TumorCell::SetOncoproteineLevel(real_t level) {
-  oncoproteine_level_ = level;
+void TumorCell::SetOncoproteinLevel(real_t level) {
+  oncoprotein_level_ = level;
   // cell type
   if (level >= kThresholdCancerCellType1) {
     // between 1.5 and 2.0
@@ -164,7 +166,7 @@ void TumorCell::SetOncoproteineLevel(real_t level) {
 }
 
 void TumorCell::SetTransformationRandomRate() {
-  // avoid division by zero
+  // avoid division by zero with kEpsilon
   transformation_random_rate_ =
       1 / (std::max(SamplePositiveGaussian(
                         kAverageTimeTransformationRandomRate,
@@ -267,10 +269,10 @@ Real3 TumorCell::CalculateDisplacement(const InteractionForce* force,
 
   uint64_t non_zero_neighbor_forces = 0;
   if (!IsStatic()) {
-    auto* ctxt = Simulation::GetActive()->GetExecutionContext();
+    ExecutionContext* ctxt = Simulation::GetActive()->GetExecutionContext();
     auto calculate_neighbor_forces =
         L2F([&](Agent* neighbor, real_t /*squared_distance*/) {
-          auto neighbor_force = force->Calculate(this, neighbor);
+          Real4 neighbor_force = force->Calculate(this, neighbor);
           if (neighbor_force[0] != 0 || neighbor_force[1] != 0 ||
               neighbor_force[2] != 0) {
             non_zero_neighbor_forces++;
@@ -351,9 +353,36 @@ void TumorCell::ComputeConstantsConsumptionSecretion() {
               (immunostimulatory_factor_secretion_rate_);
 }
 
+void TumorCell::StartApoptosis() {
+  // If the cell is already dead, do nothing
+  if (IsDead()) {
+    return;
+  }
+
+  // The cell Dies
+  SetState(TumorCellState::kApoptotic);
+
+  // Reset timer_state
+  SetTimerState(0);
+  // Set type to 5 to indicate dead cell
+  SetType(TumorCellType::kType5);
+  // Set target volume to 0 (the cell shrinks)
+  SetTargetCytoplasmSolid(0.0);
+  SetTargetNucleusSolid(0.0);
+  SetTargetFractionFluid(0.0);
+  SetTargetRelationCytoplasmNucleus(0.0);
+  // Reduce oxygen consumption
+  SetOxygenConsumptionRate(GetOxygenConsumptionRate() *
+                           kReductionConsumptionDeadCells);
+  // Stop Immunostimulatory Factor Secretion
+  SetImmunostimulatoryFactorSecretionRate(0.0);
+  // Update constants for consumption/secretion differential equation solving
+  ComputeConstantsConsumptionSecretion();
+}
+
 /// Main behavior executed at each simulation step
 void StateControlGrowProliferate::Run(Agent* agent) {
-  auto* sim = Simulation::GetActive();
+  Simulation* sim = Simulation::GetActive();
   // Run only every kDtCycle minutes, fmod does not work with the type
   // returned by GetSimulatedTime()
   if (sim->GetScheduler()->GetSimulatedSteps() % kStepsPerCycle != 0) {
@@ -368,7 +397,7 @@ void StateControlGrowProliferate::Run(Agent* agent) {
     // Oxygen levels
     const Real3 current_position = cell->GetPosition();
     // Pointer to the oxygen diffusion grid
-    auto* oxygen_dgrid = cell->GetOxygenDiffusionGrid();
+    DiffusionGrid* oxygen_dgrid = cell->GetOxygenDiffusionGrid();
     const real_t oxygen_level = oxygen_dgrid->GetValue(current_position);
 
     switch (cell->GetState()) {
@@ -435,7 +464,7 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         // duration transition)
         if (kTimeLysis < cell->GetTimerState()) {
           // remove the cell from the simulation
-          auto* ctxt = sim->GetExecutionContext();
+          ExecutionContext* ctxt = sim->GetExecutionContext();
           ctxt->RemoveAgent(agent->GetUid());
         }
         break;
@@ -454,7 +483,7 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         // duration transition)
         if (kTimeApoptosis < cell->GetTimerState()) {
           // remove the cell from the simulation
-          auto* ctxt = sim->GetExecutionContext();
+          ExecutionContext* ctxt = sim->GetExecutionContext();
           ctxt->RemoveAgent(agent->GetUid());
         }
         break;
@@ -491,11 +520,10 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
   if (oxygen_level < kOxygenLimitForProliferation) {
     multiplier = 0.0;
   }
-  // Calculate the rate of state change based on oxygen level and oncoproteine
+  // Calculate the rate of state change based on oxygen level and oncoprotein
   // (min^-1)
   const real_t final_rate_transition = cell->GetTransformationRandomRate() *
-                                       multiplier *
-                                       cell->GetOncoproteineLevel();
+                                       multiplier * cell->GetOncoproteinLevel();
 
   // Calculate the time to wait (in minutes)
   real_t time_to_wait = kTimeTooLarge;
@@ -534,8 +562,8 @@ bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level,
   const real_t probability_necrosis =
       kDtCycle * kMaximumNecrosisRate * multiplier;
 
-  auto* sim = Simulation::GetActive();
-  auto* random = sim->GetRandom();
+  Simulation* sim = Simulation::GetActive();
+  Random* random = sim->GetRandom();
   const bool enter_necrosis = random->Uniform(0, 1) < probability_necrosis;
   // If the random number is less than the probability, enter necrosis
   if (enter_necrosis) {

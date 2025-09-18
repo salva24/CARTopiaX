@@ -107,8 +107,8 @@ class TumorCell : public Cell {
   void SetTimerState(real_t timer_state) { timer_state_ = timer_state; }
   real_t GetTimerState() const { return timer_state_; }
 
-  void SetOncoproteineLevel(real_t level);
-  real_t GetOncoproteineLevel() const { return oncoproteine_level_; }
+  void SetOncoproteinLevel(real_t level);
+  real_t GetOncoproteinLevel() const { return oncoprotein_level_; }
 
   void SetFluidFraction(real_t fluid_fraction) {
     fluid_fraction_ = fluid_fraction;
@@ -171,6 +171,8 @@ class TumorCell : public Cell {
 
   real_t GetTargetTotalVolume() const;
 
+  bool IsDead() const { return type_ == TumorCellType::kType5; }
+
   int GetTypeAsInt() const { return static_cast<int>(type_); }
 
   /// Returns the diffusion grid for oxygen
@@ -225,6 +227,12 @@ class TumorCell : public Cell {
   /// equations.
   void ComputeConstantsConsumptionSecretion();
 
+  /// Start apoptosis
+  ///
+  ///  This function is called when the tumor cell is induced to apoptosis by a
+  ///  CAR-T cell.
+  void StartApoptosis();
+
  private:
   /// Current state of the tumor cell
   TumorCellState state_ = TumorCellState::kAlive;
@@ -239,7 +247,7 @@ class TumorCell : public Cell {
   DiffusionGrid* immunostimulatory_factor_dgrid_ = nullptr;
 
   /// Level of oncoprotein expression
-  real_t oncoproteine_level_ = 0.0;
+  real_t oncoprotein_level_ = 0.0;
 
   /// Transition random rate between states:
   /// Affects the probability of transitioning and depends on the individual
@@ -276,7 +284,7 @@ class TumorCell : public Cell {
   TumorCellType type_ = TumorCellType::kType0;
 
   /// Velocity of the cell in the previous time step
-  Real3 older_velocity_;
+  Real3 older_velocity_ = {0, 0, 0};
 
   /// Rate of oxygen consumption by the cell
   real_t oxygen_consumption_rate_ = 0.0;

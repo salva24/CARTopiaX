@@ -124,9 +124,8 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
   }
   const real_t force_magnitude = temp_r / distance;
 
-  return {2 * force_magnitude * displacement[0],
-          2 * force_magnitude * displacement[1],
-          2 * force_magnitude * displacement[2],
+  return {force_magnitude * displacement[0], force_magnitude * displacement[1],
+          force_magnitude * displacement[2],
           // 4th component is unused
           0.0};
 }

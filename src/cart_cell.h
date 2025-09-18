@@ -24,6 +24,7 @@
 
 #include "tumor_cell.h"
 #include "core/agent/agent.h"
+#include "core/agent/agent_pointer.h"
 #include "core/agent/cell.h"
 #include "core/agent/new_agent_event.h"
 #include "core/behavior/behavior.h"
@@ -31,6 +32,7 @@
 #include "core/diffusion/diffusion_grid.h"
 #include "core/interaction_force.h"
 #include "core/real_t.h"
+#include "core/util/random.h"
 
 namespace bdm {
 
@@ -124,8 +126,12 @@ class CarTCell : public Cell {
   real_t GetCurrentLiveTime() const { return current_live_time_; }
   void SetCurrentLiveTime(real_t time) { current_live_time_ = time; }
 
-  TumorCell* GetAttachedCell() const { return attached_cell_; }
-  void SetAttachedCell(TumorCell* cell) { attached_cell_ = cell; }
+  bdm::AgentPointer<TumorCell> GetAttachedCellPointer() const {
+    return attached_cell_ptr_;
+  }
+  void SetAttachedCellPointer(bdm::AgentPointer<TumorCell> cell_ptr) {
+    attached_cell_ptr_ = cell_ptr;
+  }
 
   /// Returns whether the cell moves by its own
   bool DoesCellMove();
@@ -184,6 +190,27 @@ class CarTCell : public Cell {
   /// equations.
   void ComputeConstantsConsumptionSecretion();
 
+  /// Try to get attached to a tumor cell
+  ///
+  /// @param victim The tumor cell to which the CAR-T cell tries to attach
+  /// @param squared_distance The squared distance between the CAR-T cell and
+  /// the tumor cell
+  /// @param rng Pointer to the random number generator
+  /// Attempts to attach the CAR-T cell to a selected tumor cell.
+  void TryToGetAttachedTo(TumorCell* victim, real_t squared_distance,
+                          Random* rng);
+
+  /// Try to induce apoptosis
+  ///
+  /// Tries stochastically to induce apoptosis in the attached tumor cell and in
+  /// case of success induces the apoptosis
+  ///
+  ///  @param attached_cell The tumor cell to which the CAR-T cell is attached
+  ///  @param rng Pointer to the random number generator
+  ///  @return true if apoptosis was induced, false otherwise
+  bool TryToInduceApoptosis(bdm::AgentPointer<TumorCell> attached_cell,
+                            Random* rng) const;
+
  private:
   /// Current state of the CAR-T cell
   CarTCellState state_ = CarTCellState::kAlive;
@@ -224,7 +251,7 @@ class CarTCell : public Cell {
   real_t target_relation_cytoplasm_nucleus_ = 0.0;
 
   /// Velocity of the cell in the previous time step
-  Real3 older_velocity_ = {0.0, 0.0, 0.0};
+  Real3 older_velocity_ = {0, 0, 0};
 
   /// Rate of oxygen consumption by the cell
   real_t oxygen_consumption_rate_ = 0.0;
@@ -239,7 +266,7 @@ class CarTCell : public Cell {
   real_t constant2_oxygen_ = 0.0;
 
   /// Pointer to the attached tumor cell
-  TumorCell* attached_cell_ = nullptr;
+  bdm::AgentPointer<TumorCell> attached_cell_ptr_;
 };
 
 /// Behavior class for controlling CAR-T cell state transitions

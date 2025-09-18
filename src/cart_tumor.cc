@@ -33,6 +33,8 @@
 #include "core/operation/operation.h"
 #include "core/param/param.h"
 #include "core/real_t.h"
+#include "core/resource_manager.h"
+#include "core/scheduler.h"
 #include "core/simulation.h"
 #include <iostream>
 #include <memory>
@@ -48,18 +50,20 @@ int Simulate(int argc, const char** argv) {
     // Periodic boundary conditions
     param->bound_space = Param::BoundSpaceMode::kTorus;
     // Cube of kBoundedSpaceLength³ centered at origin
-    param->min_bound = -kBoundedSpaceLength / 2.0;
-    param->max_bound = kBoundedSpaceLength / 2.0;
+    param->min_bound = -kBoundedSpaceLength / kHalf;
+    param->max_bound = kBoundedSpaceLength / kHalf;
     param->simulation_time_step = kDt;
+    // for outputing performance statistics
+    param->statistics = kOutputPerformanceStatistics;
   };
 
   Simulation simulation(argc, argv, set_param);
-  auto* ctxt = simulation.GetExecutionContext();
+  ExecutionContext* ctxt = simulation.GetExecutionContext();
 
   // Change Forces
-  auto* scheduler = simulation.GetScheduler();
+  Scheduler* scheduler = simulation.GetScheduler();
 
-  auto* op = scheduler->GetOps("mechanical forces")[0];
+  Operation* op = scheduler->GetOps("mechanical forces")[0];
   std::unique_ptr<InteractionVelocity> interaction_velocity =
       std::make_unique<InteractionVelocity>();
   op->GetImplementation<MechanicalForcesOp>()->SetInteractionForce(
@@ -71,7 +75,7 @@ int Simulate(int argc, const char** argv) {
   env->SetBoxLength(gKLengthBoxMechanics);
 
   // Define Substances
-  auto* rm = Simulation::GetActive()->GetResourceManager();
+  ResourceManager* rm = Simulation::GetActive()->GetResourceManager();
 
   // Oxygen
   // substance_id, name, diffusion_coefficient, decay_constant, resolution,
@@ -80,7 +84,7 @@ int Simulate(int argc, const char** argv) {
       std::make_unique<DiffusionThomasAlgorithm>(
           kOxygen, "oxygen", kDiffusionCoefficientOxygen, kDecayConstantOxygen,
           kResolutionGridSubstances, kDtSubstances,
-          true);  // true indicates Dirichlet border conditions
+          /*dirichlet_border=*/true);
   rm->AddContinuum(oxygen_grid.release());
 
   // Immunostimulatory Factor
@@ -91,8 +95,7 @@ int Simulate(int argc, const char** argv) {
           kDiffusionCoefficientImmunostimulatoryFactor,
           kDecayConstantImmunostimulatoryFactor, kResolutionGridSubstances,
           kDtSubstances,
-          // false indicates Neumann border conditions
-          false);
+          /*dirichlet_border=*/false);
   rm->AddContinuum(immunostimulatory_factor_grid.release());
 
   // Boundary Conditions Dirichlet: simulating absorption or total loss at the
@@ -127,6 +130,14 @@ int Simulate(int argc, const char** argv) {
     tumor_cell->AddBehavior(state_control.release());
     ctxt->AddAgent(tumor_cell.release());
   }
+
+  // Treatment administration operation
+  std::unique_ptr<bdm::Operation> treatment_op =
+      std::make_unique<bdm::Operation>("SpawnCart", kStepsOneDay);
+  std::unique_ptr<bdm::SpawnCart> spawn_cart =
+      std::make_unique<bdm::SpawnCart>();
+  treatment_op->AddOperationImpl(bdm::kCpu, spawn_cart.release());
+  scheduler->ScheduleOp(treatment_op.release());
 
   // OutputSummary operation
   std::unique_ptr<bdm::Operation> summary_op =
