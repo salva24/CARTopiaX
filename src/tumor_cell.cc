@@ -80,7 +80,7 @@ TumorCell::TumorCell(const Real3& position) {
 
   // Add Consumption and Secretion
   // Set default oxygen consumption rate
-  SetOxygenConsumptionRate(kDefaultOxygenConsumption);
+  SetOxygenConsumptionRate(kDefaultOxygenConsumptionTumorCell);
   // Set default immunostimulatory factor secretion rate
   SetImmunostimulatoryFactorSecretionRate(
       kRateSecretionImmunostimulatoryFactor);
@@ -423,9 +423,9 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         // volume change
         //  The cell swells
         cell->ChangeVolumeExponentialRelaxationEquation(
-            kVolumeRelaxarionRateCytoplasmNecroticSwelling,
-            kVolumeRelaxarionRateNucleusNecroticSwelling,
-            kVolumeRelaxarionRateFluidNecroticSwelling);
+            kVolumeRelaxationRateCytoplasmNecroticSwelling,
+            kVolumeRelaxationRateNucleusNecroticSwelling,
+            kVolumeRelaxationRateFluidNecroticSwelling);
 
         // If the cell has swollen to 2 times its original volume, it lyses
         if (cell->GetVolume() >= 2 * kDefaultVolumeNewTumorCell) {
@@ -457,9 +457,9 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         // volume change
         //  The cell shrinks
         cell->ChangeVolumeExponentialRelaxationEquation(
-            kVolumeRelaxarionRateCytoplasmNecroticLysed,
-            kVolumeRelaxarionRateNucleusNecroticLysed,
-            kVolumeRelaxarionRateFluidNecroticLysed);
+            kVolumeRelaxationRateCytoplasmNecroticLysed,
+            kVolumeRelaxationRateNucleusNecroticLysed,
+            kVolumeRelaxationRateFluidNecroticLysed);
         // If the timer_state exceeds the time to transition (this is a fixed
         // duration transition)
         if (kTimeLysis < cell->GetTimerState()) {
@@ -476,9 +476,9 @@ void StateControlGrowProliferate::Run(Agent* agent) {
 
         //  The cell shrinks
         cell->ChangeVolumeExponentialRelaxationEquation(
-            kVolumeRelaxarionRateCytoplasmApoptotic,
-            kVolumeRelaxarionRateNucleusApoptotic,
-            kVolumeRelaxarionRateFluidApoptotic);
+            kVolumeRelaxationRateCytoplasmApoptotic,
+            kVolumeRelaxationRateNucleusApoptotic,
+            kVolumeRelaxationRateFluidApoptotic);
         // If the timer_state exceeds the time to transition (this is a fixed
         // duration transition)
         if (kTimeApoptosis < cell->GetTimerState()) {
@@ -507,8 +507,8 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
   real_t multiplier = 1.0;
   // volume change
   cell->ChangeVolumeExponentialRelaxationEquation(
-      kVolumeRelaxarionRateAliveCytoplasm, kVolumeRelaxarionRateAliveNucleus,
-      kVolumeRelaxarionRateAliveFluid);
+      kVolumeRelaxationRateAliveCytoplasm, kVolumeRelaxationRateAliveNucleus,
+      kVolumeRelaxationRateAliveFluid);
   // cell state control
   // oxygen threshold for considering an effect on the proliferation cycle
   if (oxygen_level < kOxygenSaturationInProliferation) {

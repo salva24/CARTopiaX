@@ -459,9 +459,9 @@ void StateControlCart::Run(Agent* agent) {
             static_cast<real_t>(cell->GetTimerState()) + kDtCycle));
 
         cell->ChangeVolumeExponentialRelaxationEquation(
-            kVolumeRelaxarionRateCytoplasmApoptotic,
-            kVolumeRelaxarionRateNucleusApoptotic,
-            kVolumeRelaxarionRateFluidApoptotic);
+            kVolumeRelaxationRateCytoplasmApoptotic,
+            kVolumeRelaxationRateNucleusApoptotic,
+            kVolumeRelaxationRateFluidApoptotic);
 
         // If the timer_state exceeds the time to transition (this is a fixed
         // duration transition)
