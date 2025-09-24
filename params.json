@@ -1,0 +1,11 @@
+{
+  "kSeed": 2,
+  "kOutputPerformanceStatistics": true,
+  "kTotalMinutesToSimulate": 43200,
+  "kInitialRadiusTumor": 150.0,
+  "kBoundedSpaceLength": 1000,
+  "kTreatment": {
+    "0": 3957,
+    "8": 3957
+  }
+}

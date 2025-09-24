@@ -26,6 +26,7 @@
 #include "core/agent/agent.h"
 #include "core/container/math_array.h"
 #include "core/diffusion/diffusion_grid.h"
+#include "core/param/param.h"
 #include "core/real_t.h"
 #include "core/resource_manager.h"
 #include <cstddef>
@@ -44,8 +45,6 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
     : DiffusionGrid(substance_id, std::move(substance_name), dc, mu,
                     resolution),
       resolution_(static_cast<int>(GetResolution())),
-      d_space_(static_cast<real_t>(kBoundedSpaceLength) /
-               static_cast<real_t>(resolution_)),
       dirichlet_border_(dirichlet_border),
       jump_i_(1),
       jump_j_(resolution_),
@@ -62,8 +61,10 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
       thomas_denom_y_(resolution_, central_coeff_),
       thomas_c_z_(resolution_, neg_diffusion_factor_),
       thomas_denom_z_(resolution_, central_coeff_) {
+  
   SetTimeStep(dt);
-
+  const SimParam* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
+  d_space_=static_cast<real_t>(sparams->kBoundedSpaceLength) /static_cast<real_t>(resolution_);
   // Initialize the denominators and coefficients for the Thomas algorithm
   InitializeThomasAlgorithmVectors(thomas_denom_x_, thomas_c_x_);
   InitializeThomasAlgorithmVectors(thomas_denom_y_, thomas_c_y_);
