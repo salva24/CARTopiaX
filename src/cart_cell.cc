@@ -151,6 +151,7 @@ void CarTCell::ChangeVolumeExponentialRelaxationEquation(
 // compute Displacement
 Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
                                       real_t squared_radius, real_t /*dt*/) {
+
   Simulation* sim = Simulation::GetActive();
   const SimParam* sparams = sim->GetParam()->Get<SimParam>();
   // real_t h = dt;
@@ -196,12 +197,13 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
   }
 
   //--------------------------------------------
-  // CAR-T killing or victim cell escaping
-  //--------------------------------------------
   // If cell is not apoptotic
   if (state_ == CarTCellState::kAlive) {
     // if it is attached to tumor cell
     if (attached_to_tumor_cell_) {
+      //--------------------------------------------
+      // CAR-T killing or victim cell escaping
+      //--------------------------------------------
       // try to kill the cancer cell and in case of failure see if it manages to
       // scape the order needs to be this one because it should try to kill
       // before seeing if it scapes
@@ -319,8 +321,8 @@ void CarTCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance,
     // kDtMechanics
     if (rng->Uniform(0.0, 1.0) < sparams->kAdhesionRateCart * oncoprotein_scale_factor *
                                      distance_scale_factor * sparams->kDtMechanics) {
-// avoid race condition. Only one cell can be attached to the tumor cell.
-#pragma omp critical
+      // avoid race condition. Only one cell can be attached to the tumor cell.
+      #pragma omp critical
       {
         // We need to check again if the victim is not attached to a CAR-T cell
         // yet. This could be made more efficiently with a semaphore for each

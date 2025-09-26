@@ -1,5 +1,5 @@
 {
-  "kSeed": 2,
+  "kSeed": 1,
   "kOutputPerformanceStatistics": true,
   "kTotalMinutesToSimulate": 43200,
   "kInitialRadiusTumor": 150.0,

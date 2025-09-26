@@ -66,6 +66,9 @@ int Simulate(int argc, const char** argv) {
 
     Simulation simulation(argc, argv, set_param);
     const SimParam* sparam = simulation.GetParam()->Get<SimParam>();
+    // Print parameters
+    sparam->PrintParams();
+
     ExecutionContext* ctxt = simulation.GetExecutionContext();
 
     // Change Forces
