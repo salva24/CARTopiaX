@@ -45,7 +45,10 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
     : DiffusionGrid(substance_id, std::move(substance_name), dc, mu,
                     resolution),
       resolution_(static_cast<int>(GetResolution())),
-      d_space_(static_cast<real_t>(Simulation::GetActive()->GetParam()->Get<SimParam>()->kBoundedSpaceLength) /
+      d_space_(static_cast<real_t>(Simulation::GetActive()
+                                       ->GetParam()
+                                       ->Get<SimParam>()
+                                       ->kBoundedSpaceLength) /
                static_cast<real_t>(resolution_)),
       dirichlet_border_(dirichlet_border),
       jump_i_(1),
@@ -63,7 +66,6 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
       thomas_denom_y_(resolution_, central_coeff_),
       thomas_c_z_(resolution_, neg_diffusion_factor_),
       thomas_denom_z_(resolution_, central_coeff_) {
-  
   SetTimeStep(dt);
   // Initialize the denominators and coefficients for the Thomas algorithm
   InitializeThomasAlgorithmVectors(thomas_denom_x_, thomas_c_x_);

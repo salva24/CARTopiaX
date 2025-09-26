@@ -62,7 +62,8 @@ real_t SamplePositiveGaussian(float mean, float sigma) {
 }
 
 std::vector<Real3> CreateSphereOfTumorCells(real_t sphere_radius) {
-  const SimParam* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const SimParam* sparams =
+      Simulation::GetActive()->GetParam()->Get<SimParam>();
   // V = (4/3)*pi*r^3 = (pi/6)*diameter^3
   const real_t cell_radius =
       std::cbrt(sparams->kDefaultVolumeNewTumorCell * 6 / Math::kPi) / kHalf;
@@ -209,7 +210,8 @@ void OutputSummary::operator()() {
       }
 
       // Calculate time in days, hours, minutes
-      const double total_minutes = static_cast<double>(current_step) * sparams->kDt;
+      const double total_minutes =
+          static_cast<double>(current_step) * sparams->kDt;
       const double total_hours = total_minutes / kMinutesInAnHour;
       const double total_days = total_hours / kHoursInADay;
 
@@ -231,7 +233,8 @@ void OutputSummary::operator()() {
                average_oxygen_cancer_cells) = AnalyzeTumor();
       size_t total_num_cells = simulation->GetResourceManager()->GetNumAgents();
 
-      const SimParam* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
+      const SimParam* sparams =
+          Simulation::GetActive()->GetParam()->Get<SimParam>();
 
       // If a dosage is administred this exact time the numbers are not seen in
       // the resource manager yet because of how BioDynaMo is built
@@ -239,8 +242,10 @@ void OutputSummary::operator()() {
       // here.
       const auto current_day_int = static_cast<size_t>(total_days);
       if (current_step % sparams->kStepsOneDay == 0 &&
-          sparams->kTreatment.find(current_day_int) != sparams->kTreatment.end()) {
-        const size_t just_spawned_cells = sparams->kTreatment.at(current_day_int);
+          sparams->kTreatment.find(current_day_int) !=
+              sparams->kTreatment.end()) {
+        const size_t just_spawned_cells =
+            sparams->kTreatment.at(current_day_int);
         total_num_cells += just_spawned_cells;
         num_alive_cart += static_cast<int>(just_spawned_cells);
       }
@@ -295,8 +300,8 @@ void SpawnCart::operator()() {
       }
     });
 
-    // the car-t spawns at least sparams->kMinimumDistanceCarTFromTumor micrometers away
-    // from the tumor
+    // the car-t spawns at least sparams->kMinimumDistanceCarTFromTumor
+    // micrometers away from the tumor
     real_t minimum_squared_radius =
         std::sqrt(max_dist_sq) + sparams->kMinimumDistanceCarTFromTumor;
     minimum_squared_radius *= minimum_squared_radius;

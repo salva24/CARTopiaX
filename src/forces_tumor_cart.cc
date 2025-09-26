@@ -44,20 +44,21 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
     return {0.0, 0.0, 0.0, 0.0};
   }
 
-  const SimParam* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const SimParam* sparams =
+      Simulation::GetActive()->GetParam()->Get<SimParam>();
 
   Real3 displacement = a->GetPosition() - b->GetPosition();
 
   // For periodic boundary conditions, we need to adjust the displacement
-  displacement[0] =
-      displacement[0] -
-      (sparams->kBoundedSpaceLength)*round(displacement[0] / (sparams->kBoundedSpaceLength));
-  displacement[1] =
-      displacement[1] -
-      (sparams->kBoundedSpaceLength)*round(displacement[1] / (sparams->kBoundedSpaceLength));
-  displacement[2] =
-      displacement[2] -
-      (sparams->kBoundedSpaceLength)*round(displacement[2] / (sparams->kBoundedSpaceLength));
+  displacement[0] = displacement[0] -
+                    (sparams->kBoundedSpaceLength) *
+                        round(displacement[0] / (sparams->kBoundedSpaceLength));
+  displacement[1] = displacement[1] -
+                    (sparams->kBoundedSpaceLength) *
+                        round(displacement[1] / (sparams->kBoundedSpaceLength));
+  displacement[2] = displacement[2] -
+                    (sparams->kBoundedSpaceLength) *
+                        round(displacement[2] / (sparams->kBoundedSpaceLength));
 
   const real_t dist_sq = displacement[0] * displacement[0] +
                          displacement[1] * displacement[1] +
@@ -82,7 +83,8 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
 
     if ((a_tumor != nullptr) && (b_tumor != nullptr)) {
       // two tumor cells
-      // std::sqrt(sparams->kRepulsionTumorTumor * sparams->kRepulsionTumorTumor);
+      // std::sqrt(sparams->kRepulsionTumorTumor *
+      // sparams->kRepulsionTumorTumor);
       repulsion = sparams->kRepulsionTumorTumor;
     } else if ((a_tumor == nullptr) && (b_tumor == nullptr)) {
       // two CAR-T cells
@@ -90,7 +92,8 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
       repulsion = sparams->kRepulsionCartCart;
     } else {
       // one tumor cell and one CAR-T
-      repulsion = std::sqrt(sparams->kRepulsionCartTumor * sparams->kRepulsionTumorCart);
+      repulsion = std::sqrt(sparams->kRepulsionCartTumor *
+                            sparams->kRepulsionTumorCart);
     }
 
     temp_r *= repulsion;
@@ -115,7 +118,8 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
       adhesion = sparams->kAdhesionCartCart;
     } else {
       // one tumor cell and one CAR-T
-      adhesion = std::sqrt(sparams->kAdhesionCartTumor * sparams->kAdhesionTumorCart);
+      adhesion =
+          std::sqrt(sparams->kAdhesionCartTumor * sparams->kAdhesionTumorCart);
     }
 
     temp_a *= adhesion;
