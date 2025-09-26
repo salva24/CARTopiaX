@@ -159,6 +159,7 @@ int Simulate(int argc, const char** argv) {
     scheduler->ScheduleOp(summary_op.release());
 
     // Run simulation
+    std::cout << "Running simulation..." << std::endl;
     // simulate kTotalMinutesToSimulate minutes including the last minute
     scheduler->Simulate(1 + sparam->kTotalMinutesToSimulate / sparam->kDt);
     std::cout << "Simulation completed successfully!" << std::endl;
