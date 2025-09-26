@@ -86,7 +86,7 @@ Real3 GenerateRandomDirection();
 ///
 /// Called automatically by the simulation scheduler at the specified frequency.
 /// Spawns a dosage of CAR-T cells around the tumor following the map
-/// sparams->kTreatment where
+/// sparams->treatment where
 ///   - The key represents the day of treatment (starting from day 0).
 ///   - The value represents the number of CAR-T cells administered on that day.
 struct SpawnCart : public StandaloneOperationImpl {

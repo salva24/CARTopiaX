@@ -48,16 +48,16 @@ CarTCell::CarTCell(const Real3& position) {
   SetPosition(position);
   Simulation* sim = Simulation::GetActive();
   const SimParam* sparams = sim->GetParam()->Get<SimParam>();
-  SetVolume(sparams->kDefaultVolumeNewCarTCell);
+  SetVolume(sparams->default_volume_new_cart_cell);
   const ResourceManager& rm = *sim->GetResourceManager();
   oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen");
   immunostimulatory_factor_dgrid_ =
       rm.GetDiffusionGrid("immunostimulatory_factor");
 
-  SetCurrentLiveTime(sparams->kAverageMaximumTimeUntillApoptosisCart);
+  SetCurrentLiveTime(sparams->average_maximum_time_untill_apoptosis_cart);
   // Add Consumption and Secretion
   //  Set default oxygen consumption rate
-  SetOxygenConsumptionRate(sparams->kDefaultOxygenConsumptionCarT);
+  SetOxygenConsumptionRate(sparams->default_oxygen_consumption_cart);
   // Compute constants for all ConsumptionSecretion of Oxygen
   ComputeConstantsConsumptionSecretion();
 }
@@ -96,7 +96,7 @@ void CarTCell::ChangeVolumeExponentialRelaxationEquation(
   // Update fluid volume
   real_t new_fluid =
       current_fluid +
-      sparams->kDtCycle * relaxation_rate_fluid *
+      sparams->dt_cycle * relaxation_rate_fluid *
           (GetTargetFractionFluid() * current_total_volume - current_fluid);
   // Clamp to zero to prevent negative volumes
   if (new_fluid < 0.0) {
@@ -108,7 +108,7 @@ void CarTCell::ChangeVolumeExponentialRelaxationEquation(
   // real_t cytoplasm_fluid = new_fluid - nuclear_fluid;
 
   real_t nuclear_solid = current_nuclear_solid +
-                         sparams->kDtCycle * relaxation_rate_nucleus *
+                         sparams->dt_cycle * relaxation_rate_nucleus *
                              (GetTargetNucleusSolid() - current_nuclear_solid);
   // Clamp to zero to prevent negative volumes
   if (nuclear_solid < 0.0) {
@@ -119,7 +119,7 @@ void CarTCell::ChangeVolumeExponentialRelaxationEquation(
       GetTargetRelationCytoplasmNucleus() * GetTargetNucleusSolid();
   real_t cytoplasm_solid =
       current_cytoplasm_solid +
-      sparams->kDtCycle * relaxation_rate_cytoplasm *
+      sparams->dt_cycle * relaxation_rate_cytoplasm *
           (target_cytoplasm_solid - current_cytoplasm_solid);
   // Clamp to zero to prevent negative volumes
   if (cytoplasm_solid < 0.0) {
@@ -158,7 +158,7 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
   Real3 movement_at_next_step{0, 0, 0};
   // this should be chaged in a future version of BioDynaMo in order to have a
   // cleaner code instead of hardcoding it here
-  squared_radius = sparams->kSquaredMaxDistanceNeighborsForce;
+  squared_radius = sparams->squared_max_distance_neighbors_force;
 
   // the physics force to move the point mass
 
@@ -173,7 +173,7 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
   Real3 motility;
   if (DoesCellMove()) {
     // compute motility
-    if (rng->Uniform(0.0, 1.0) < sparams->kMotilityProbability) {
+    if (rng->Uniform(0.0, 1.0) < sparams->motility_probability_cart) {
       // random direction as unitary vector
       const Real3 random_direction = GenerateRandomDirection();
       Real3 direction_to_immunostimulatory_factor;
@@ -183,8 +183,8 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
       // motility = bias * direction_to_immunostimulatory_factor +
       // (1-bias)*random_direction
       motility =
-          sparams->kMigrationBiasCart * direction_to_immunostimulatory_factor +
-          sparams->kMigrationOneMinusBiasCart * random_direction;
+          sparams->migration_bias_cart * direction_to_immunostimulatory_factor +
+          sparams->migration_one_minus_bias_cart * random_direction;
       const real_t motility_norm_squared = motility[0] * motility[0] +
                                            motility[1] * motility[1] +
                                            motility[2] * motility[2];
@@ -194,7 +194,7 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
       }
       // Scale by migration speed and add to the velocity
       translation_velocity_on_point_mass +=
-          motility * sparams->kMigrationSpeedCart;
+          motility * sparams->migration_speed_cart;
     }
   }
 
@@ -210,7 +210,7 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
       // scape the order needs to be this one because it should try to kill
       // before seeing if it scapes
       if (TryToInduceApoptosis(attached_cell_ptr_, rng) ||
-          rng->Uniform(0.0, 1.0) < sparams->kProbabilityEscape) {
+          rng->Uniform(0.0, 1.0) < sparams->probability_escape_from_cart) {
         // the cancer cell is detached
         attached_cell_ptr_->SetAttachedToCart(false);
         // empty ID
@@ -246,17 +246,17 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
             // touching already If they are too close the only force affecting
             // is the adhesion force to avoid CAR-T non-stop pushing tumor
             // cells. In case of being closer than
-            // sparams->kMaxSquaredDistanceCartMovingTowardsTumorCell there is a
-            // probability kProbabilityPushing for the CAR-T to keep pushing the
-            // tumor cell
+            // sparams->max_squared_distance_cart_moving_towards_tumor_cell
+            // there is a probability kProbabilityPushing for the CAR-T to keep
+            // pushing the tumor cell
             if (sq_norm_displac >
-                sparams->kMaxSquaredDistanceCartMovingTowardsTumorCell) {
+                sparams->max_squared_distance_cart_moving_towards_tumor_cell) {
               translation_velocity_on_point_mass[0] +=
-                  displac[0] * sparams->kElasticConstantCart;
+                  displac[0] * sparams->elastic_constant_cart;
               translation_velocity_on_point_mass[1] +=
-                  displac[1] * sparams->kElasticConstantCart;
+                  displac[1] * sparams->elastic_constant_cart;
               translation_velocity_on_point_mass[2] +=
-                  displac[2] * sparams->kElasticConstantCart;
+                  displac[2] * sparams->elastic_constant_cart;
             }
 
             // If the CAR-T has not succeeded in attaching to a tumor cell yet,
@@ -275,8 +275,8 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
   // position(t + dt) ≈ position(t) + dt * [ 1.5 * velocity(t) - 0.5 *
   // velocity(t - dt) ]
   //--------------------------------------------
-  movement_at_next_step += translation_velocity_on_point_mass * sparams->kDnew +
-                           older_velocity_ * sparams->kDold;
+  movement_at_next_step += translation_velocity_on_point_mass * sparams->dnew +
+                           older_velocity_ * sparams->dold;
 
   older_velocity_ = translation_velocity_on_point_mass;
 
@@ -292,11 +292,11 @@ void CarTCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance,
   // If the tumor cell is not already attached to a CAR-T cell, is not dead and
   // is not too far away.
   if (!victim->IsAttachedToCart() && !victim->IsDead() &&
-      squared_distance < sparams->kSquaredMaxAdhesionDistanceCart) {
+      squared_distance < sparams->squared_max_adhesion_distance_cart) {
     // factor of how high is the oncoprotein level of the cancer cell
     real_t oncoprotein_scale_factor =
-        (victim->GetOncoproteinLevel() - sparams->kOncoproteinLimit) /
-        sparams->kOncoproteinDifference;
+        (victim->GetOncoproteinLevel() - sparams->oncoprotein_limit) /
+        sparams->oncoprotein_difference;
     // Clamp scale_factor to be in [0,1]
     if (oncoprotein_scale_factor > 1.0) {
       oncoprotein_scale_factor = 1.0;
@@ -311,20 +311,20 @@ void CarTCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance,
 
     // factor of how far the cancer cell is
     real_t distance_scale_factor =
-        (sparams->kMaxAdhesionDistanceCart - std::sqrt(squared_distance)) /
-        sparams->kDifferenceCartAdhesionDistances;
+        (sparams->max_adhesion_distance_cart - std::sqrt(squared_distance)) /
+        sparams->difference_cart_adhesion_distances;
     // Clamp scale_factor to be in [0,1]. We already checked that it is > 0
-    // because squared_distance < kSquaredMaxAdhesionDistanceCart
+    // because squared_distance < squared_max_adhesion_distance_cart
     if (distance_scale_factor > 1.0) {
       distance_scale_factor = 1.0;
     }
 
     // It tries to attach the CAR-T cell to the tumor cell with probability
-    // kAdhesionRateCart * oncoprotein_scale_factor * distance_scale_factor *
-    // kDtMechanics
+    // adhesion_rate_cart * oncoprotein_scale_factor * distance_scale_factor *
+    // dt_mechanics
     if (rng->Uniform(0.0, 1.0) <
-        sparams->kAdhesionRateCart * oncoprotein_scale_factor *
-            distance_scale_factor * sparams->kDtMechanics) {
+        sparams->adhesion_rate_cart * oncoprotein_scale_factor *
+            distance_scale_factor * sparams->dt_mechanics) {
 // avoid race condition. Only one cell can be attached to the tumor cell.
 #pragma omp critical
       {
@@ -354,8 +354,8 @@ bool CarTCell::TryToInduceApoptosis(bdm::AgentPointer<TumorCell> attached_cell,
 
   // factor of how high is the oncoprotein levelof the cancer cell
   real_t scale_factor =
-      (attached_cell->GetOncoproteinLevel() - sparams->kOncoproteinLimit) /
-      sparams->kOncoproteinDifference;
+      (attached_cell->GetOncoproteinLevel() - sparams->oncoprotein_limit) /
+      sparams->oncoprotein_difference;
   // Clamp scale_factor to be in [0,1]
   if (scale_factor > 1.0) {
     scale_factor = 1.0;
@@ -371,7 +371,7 @@ bool CarTCell::TryToInduceApoptosis(bdm::AgentPointer<TumorCell> attached_cell,
   // oncoprotein level) are more likely to be killed
   const bool succeeded =
       rng->Uniform(0.0, 1.0) <
-      sparams->kKillRateCart * scale_factor * sparams->kDtMechanics;
+      sparams->kill_rate_cart * scale_factor * sparams->dt_mechanics;
 
   // The CAR-T has succeeded to induce apoptosis on the Cancer Cell
   if (succeeded) {
@@ -423,8 +423,8 @@ void CarTCell::ComputeConstantsConsumptionSecretion() {
   // 1 + dt*(cell_volume/voxel_volume)*(quantity_secretion +
   // quantity_consumption ) = [1 + dt · (V_k / V_voxel) · (S_k + U_k)]
   //  Scale by the volume of the cell in the Voxel and time step
-  constant2_oxygen_ = 1 + sparams->kDtSubstances *
-                              (volume / sparams->kVoxelVolume) *
+  constant2_oxygen_ = 1 + sparams->dt_substances *
+                              (volume / sparams->voxel_volume) *
                               (oxygen_consumption_rate_);
 }
 
@@ -433,9 +433,11 @@ void StateControlCart::Run(Agent* agent) {
   Simulation* sim = Simulation::GetActive();
   const SimParam* sparams = sim->GetParam()->Get<SimParam>();
 
-  // Run only every kDtCycle minutes, fmod does not work with the type
+  // Run only every dt_cycle minutes, fmod does not work with the type
   // returned by GetSimulatedTime()
-  if (sim->GetScheduler()->GetSimulatedSteps() % sparams->kStepsPerCycle != 0) {
+  if (sim->GetScheduler()->GetSimulatedSteps() %
+          sparams->steps_per_cell_cycle !=
+      0) {
     return;
   }
 
@@ -445,7 +447,7 @@ void StateControlCart::Run(Agent* agent) {
         // the cell is growing to real_t its size before mitosis
         // Probability of death= 1/CurrentLiveTime,avoiding division by 0
         if (sim->GetRandom()->Uniform(1.0) <
-            sparams->kDtCycle /
+            sparams->dt_cycle /
                 std::max(cell->GetCurrentLiveTime(), kEpsilon)) {
           // the cell Dies
           cell->SetState(CarTCellState::kApoptotic);
@@ -459,7 +461,7 @@ void StateControlCart::Run(Agent* agent) {
           // Reduce oxygen consumption
           cell->SetOxygenConsumptionRate(
               cell->GetOxygenConsumptionRate() *
-              sparams->kReductionConsumptionDeadCells);
+              sparams->reduction_consumption_dead_cells);
           // Update constants for all Consumption of oxygen
           cell->ComputeConstantsConsumptionSecretion();
           // Detach from tumor cell if it was attached
@@ -471,22 +473,22 @@ void StateControlCart::Run(Agent* agent) {
         } else {
           // decrease current life time
           cell->SetCurrentLiveTime((cell->GetCurrentLiveTime() -
-                                    (sparams->kDtCycle * sparams->kDtCycle)));
+                                    (sparams->dt_cycle * sparams->dt_cycle)));
         }
         break;
       }
       case CarTCellState::kApoptotic: {
         cell->SetTimerState(static_cast<int>(
-            static_cast<real_t>(cell->GetTimerState()) + sparams->kDtCycle));
+            static_cast<real_t>(cell->GetTimerState()) + sparams->dt_cycle));
 
         cell->ChangeVolumeExponentialRelaxationEquation(
-            sparams->kVolumeRelaxationRateCytoplasmApoptotic,
-            sparams->kVolumeRelaxationRateNucleusApoptotic,
-            sparams->kVolumeRelaxationRateFluidApoptotic);
+            sparams->volume_relaxation_rate_cytoplasm_apoptotic_cells,
+            sparams->volume_relaxation_rate_nucleus_apoptotic_cells,
+            sparams->volume_relaxation_rate_fluid_apoptotic_cells);
 
         // If the timer_state exceeds the time to transition (this is a fixed
         // duration transition)
-        if (sparams->kTimeApoptosis < cell->GetTimerState()) {
+        if (sparams->time_apoptosis < cell->GetTimerState()) {
           // remove the cell from the simulation
           ExecutionContext* ctxt = sim->GetExecutionContext();
           ctxt->RemoveAgent(agent->GetUid());

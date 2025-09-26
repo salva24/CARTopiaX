@@ -48,12 +48,12 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
       d_space_(static_cast<real_t>(Simulation::GetActive()
                                        ->GetParam()
                                        ->Get<SimParam>()
-                                       ->kBoundedSpaceLength) /
+                                       ->bounded_space_length) /
                static_cast<real_t>(resolution_)),
       dirichlet_border_(dirichlet_border),
       jump_i_(1),
       jump_j_(resolution_),
-      jump_k_(resolution_ * resolution_),
+      jump_(resolution_ * resolution_),
       spatial_diffusion_coeff_(dc * dt / (d_space_ * d_space_)),
       neg_diffusion_factor_(-spatial_diffusion_coeff_),
       temporal_decay_coeff_(mu * dt / 3.0),
@@ -248,7 +248,7 @@ void DiffusionThomasAlgorithm::SolveDirectionThomas(int direction) {
       return jump_j_;
     }
     // direction == 2
-    return jump_k_;
+    return jump_;
   }();
 
 #pragma omp parallel for collapse(2)

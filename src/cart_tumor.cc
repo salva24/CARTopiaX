@@ -56,12 +56,12 @@ int Simulate(int argc, const char** argv) {
   // Set simulation parameters using lambda
   auto set_param = [sparam_ref](Param* param) {
     // Set simulation bounds using the parameters
-    param->random_seed = sparam_ref->kSeed;
+    param->random_seed = sparam_ref->seed;
     param->bound_space = Param::BoundSpaceMode::kTorus;
-    param->min_bound = -sparam_ref->kBoundedSpaceLength / kHalf;
-    param->max_bound = sparam_ref->kBoundedSpaceLength / kHalf;
-    param->simulation_time_step = sparam_ref->kDt;
-    param->statistics = sparam_ref->kOutputPerformanceStatistics;
+    param->min_bound = -sparam_ref->bounded_space_length / kHalf;
+    param->max_bound = sparam_ref->bounded_space_length / kHalf;
+    param->simulation_time_step = sparam_ref->dt_step;
+    param->statistics = sparam_ref->output_performance_statistics;
   };
 
   Simulation simulation(argc, argv, set_param);
@@ -83,7 +83,7 @@ int Simulate(int argc, const char** argv) {
   auto* env = dynamic_cast<UniformGridEnvironment*>(
       Simulation::GetActive()->GetEnvironment());
   // Fix the box length for the uniform grid environment
-  env->SetBoxLength(sparam->kLengthBoxMechanics);
+  env->SetBoxLength(sparam->length_box_mechanics);
 
   // Define Substances
   ResourceManager* rm = Simulation::GetActive()->GetResourceManager();
@@ -93,9 +93,9 @@ int Simulate(int argc, const char** argv) {
   // time_step
   std::unique_ptr<DiffusionThomasAlgorithm> oxygen_grid =
       std::make_unique<DiffusionThomasAlgorithm>(
-          kOxygen, "oxygen", sparam->kDiffusionCoefficientOxygen,
-          sparam->kDecayConstantOxygen, sparam->kResolutionGridSubstances,
-          sparam->kDtSubstances,
+          kOxygen, "oxygen", sparam->diffusion_coefficient_oxygen,
+          sparam->decay_constant_oxygen, sparam->resolution_grid_substances,
+          sparam->dt_substances,
           /*dirichlet_border=*/true);
   rm->AddContinuum(oxygen_grid.release());
 
@@ -104,9 +104,9 @@ int Simulate(int argc, const char** argv) {
   std::unique_ptr<DiffusionThomasAlgorithm> immunostimulatory_factor_grid =
       std::make_unique<DiffusionThomasAlgorithm>(
           kImmunostimulatoryFactor, "immunostimulatory_factor",
-          sparam->kDiffusionCoefficientImmunostimulatoryFactor,
-          sparam->kDecayConstantImmunostimulatoryFactor,
-          sparam->kResolutionGridSubstances, sparam->kDtSubstances,
+          sparam->diffusion_coefficient_immunostimulatory_factor,
+          sparam->decay_constant_immunostimulatory_factor,
+          sparam->resolution_grid_substances, sparam->dt_substances,
           /*dirichlet_border=*/false);
   rm->AddContinuum(immunostimulatory_factor_grid.release());
 
@@ -115,10 +115,10 @@ int Simulate(int argc, const char** argv) {
   // Oxygen comming from the borders (capillary vessels)
   ModelInitializer::AddBoundaryConditions(
       kOxygen, BoundaryConditionType::kDirichlet,
-      // kOxygenReferenceLevel mmHg is the physiological level of oxygen in
+      // oxygen_reference_level mmHg is the physiological level of oxygen in
       // tissues, o2 saturation is 100% at this level
       std::make_unique<ConstantBoundaryCondition>(
-          sparam->kOxygenReferenceLevel));
+          sparam->oxygen_reference_level));
 
   // This is useless now but should be added this way in a future version of
   // BioDynaMo
@@ -128,14 +128,14 @@ int Simulate(int argc, const char** argv) {
   // Initialize oxygen voxels
   ModelInitializer::InitializeSubstance(
       kOxygen, [sparam](real_t /*x*/, real_t /*y*/, real_t /*z*/) {
-        // Set all voxels to kInitialOxygenLevel mmHg
-        return sparam->kInitialOxygenLevel;
+        // Set all voxels to initial_oxygen_level mmHg
+        return sparam->initial_oxygen_level;
       });
 
-  // One spherical tumor of radius kInitialRadiusTumor in the center of the
+  // One spherical tumor of radius initial_tumor_radius in the center of the
   // simulation space
   const std::vector<Real3> positions =
-      CreateSphereOfTumorCells(sparam->kInitialRadiusTumor);
+      CreateSphereOfTumorCells(sparam->initial_tumor_radius);
   for (const auto& pos : positions) {
     std::unique_ptr<TumorCell> tumor_cell = std::make_unique<TumorCell>(pos);
     std::unique_ptr<StateControlGrowProliferate> state_control =
@@ -146,7 +146,7 @@ int Simulate(int argc, const char** argv) {
 
   // Treatment administration operation
   std::unique_ptr<bdm::Operation> treatment_op =
-      std::make_unique<bdm::Operation>("SpawnCart", sparam->kStepsOneDay);
+      std::make_unique<bdm::Operation>("SpawnCart", sparam->steps_in_one_day);
   std::unique_ptr<bdm::SpawnCart> spawn_cart =
       std::make_unique<bdm::SpawnCart>();
   treatment_op->AddOperationImpl(bdm::kCpu, spawn_cart.release());
@@ -154,7 +154,7 @@ int Simulate(int argc, const char** argv) {
 
   // OutputSummary operation
   std::unique_ptr<bdm::Operation> summary_op = std::make_unique<bdm::Operation>(
-      "OutputSummary", sparam->kOutputCsvInterval);
+      "OutputSummary", sparam->output_csv_interval);
   std::unique_ptr<bdm::OutputSummary> output_summary =
       std::make_unique<bdm::OutputSummary>();
   summary_op->AddOperationImpl(bdm::kCpu, output_summary.release());
@@ -162,8 +162,8 @@ int Simulate(int argc, const char** argv) {
 
   // Run simulation
   std::cout << "Running simulation..." << std::endl;
-  // simulate kTotalMinutesToSimulate minutes including the last minute
-  scheduler->Simulate(1 + sparam->kTotalMinutesToSimulate / sparam->kDt);
+  // simulate total_minutes_to_simulate minutes including the last minute
+  scheduler->Simulate(1 + sparam->total_minutes_to_simulate / sparam->dt_step);
   std::cout << "Simulation completed successfully!" << std::endl;
   return 0;
 }

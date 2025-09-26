@@ -66,7 +66,7 @@ std::vector<Real3> CreateSphereOfTumorCells(real_t sphere_radius) {
       Simulation::GetActive()->GetParam()->Get<SimParam>();
   // V = (4/3)*pi*r^3 = (pi/6)*diameter^3
   const real_t cell_radius =
-      std::cbrt(sparams->kDefaultVolumeNewTumorCell * 6 / Math::kPi) / kHalf;
+      std::cbrt(sparams->default_volume_new_tumor_cell * 6 / Math::kPi) / kHalf;
 
   std::vector<Real3> positions;
 
@@ -211,7 +211,7 @@ void OutputSummary::operator()() {
 
       // Calculate time in days, hours, minutes
       const double total_minutes =
-          static_cast<double>(current_step) * sparams->kDt;
+          static_cast<double>(current_step) * sparams->dt_step;
       const double total_hours = total_minutes / kMinutesInAnHour;
       const double total_days = total_hours / kHoursInADay;
 
@@ -241,11 +241,11 @@ void OutputSummary::operator()() {
       // therefore we need to add the just added new cells to the statistics
       // here.
       const auto current_day_int = static_cast<size_t>(total_days);
-      if (current_step % sparams->kStepsOneDay == 0 &&
-          sparams->kTreatment.find(current_day_int) !=
-              sparams->kTreatment.end()) {
+      if (current_step % sparams->steps_in_one_day == 0 &&
+          sparams->treatment.find(current_day_int) !=
+              sparams->treatment.end()) {
         const size_t just_spawned_cells =
-            sparams->kTreatment.at(current_day_int);
+            sparams->treatment.at(current_day_int);
         total_num_cells += just_spawned_cells;
         num_alive_cart += static_cast<int>(just_spawned_cells);
       }
@@ -275,12 +275,12 @@ void SpawnCart::operator()() {
   }
   // See if there is any dosage to apply in this day
   const auto current_day =
-      static_cast<size_t>(static_cast<double>(current_step) * sparams->kDt /
+      static_cast<size_t>(static_cast<double>(current_step) * sparams->dt_step /
                           (kMinutesInAnHour * kHoursInADay));
   size_t cells_to_spawn = 0;
 
-  if (sparams->kTreatment.find(current_day) != sparams->kTreatment.end()) {
-    cells_to_spawn = sparams->kTreatment.at(current_day);
+  if (sparams->treatment.find(current_day) != sparams->treatment.end()) {
+    cells_to_spawn = sparams->treatment.at(current_day);
   }
 
   // if there are cells to spawn in the treatment
@@ -300,10 +300,12 @@ void SpawnCart::operator()() {
       }
     });
 
-    // the car-t spawns at least sparams->kMinimumDistanceCarTFromTumor
-    // micrometers away from the tumor
+    // the car-t spawns at least
+    // sparams->minimum_distance_from_tumor_to_spawn_cart micrometers away from
+    // the tumor
     real_t minimum_squared_radius =
-        std::sqrt(max_dist_sq) + sparams->kMinimumDistanceCarTFromTumor;
+        std::sqrt(max_dist_sq) +
+        sparams->minimum_distance_from_tumor_to_spawn_cart;
     minimum_squared_radius *= minimum_squared_radius;
 
     // for generating car-t positions

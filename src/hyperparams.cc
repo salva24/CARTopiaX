@@ -33,8 +33,7 @@ namespace bdm {
 const ParamGroupUid SimParam::kUid = ParamGroupUidGenerator::Get()->NewUid();
 
 // Function to read a JSON file and load the parameters
-// The parameters that are not found in the file are assigned their default
-// value
+// The parameters that are not found in the file keep their default
 void SimParam::LoadParams(const std::string& filename) {
   nlohmann::json jfile;
   std::ifstream file(filename);
@@ -47,576 +46,195 @@ void SimParam::LoadParams(const std::string& filename) {
     }
   }
 
+  // Helper functions to load parameters from JSON
+  auto load_double = [&](const std::string& key, double& var) {
+    if (jfile.contains(key)) {
+      var = jfile[key].get<double>();
+    }
+  };
+
+  auto load_int = [&](const std::string& key, int& var) {
+    if (jfile.contains(key)) {
+      var = jfile[key].get<int>();
+    }
+  };
+
+  auto load_bool = [&](const std::string& key, bool& var) {
+    if (jfile.contains(key)) {
+      var = jfile[key].get<bool>();
+    }
+  };
+
   // Load parameters from JSON file
-  if (jfile.contains("kSeed")) {
-    kSeed = jfile["kSeed"].get<int>();
-  } else {
-    kSeed = 1;
-  }
+  load_int("seed", seed);
+  load_bool("output_performance_statistics", output_performance_statistics);
+  load_int("total_minutes_to_simulate", total_minutes_to_simulate);
+  load_double("initial_tumor_radius", initial_tumor_radius);
+  load_int("bounded_space_length", bounded_space_length);
 
-  if (jfile.contains("kOutputPerformanceStatistics")) {
-    kOutputPerformanceStatistics =
-        jfile["kOutputPerformanceStatistics"].get<bool>();
-  } else {
-    kOutputPerformanceStatistics = false;
-  }
-
-  if (jfile.contains("kTotalMinutesToSimulate")) {
-    kTotalMinutesToSimulate = jfile["kTotalMinutesToSimulate"].get<int>();
-  } else {
-    // Default: simulate 30 days
-    kTotalMinutesToSimulate = 30 * 24 * 60;
-  }
-
-  if (jfile.contains("kInitialRadiusTumor")) {
-    kInitialRadiusTumor = jfile["kInitialRadiusTumor"].get<double>();
-  } else {
-    // Default: initial radius of the tumor is 150 micrometers
-    kInitialRadiusTumor = 150.0;
-  }
-
-  if (jfile.contains("kBoundedSpaceLength")) {
-    kBoundedSpaceLength = jfile["kBoundedSpaceLength"].get<double>();
-  } else {
-    kBoundedSpaceLength = 1000.0;
-  }
-
-  if (jfile.contains("kTreatment")) {
-    kTreatment.clear();
+  if (jfile.contains("treatment")) {
+    treatment.clear();
     // Parse the JSON object to handle string keys
-    for (auto& [key, value] : jfile["kTreatment"].items()) {
+    for (auto& [key, value] : jfile["treatment"].items()) {
       int day = std::stoi(key);
       int dose = value.get<int>();
-      kTreatment[day] = dose;
+      treatment[day] = dose;
     }
-  } else {
-    // Example: On day 0 and day 8, 3957 CAR-T cells are introduced (matching
-    // the initial tumor cell count). avoid
-    // cppcoreguidelines-avoid-magic-numbers warning
-    kTreatment = {{0, 3957}, {8, 3957}};
   }
 
-  if (jfile.contains("kDtSubstances")) {
-    kDtSubstances = jfile["kDtSubstances"].get<double>();
+  load_double("dt_substances", dt_substances);
+  load_double("dt_mechanics", dt_mechanics);
+  load_double("dt_cycle", dt_cycle);
+
+  if (jfile.contains("dt_step")) {
+    dt_step = jfile["dt_step"].get<double>();
   } else {
-    kDtSubstances = 0.01;
+    dt_step = dt_mechanics;
   }
 
-  if (jfile.contains("kDtMechanics")) {
-    kDtMechanics = jfile["kDtMechanics"].get<double>();
+  if (jfile.contains("output_csv_interval")) {
+    output_csv_interval = jfile["output_csv_interval"].get<int>();
   } else {
-    kDtMechanics = 0.1;
+    output_csv_interval = 12 * 60 / dt_step;
   }
 
-  if (jfile.contains("kDtCycle")) {
-    kDtCycle = jfile["kDtCycle"].get<double>();
+  load_double("volume_relaxation_rate_cytoplasm_apoptotic_cells", volume_relaxation_rate_cytoplasm_apoptotic_cells);
+  load_double("volume_relaxation_rate_nucleus_apoptotic_cells", volume_relaxation_rate_nucleus_apoptotic_cells);
+  load_double("volume_relaxation_rate_fluid_apoptotic_cells", volume_relaxation_rate_fluid_apoptotic_cells);
+
+  load_double("time_apoptosis", time_apoptosis);
+  load_double("reduction_consumption_dead_cells", reduction_consumption_dead_cells);
+  load_int("resolution_grid_substances", resolution_grid_substances);
+
+  load_double("diffusion_coefficient_oxygen", diffusion_coefficient_oxygen);
+  load_double("decay_constant_oxygen", decay_constant_oxygen);
+  load_double("diffusion_coefficient_immunostimulatory_factor", diffusion_coefficient_immunostimulatory_factor);
+  load_double("decay_constant_immunostimulatory_factor", decay_constant_immunostimulatory_factor);
+  load_double("oxygen_reference_level", oxygen_reference_level);
+  load_double("initial_oxygen_level", initial_oxygen_level);
+  load_double("oxygen_saturation", oxygen_saturation);
+
+  load_double("cell_repulsion_between_tumor_tumor", cell_repulsion_between_tumor_tumor);
+  load_double("cell_repulsion_between_cart_cart", cell_repulsion_between_cart_cart);
+  load_double("cell_repulsion_between_cart_tumor", cell_repulsion_between_cart_tumor);
+  load_double("cell_repulsion_between_tumor_cart", cell_repulsion_between_tumor_cart);
+
+  load_double("max_relative_adhesion_distance", max_relative_adhesion_distance);
+  load_double("cell_adhesion_between_tumor_tumor", cell_adhesion_between_tumor_tumor);
+  load_double("cell_adhesion_between_cart_cart", cell_adhesion_between_cart_cart);
+  load_double("cell_adhesion_between_cart_tumor", cell_adhesion_between_cart_tumor);
+  load_double("cell_adhesion_between_tumor_cart", cell_adhesion_between_tumor_cart);
+  load_double("length_box_mechanics", length_box_mechanics);
+
+  if (jfile.contains("dnew")) {
+    dnew = jfile["dnew"].get<double>();
   } else {
-    kDtCycle = 6.0;
+    dnew = 1.5 * dt_mechanics;
   }
 
-  if (jfile.contains("kDt")) {
-    kDt = jfile["kDt"].get<double>();
+  if (jfile.contains("dold")) {
+    dold = jfile["dold"].get<double>();
   } else {
-    kDt = kDtMechanics;
+    dold = -0.5 * dt_mechanics;
   }
 
-  if (jfile.contains("kOutputCsvInterval")) {
-    kOutputCsvInterval = jfile["kOutputCsvInterval"].get<int>();
-  } else {
-    kOutputCsvInterval = 12 * 60 / kDt;
-  }
+  load_double("rate_secretion_immunostimulatory_factor", rate_secretion_immunostimulatory_factor);
+  load_double("saturation_density_immunostimulatory_factor", saturation_density_immunostimulatory_factor);
+  load_double("oncoprotein_mean", oncoprotein_mean);
+  load_double("oncoprotein_standard_deviation", oncoprotein_standard_deviation);
+  load_double("oxygen_saturation_for_proliferation", oxygen_saturation_for_proliferation);
+  load_double("oxygen_limit_for_proliferation", oxygen_limit_for_proliferation);
+  load_double("oxygen_limit_for_necrosis", oxygen_limit_for_necrosis);
+  load_double("oxygen_limit_for_necrosis_maximum", oxygen_limit_for_necrosis_maximum);
+  load_double("time_lysis", time_lysis);
+  load_double("maximum_necrosis_rate", maximum_necrosis_rate);
 
-  if (jfile.contains("kVolumeRelaxationRateCytoplasmApoptotic")) {
-    kVolumeRelaxationRateCytoplasmApoptotic =
-        jfile["kVolumeRelaxationRateCytoplasmApoptotic"].get<double>();
-  } else {
-    kVolumeRelaxationRateCytoplasmApoptotic = 1.0 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateNucleusApoptotic")) {
-    kVolumeRelaxationRateNucleusApoptotic =
-        jfile["kVolumeRelaxationRateNucleusApoptotic"].get<double>();
-  } else {
-    kVolumeRelaxationRateNucleusApoptotic = 0.35 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateFluidApoptotic")) {
-    kVolumeRelaxationRateFluidApoptotic =
-        jfile["kVolumeRelaxationRateFluidApoptotic"].get<double>();
-  } else {
-    kVolumeRelaxationRateFluidApoptotic = 0.0;
-  }
-
-  if (jfile.contains("kTimeApoptosis")) {
-    kTimeApoptosis = jfile["kTimeApoptosis"].get<double>();
-  } else {
-    kTimeApoptosis = 8.6 * 60;
-  }
-
-  if (jfile.contains("kReductionConsumptionDeadCells")) {
-    kReductionConsumptionDeadCells =
-        jfile["kReductionConsumptionDeadCells"].get<double>();
-  } else {
-    kReductionConsumptionDeadCells = 0.1;
-  }
-
-  if (jfile.contains("kResolutionGridSubstances")) {
-    kResolutionGridSubstances = jfile["kResolutionGridSubstances"].get<int>();
-  } else {
-    kResolutionGridSubstances = 50;
-  }
-
-  if (jfile.contains("kDiffusionCoefficientOxygen")) {
-    kDiffusionCoefficientOxygen =
-        jfile["kDiffusionCoefficientOxygen"].get<double>();
-  } else {
-    kDiffusionCoefficientOxygen = 100000;
-  }
-
-  if (jfile.contains("kDecayConstantOxygen")) {
-    kDecayConstantOxygen = jfile["kDecayConstantOxygen"].get<double>();
-  } else {
-    kDecayConstantOxygen = 0.1;
-  }
-
-  if (jfile.contains("kDiffusionCoefficientImmunostimulatoryFactor")) {
-    kDiffusionCoefficientImmunostimulatoryFactor =
-        jfile["kDiffusionCoefficientImmunostimulatoryFactor"].get<double>();
-  } else {
-    kDiffusionCoefficientImmunostimulatoryFactor = 1000;
-  }
-
-  if (jfile.contains("kDecayConstantImmunostimulatoryFactor")) {
-    kDecayConstantImmunostimulatoryFactor =
-        jfile["kDecayConstantImmunostimulatoryFactor"].get<double>();
-  } else {
-    kDecayConstantImmunostimulatoryFactor = 0.016;
-  }
-
-  if (jfile.contains("kOxygenReferenceLevel")) {
-    kOxygenReferenceLevel = jfile["kOxygenReferenceLevel"].get<double>();
-  } else {
-    kOxygenReferenceLevel = 38.0;
-  }
-
-  if (jfile.contains("kInitialOxygenLevel")) {
-    kInitialOxygenLevel = jfile["kInitialOxygenLevel"].get<double>();
-  } else {
-    kInitialOxygenLevel = 38.0;
-  }
-
-  if (jfile.contains("kOxygenSaturation")) {
-    kOxygenSaturation = jfile["kOxygenSaturation"].get<double>();
-  } else {
-    kOxygenSaturation = 30.0;
-  }
-
-  if (jfile.contains("kRepulsionTumorTumor")) {
-    kRepulsionTumorTumor = jfile["kRepulsionTumorTumor"].get<double>();
-  } else {
-    kRepulsionTumorTumor = 10.0;
-  }
-
-  if (jfile.contains("kRepulsionCartCart")) {
-    kRepulsionCartCart = jfile["kRepulsionCartCart"].get<double>();
-  } else {
-    kRepulsionCartCart = 50.0;
-  }
-
-  if (jfile.contains("kRepulsionCartTumor")) {
-    kRepulsionCartTumor = jfile["kRepulsionCartTumor"].get<double>();
-  } else {
-    kRepulsionCartTumor = 50.0;
-  }
-
-  if (jfile.contains("kRepulsionTumorCart")) {
-    kRepulsionTumorCart = jfile["kRepulsionTumorCart"].get<double>();
-  } else {
-    kRepulsionTumorCart = 10.0;
-  }
-
-  if (jfile.contains("kMaxRelativeAdhesionDistance")) {
-    kMaxRelativeAdhesionDistance =
-        jfile["kMaxRelativeAdhesionDistance"].get<double>();
-  } else {
-    kMaxRelativeAdhesionDistance = 1.25;
-  }
-
-  if (jfile.contains("kAdhesionTumorTumor")) {
-    kAdhesionTumorTumor = jfile["kAdhesionTumorTumor"].get<double>();
-  } else {
-    kAdhesionTumorTumor = 0.4;
-  }
-
-  if (jfile.contains("kAdhesionCartCart")) {
-    kAdhesionCartCart = jfile["kAdhesionCartCart"].get<double>();
-  } else {
-    kAdhesionCartCart = 0.0;
-  }
-
-  if (jfile.contains("kAdhesionCartTumor")) {
-    kAdhesionCartTumor = jfile["kAdhesionCartTumor"].get<double>();
-  } else {
-    kAdhesionCartTumor = 0.0;
-  }
-
-  if (jfile.contains("kAdhesionTumorCart")) {
-    kAdhesionTumorCart = jfile["kAdhesionTumorCart"].get<double>();
-  } else {
-    kAdhesionTumorCart = 0.0;
-  }
-
-  if (jfile.contains("kLengthBoxMechanics")) {
-    kLengthBoxMechanics = jfile["kLengthBoxMechanics"].get<double>();
-  } else {
-    kLengthBoxMechanics = 22;
-  }
-
-  if (jfile.contains("kDnew")) {
-    kDnew = jfile["kDnew"].get<double>();
-  } else {
-    kDnew = 1.5 * kDtMechanics;
-  }
-
-  if (jfile.contains("kDold")) {
-    kDold = jfile["kDold"].get<double>();
-  } else {
-    kDold = -0.5 * kDtMechanics;
-  }
-
-  if (jfile.contains("kRateSecretionImmunostimulatoryFactor")) {
-    kRateSecretionImmunostimulatoryFactor =
-        jfile["kRateSecretionImmunostimulatoryFactor"].get<double>();
-  } else {
-    kRateSecretionImmunostimulatoryFactor = 10.0;
-  }
-
-  if (jfile.contains("kSaturationDensityImmunostimulatoryFactor")) {
-    kSaturationDensityImmunostimulatoryFactor =
-        jfile["kSaturationDensityImmunostimulatoryFactor"].get<double>();
-  } else {
-    kSaturationDensityImmunostimulatoryFactor = 1.0;
-  }
-
-  if (jfile.contains("kOncoproteinMean")) {
-    kOncoproteinMean = jfile["kOncoproteinMean"].get<double>();
-  } else {
-    kOncoproteinMean = 1.0;
-  }
-
-  if (jfile.contains("kOncoproteinStandardDeviation")) {
-    kOncoproteinStandardDeviation =
-        jfile["kOncoproteinStandardDeviation"].get<double>();
-  } else {
-    kOncoproteinStandardDeviation = 0.25;
-  }
-
-  if (jfile.contains("kOxygenSaturationInProliferation")) {
-    kOxygenSaturationInProliferation =
-        jfile["kOxygenSaturationInProliferation"].get<double>();
-  } else {
-    kOxygenSaturationInProliferation = 38.0;
-  }
-
-  if (jfile.contains("kOxygenLimitForProliferation")) {
-    kOxygenLimitForProliferation =
-        jfile["kOxygenLimitForProliferation"].get<double>();
-  } else {
-    kOxygenLimitForProliferation = 10.0;
-  }
-
-  if (jfile.contains("kOxygenLimitForNecrosis")) {
-    kOxygenLimitForNecrosis = jfile["kOxygenLimitForNecrosis"].get<double>();
-  } else {
-    kOxygenLimitForNecrosis = 5.0;
-  }
-
-  if (jfile.contains("kOxygenLimitForNecrosisMaximum")) {
-    kOxygenLimitForNecrosisMaximum =
-        jfile["kOxygenLimitForNecrosisMaximum"].get<double>();
-  } else {
-    kOxygenLimitForNecrosisMaximum = 2.5;
-  }
-
-  if (jfile.contains("kTimeLysis")) {
-    kTimeLysis = jfile["kTimeLysis"].get<double>();
-  } else {
-    kTimeLysis = 60 * 24 * 60.0;
-  }
-
-  if (jfile.contains("kMaximumNecrosisRate")) {
-    kMaximumNecrosisRate = jfile["kMaximumNecrosisRate"].get<double>();
-  } else {
-    kMaximumNecrosisRate = 1.0 / (6.0 * 60.0);
-  }
-
-  if (jfile.contains("kDefaultOxygenConsumptionTumorCell")) {
-    kDefaultOxygenConsumptionTumorCell =
-        jfile["kDefaultOxygenConsumptionTumorCell"].get<double>();
-  } else {
-    kDefaultOxygenConsumptionTumorCell = 10.0;
-  }
-
-  if (jfile.contains("kDefaultVolumeNewTumorCell")) {
-    kDefaultVolumeNewTumorCell =
-        jfile["kDefaultVolumeNewTumorCell"].get<double>();
-  } else {
-    kDefaultVolumeNewTumorCell = 2494.0;
-  }
-
-  if (jfile.contains("kDefaultVolumeNucleusTumorCell")) {
-    kDefaultVolumeNucleusTumorCell =
-        jfile["kDefaultVolumeNucleusTumorCell"].get<double>();
-  } else {
-    kDefaultVolumeNucleusTumorCell = 540.0;
-  }
-
-  if (jfile.contains("kDefaultFractionFluidTumorCell")) {
-    kDefaultFractionFluidTumorCell =
-        jfile["kDefaultFractionFluidTumorCell"].get<double>();
-  } else {
-    kDefaultFractionFluidTumorCell = 0.75;
-  }
-
-  if (jfile.contains("kAverageTimeTransformationRandomRate")) {
-    kAverageTimeTransformationRandomRate =
-        jfile["kAverageTimeTransformationRandomRate"].get<double>();
-  } else {
-    kAverageTimeTransformationRandomRate = 38.6;
-  }
-
-  if (jfile.contains("kStandardDeviationTransformationRandomRate")) {
-    kStandardDeviationTransformationRandomRate =
-        jfile["kStandardDeviationTransformationRandomRate"].get<double>();
-  } else {
-    kStandardDeviationTransformationRandomRate = 3.7;
-  }
-
-  if (jfile.contains("kAdhesionTime")) {
-    kAdhesionTime = jfile["kAdhesionTime"].get<double>();
-  } else {
-    kAdhesionTime = 60.0;
-  }
-
-  if (jfile.contains("kOncoproteinLimit")) {
-    kOncoproteinLimit = jfile["kOncoproteinLimit"].get<double>();
-  } else {
-    kOncoproteinLimit = 0.5;
-  }
-
-  if (jfile.contains("kOncoproteinSaturation")) {
-    kOncoproteinSaturation = jfile["kOncoproteinSaturation"].get<double>();
-  } else {
-    kOncoproteinSaturation = 2.0;
-  }
+  load_double("default_oxygen_consumption_tumor_cell", default_oxygen_consumption_tumor_cell);
+  load_double("default_volume_new_tumor_cell", default_volume_new_tumor_cell);
+  load_double("default_volume_nucleus_tumor_cell", default_volume_nucleus_tumor_cell);
+  load_double("default_fraction_fluid_tumor_cell", default_fraction_fluid_tumor_cell);
+  load_double("average_time_transformation_random_rate", average_time_transformation_random_rate);
+  load_double("standard_deviation_transformation_random_rate", standard_deviation_transformation_random_rate);
+  load_double("adhesion_time", adhesion_time);
+  load_double("oncoprotein_limit", oncoprotein_limit);
+  load_double("oncoprotein_saturation", oncoprotein_saturation);
 
   // Difference between saturation and limit. This is always calculated here
-  kOncoproteinDifference = kOncoproteinSaturation - kOncoproteinLimit;
+  oncoprotein_difference = oncoprotein_saturation - oncoprotein_limit;
 
-  if (jfile.contains("kVolumeRelaxationRateAliveCytoplasm")) {
-    kVolumeRelaxationRateAliveCytoplasm =
-        jfile["kVolumeRelaxationRateAliveCytoplasm"].get<double>();
+  load_double("volume_relaxation_rate_alive_tumor_cell_cytoplasm", volume_relaxation_rate_alive_tumor_cell_cytoplasm);
+  load_double("volume_relaxation_rate_alive_tumor_cell_nucleus", volume_relaxation_rate_alive_tumor_cell_nucleus);
+  load_double("volume_relaxation_rate_alive_tumor_cell_fluid", volume_relaxation_rate_alive_tumor_cell_fluid);
+
+  load_double("volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell", volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell);
+  load_double("volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell", volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell);
+  load_double("volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell", volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell);
+
+  load_double("volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell", volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell);
+  load_double("volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell", volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell);
+  load_double("volume_relaxation_rate_fluid_necrotic_lysed_tumor_cell", volume_relaxation_rate_fluid_necrotic_lysed_tumor_cell);
+
+  load_double("threshold_cancer_cell_type1", threshold_cancer_cell_type1);
+  load_double("threshold_cancer_cell_type2", threshold_cancer_cell_type2);
+  load_double("threshold_cancer_cell_type3", threshold_cancer_cell_type3);
+  load_double("threshold_cancer_cell_type4", threshold_cancer_cell_type4);
+
+  if (jfile.contains("average_maximum_time_untill_apoptosis_cart")) {
+    average_maximum_time_untill_apoptosis_cart =
+        jfile["average_maximum_time_untill_apoptosis_cart"].get<double>();
   } else {
-    kVolumeRelaxationRateAliveCytoplasm = 0.13 / 60.0;
+    average_maximum_time_untill_apoptosis_cart = dt_cycle * 10.0 * 24.0 * 60.0;
   }
 
-  if (jfile.contains("kVolumeRelaxationRateAliveNucleus")) {
-    kVolumeRelaxationRateAliveNucleus =
-        jfile["kVolumeRelaxationRateAliveNucleus"].get<double>();
-  } else {
-    kVolumeRelaxationRateAliveNucleus = 0.22 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateAliveFluid")) {
-    kVolumeRelaxationRateAliveFluid =
-        jfile["kVolumeRelaxationRateAliveFluid"].get<double>();
-  } else {
-    kVolumeRelaxationRateAliveFluid = 1.3 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateCytoplasmNecroticSwelling")) {
-    kVolumeRelaxationRateCytoplasmNecroticSwelling =
-        jfile["kVolumeRelaxationRateCytoplasmNecroticSwelling"].get<double>();
-  } else {
-    kVolumeRelaxationRateCytoplasmNecroticSwelling = 0.0032 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateNucleusNecroticSwelling")) {
-    kVolumeRelaxationRateNucleusNecroticSwelling =
-        jfile["kVolumeRelaxationRateNucleusNecroticSwelling"].get<double>();
-  } else {
-    kVolumeRelaxationRateNucleusNecroticSwelling = 0.013 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateFluidNecroticSwelling")) {
-    kVolumeRelaxationRateFluidNecroticSwelling =
-        jfile["kVolumeRelaxationRateFluidNecroticSwelling"].get<double>();
-  } else {
-    kVolumeRelaxationRateFluidNecroticSwelling = 0.050 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateCytoplasmNecroticLysed")) {
-    kVolumeRelaxationRateCytoplasmNecroticLysed =
-        jfile["kVolumeRelaxationRateCytoplasmNecroticLysed"].get<double>();
-  } else {
-    kVolumeRelaxationRateCytoplasmNecroticLysed = 0.0032 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateNucleusNecroticLysed")) {
-    kVolumeRelaxationRateNucleusNecroticLysed =
-        jfile["kVolumeRelaxationRateNucleusNecroticLysed"].get<double>();
-  } else {
-    kVolumeRelaxationRateNucleusNecroticLysed = 0.013 / 60.0;
-  }
-
-  if (jfile.contains("kVolumeRelaxationRateFluidNecroticLysed")) {
-    kVolumeRelaxationRateFluidNecroticLysed =
-        jfile["kVolumeRelaxationRateFluidNecroticLysed"].get<double>();
-  } else {
-    kVolumeRelaxationRateFluidNecroticLysed = 0.050 / 60.0;
-  }
-
-  if (jfile.contains("kThresholdCancerCellType1")) {
-    kThresholdCancerCellType1 =
-        jfile["kThresholdCancerCellType1"].get<double>();
-  } else {
-    kThresholdCancerCellType1 = 1.5;
-  }
-
-  if (jfile.contains("kThresholdCancerCellType2")) {
-    kThresholdCancerCellType2 =
-        jfile["kThresholdCancerCellType2"].get<double>();
-  } else {
-    kThresholdCancerCellType2 = 1.0;
-  }
-
-  if (jfile.contains("kThresholdCancerCellType3")) {
-    kThresholdCancerCellType3 =
-        jfile["kThresholdCancerCellType3"].get<double>();
-  } else {
-    kThresholdCancerCellType3 = 0.5;
-  }
-
-  if (jfile.contains("kThresholdCancerCellType4")) {
-    kThresholdCancerCellType4 =
-        jfile["kThresholdCancerCellType4"].get<double>();
-  } else {
-    kThresholdCancerCellType4 = 0.0;
-  }
-
-  if (jfile.contains("kAverageMaximumTimeUntillApoptosisCart")) {
-    kAverageMaximumTimeUntillApoptosisCart =
-        jfile["kAverageMaximumTimeUntillApoptosisCart"].get<double>();
-  } else {
-    kAverageMaximumTimeUntillApoptosisCart = kDtCycle * 10.0 * 24.0 * 60.0;
-  }
-
-  if (jfile.contains("kDefaultOxygenConsumptionCarT")) {
-    kDefaultOxygenConsumptionCarT =
-        jfile["kDefaultOxygenConsumptionCarT"].get<double>();
-  } else {
-    kDefaultOxygenConsumptionCarT = 1.0;
-  }
-
-  if (jfile.contains("kDefaultVolumeNewCarTCell")) {
-    kDefaultVolumeNewCarTCell =
-        jfile["kDefaultVolumeNewCarTCell"].get<double>();
-  } else {
-    kDefaultVolumeNewCarTCell = 2494.0;
-  }
-
-  if (jfile.contains("kKillRateCart")) {
-    kKillRateCart = jfile["kKillRateCart"].get<double>();
-  } else {
-    kKillRateCart = 0.06667;
-  }
-
-  if (jfile.contains("kAdhesionRateCart")) {
-    kAdhesionRateCart = jfile["kAdhesionRateCart"].get<double>();
-  } else {
-    kAdhesionRateCart = 0.013;
-  }
-
-  if (jfile.contains("kMaxAdhesionDistanceCart")) {
-    kMaxAdhesionDistanceCart = jfile["kMaxAdhesionDistanceCart"].get<double>();
-  } else {
-    kMaxAdhesionDistanceCart = 18.0;
-  }
-
-  if (jfile.contains("kMinAdhesionDistanceCart")) {
-    kMinAdhesionDistanceCart = jfile["kMinAdhesionDistanceCart"].get<double>();
-  } else {
-    kMinAdhesionDistanceCart = 14.0;
-  }
-
-  if (jfile.contains("kMinimumDistanceCarTFromTumor")) {
-    kMinimumDistanceCarTFromTumor =
-        jfile["kMinimumDistanceCarTFromTumor"].get<double>();
-  } else {
-    kMinimumDistanceCarTFromTumor = 50.0;
-  }
-
-  if (jfile.contains("kPersistenceTimeCart")) {
-    kPersistenceTimeCart = jfile["kPersistenceTimeCart"].get<double>();
-  } else {
-    kPersistenceTimeCart = 10;
-  }
-
-  if (jfile.contains("kMigrationBiasCart")) {
-    kMigrationBiasCart = jfile["kMigrationBiasCart"].get<double>();
-  } else {
-    kMigrationBiasCart = 0.5;
-  }
-
-  if (jfile.contains("kMigrationSpeedCart")) {
-    kMigrationSpeedCart = jfile["kMigrationSpeedCart"].get<double>();
-  } else {
-    kMigrationSpeedCart = 5.0;
-  }
-
-  if (jfile.contains("kElasticConstantCart")) {
-    kElasticConstantCart = jfile["kElasticConstantCart"].get<double>();
-  } else {
-    kElasticConstantCart = 0.01;
-  }
+  load_double("default_oxygen_consumption_cart", default_oxygen_consumption_cart);
+  load_double("default_volume_new_cart_cell", default_volume_new_cart_cell);
+  load_double("kill_rate_cart", kill_rate_cart);
+  load_double("adhesion_rate_cart", adhesion_rate_cart);
+  load_double("max_adhesion_distance_cart", max_adhesion_distance_cart);
+  load_double("min_adhesion_distance_cart", min_adhesion_distance_cart);
+  load_double("minimum_distance_from_tumor_to_spawn_cart", minimum_distance_from_tumor_to_spawn_cart);
+  load_double("persistence_time_cart", persistence_time_cart);
+  load_double("migration_bias_cart", migration_bias_cart);
+  load_double("migration_speed_cart", migration_speed_cart);
+  load_double("elastic_constant_cart", elastic_constant_cart);
 
   //
   // Computed constants that should not be directly changed
   //
   // Calculate steps per cycle. This is always calculated here
-  kStepsPerCycle = kDtCycle / kDt;
+  steps_per_cell_cycle = dt_cycle / dt_step;
   // Calculate steps per day. This is always calculated here
-  kStepsOneDay = 24 * 60 / kDt;
+  steps_in_one_day = 24 * 60 / dt_step;
   // Calculate the volume of a single mechanical voxel in μm³
-  kVoxelVolume =
-      (static_cast<real_t>(kBoundedSpaceLength) / kResolutionGridSubstances) *
-      (static_cast<real_t>(kBoundedSpaceLength) / kResolutionGridSubstances) *
-      (static_cast<real_t>(kBoundedSpaceLength) / kResolutionGridSubstances);
-  // 1-kMigrationBiasCart
-  kMigrationOneMinusBiasCart = 1.0 - kMigrationBiasCart;
+  voxel_volume =
+      (static_cast<real_t>(bounded_space_length) / resolution_grid_substances) *
+      (static_cast<real_t>(bounded_space_length) / resolution_grid_substances) *
+      (static_cast<real_t>(bounded_space_length) / resolution_grid_substances);
+  // 1-migration_bias_cart
+  migration_one_minus_bias_cart = 1.0 - migration_bias_cart;
   // Probability of a CAR-T cell to migrate in a given
   // mechanical time step
-  kMotilityProbability = kDtMechanics / kPersistenceTimeCart;
+  motility_probability_cart = dt_mechanics / persistence_time_cart;
   // Probability of a Tumor cell to escape in a given
   // mechanical time step
-  kProbabilityEscape = kDtMechanics / (kAdhesionTime + 1e-15);
+  probability_escape_from_cart = dt_mechanics / (adhesion_time + 1e-15);
   // Maximum adhesion distance squared
-  kSquaredMaxAdhesionDistanceCart =
-      kMaxAdhesionDistanceCart * kMaxAdhesionDistanceCart;
+  squared_max_adhesion_distance_cart =
+      max_adhesion_distance_cart * max_adhesion_distance_cart;
   // Difference between min and max adhesion distance
-  kDifferenceCartAdhesionDistances =
-      kMaxAdhesionDistanceCart - kMinAdhesionDistanceCart;
+  difference_cart_adhesion_distances =
+      max_adhesion_distance_cart - min_adhesion_distance_cart;
   // Radius tumor cell
-  kRadiusTumorCell =
-      std::cbrt(kDefaultVolumeNewTumorCell * 3. / (4. * Math::kPi));
+  radius_tumor_cell =
+      std::cbrt(default_volume_new_tumor_cell * 3. / (4. * Math::kPi));
   // Radius cart cell
-  kRadiusCarTCell =
-      std::cbrt(kDefaultVolumeNewCarTCell * 3. / (4. * Math::kPi));
+  radius_cart_cell =
+      std::cbrt(default_volume_new_cart_cell * 3. / (4. * Math::kPi));
   // Max Distance for considering two cells as neighbours for force calculations
-  // in μm (twice cell radius times kMaxRelativeAdhesionDistance + 0.1 to avoid
-  // mismatch because of numerical errors)**2
-  kSquaredMaxDistanceNeighborsForce =
-      std::pow(0.1 + 2 * kRadiusTumorCell * kMaxRelativeAdhesionDistance, 2);
+  // in μm (twice cell radius times max_relative_adhesion_distance + 0.1 to
+  // avoid mismatch because of numerical errors)**2
+  squared_max_distance_neighbors_force =
+      std::pow(0.1 + 2 * radius_tumor_cell * max_relative_adhesion_distance, 2);
 
   //
   // Last constant that is derived from others but can be changed directly
@@ -625,8 +243,8 @@ void SimParam::LoadParams(const std::string& filename) {
   // tumor cells If a CAR-T and a Tumor Cell are closer than this distance, the
   // CAR-T cell will only move to the tumor cell with the adhesion forces
   // (radiusCART + radiusTumorCell + 1 to avoid numerical errors)**2
-  kMaxSquaredDistanceCartMovingTowardsTumorCell =
-      std::pow(kRadiusCarTCell + kRadiusTumorCell + 1, 2);
+  max_squared_distance_cart_moving_towards_tumor_cell =
+      std::pow(radius_cart_cell + radius_tumor_cell + 1, 2);
 }
 
 void SimParam::PrintParams() const {
@@ -641,24 +259,24 @@ void SimParam::PrintParams() const {
   std::cout << "/// General Hyperparameters\n";
   std::cout << "///\n\n";
 
-  std::cout << "Seed for random number generation: " << kSeed << "\n";
+  std::cout << "Seed for random number generation: " << seed << "\n";
   std::cout << "Output Performance Statistics: "
-            << (kOutputPerformanceStatistics ? "true" : "false") << "\n";
+            << (output_performance_statistics ? "true" : "false") << "\n";
   std::cout << "Total simulation time in minutes (30 days): "
-            << kTotalMinutesToSimulate << "\n";
+            << total_minutes_to_simulate << "\n";
   std::cout << "Initial radius of the spherical tumor (micrometers): "
-            << kInitialRadiusTumor << "\n";
+            << initial_tumor_radius << "\n";
   std::cout << "Length of the bounded space (micrometers): "
-            << kBoundedSpaceLength << "\n\n";
+            << bounded_space_length << "\n\n";
 
   /// Treatment Dosages
   std::cout << "/// Treatment Dosages\n";
   std::cout << "///\n\n";
   std::cout << "CAR-T cell infusion schedule:\n";
-  if (kTreatment.empty()) {
+  if (treatment.empty()) {
     std::cout << "  No treatment scheduled\n";
   } else {
-    for (const auto& [day, dose] : kTreatment) {
+    for (const auto& [day, dose] : treatment) {
       std::cout << "  Day " << day << ": " << dose << " CAR-T cells\n";
     }
   }
@@ -668,81 +286,81 @@ void SimParam::PrintParams() const {
   std::cout << "/// Time steps\n";
   std::cout << "///\n\n";
   std::cout << "Time step for substances secretion/consumption (minutes): "
-            << kDtSubstances << "\n";
-  std::cout << "Time step for the cell mechanics (minutes): " << kDtMechanics
+            << dt_substances << "\n";
+  std::cout << "Time step for the cell mechanics (minutes): " << dt_mechanics
             << "\n";
-  std::cout << "Time step for the cell cycle (minutes): " << kDtCycle << "\n";
-  std::cout << "General time step for the simulation: " << kDt << "\n";
-  std::cout << "Output CSV interval: " << kOutputCsvInterval << "\n\n";
+  std::cout << "Time step for the cell cycle (minutes): " << dt_cycle << "\n";
+  std::cout << "General time step for the simulation: " << dt_step << "\n";
+  std::cout << "Output CSV interval: " << output_csv_interval << "\n\n";
 
   /// Apoptotic cells volume change
   std::cout << "/// Apoptotic cells volume change\n";
   std::cout << "///\n\n";
   std::cout << "Volume relaxation rate cytoplasm apoptotic: "
-            << kVolumeRelaxationRateCytoplasmApoptotic << "\n";
+            << volume_relaxation_rate_cytoplasm_apoptotic_cells << "\n";
   std::cout << "Volume relaxation rate nucleus apoptotic: "
-            << kVolumeRelaxationRateNucleusApoptotic << "\n";
+            << volume_relaxation_rate_nucleus_apoptotic_cells << "\n";
   std::cout << "Volume relaxation rate fluid apoptotic: "
-            << kVolumeRelaxationRateFluidApoptotic << "\n";
+            << volume_relaxation_rate_fluid_apoptotic_cells << "\n";
   std::cout << "Time in minutes until an apoptotic cell is removed: "
-            << kTimeApoptosis << "\n";
+            << time_apoptosis << "\n";
   std::cout << "Reduction of consumption rate of dead cells when they enter "
                "necrosis: "
-            << kReductionConsumptionDeadCells << "\n\n";
+            << reduction_consumption_dead_cells << "\n\n";
 
   /// Chemicals
   ///
   std::cout << "/// Chemicals\n";
   std::cout << "///\n\n";
   std::cout << "Number of voxels per axis for the substances grid: "
-            << kResolutionGridSubstances << "\n";
+            << resolution_grid_substances << "\n";
   std::cout << "Diffusion coefficient of oxygen (μm²/min): "
-            << kDiffusionCoefficientOxygen << "\n";
-  std::cout << "Decay constant of oxygen (min⁻¹): " << kDecayConstantOxygen
+            << diffusion_coefficient_oxygen << "\n";
+  std::cout << "Decay constant of oxygen (min⁻¹): " << decay_constant_oxygen
             << "\n";
   std::cout << "Diffusion coefficient of immunostimulatory factor (μm²/min): "
-            << kDiffusionCoefficientImmunostimulatoryFactor << "\n";
+            << diffusion_coefficient_immunostimulatory_factor << "\n";
   std::cout << "Decay constant of immunostimulatory factor (min⁻¹): "
-            << kDecayConstantImmunostimulatoryFactor << "\n";
+            << decay_constant_immunostimulatory_factor << "\n";
   std::cout << "Reference level of oxygen at the boundaries (mmHg): "
-            << kOxygenReferenceLevel << "\n";
+            << oxygen_reference_level << "\n";
   std::cout << "Initial oxygen concentration in each voxel (mmHg): "
-            << kInitialOxygenLevel << "\n";
+            << initial_oxygen_level << "\n";
   std::cout << "Oxygen saturation in the microenvironment (mmHg): "
-            << kOxygenSaturation << "\n\n";
+            << oxygen_saturation << "\n\n";
 
   /// Forces
   ///
   std::cout << "/// Forces\n";
   std::cout << "///\n\n";
   std::cout << "Repulsion coefficient between tumor cells: "
-            << kRepulsionTumorTumor << "\n";
+            << cell_repulsion_between_tumor_tumor << "\n";
   std::cout << "Repulsion coefficient between CAR-T cells: "
-            << kRepulsionCartCart << "\n";
+            << cell_repulsion_between_cart_cart << "\n";
   std::cout << "Repulsion coefficient between CAR-T cells and tumor cells: "
-            << kRepulsionCartTumor << "\n";
+            << cell_repulsion_between_cart_tumor << "\n";
   std::cout << "Repulsion coefficient between tumor cells and CAR-T cells: "
-            << kRepulsionTumorCart << "\n";
+            << cell_repulsion_between_tumor_cart << "\n";
   std::cout << "Maximum relative adhesion distance for cell interactions: "
-            << kMaxRelativeAdhesionDistance << "\n";
+            << max_relative_adhesion_distance << "\n";
   std::cout << "Adhesion coefficient between tumor cells: "
-            << kAdhesionTumorTumor << "\n";
-  std::cout << "Adhesion coefficient between CAR-T cells: " << kAdhesionCartCart
-            << "\n";
+            << cell_adhesion_between_tumor_tumor << "\n";
+  std::cout << "Adhesion coefficient between CAR-T cells: "
+            << cell_adhesion_between_cart_cart << "\n";
   std::cout << "Adhesion coefficient between CAR-T cells and tumor cells: "
-            << kAdhesionCartTumor << "\n";
+            << cell_adhesion_between_cart_tumor << "\n";
   std::cout << "Adhesion coefficient between tumor cells and CAR-T cells: "
-            << kAdhesionTumorCart << "\n";
+            << cell_adhesion_between_tumor_cart << "\n";
   std::cout << "Box length for mechanics calculations (micrometers): "
-            << kLengthBoxMechanics << "\n";
+            << length_box_mechanics << "\n";
   std::cout
       << "Coefficient for the current time step in Adams-Bashforth method: "
-      << kDnew << "\n";
+      << dnew << "\n";
   std::cout
       << "Coefficient for the previous time step in Adams-Bashforth method: "
-      << kDold << "\n";
+      << dold << "\n";
   std::cout << "Maximum squared distance to avoid CAR-T pushing tumor cells: "
-            << kMaxSquaredDistanceCartMovingTowardsTumorCell << "\n\n";
+            << max_squared_distance_cart_moving_towards_tumor_cell << "\n\n";
 
   ///
   /// TumorCell Hyperparameters
@@ -753,84 +371,88 @@ void SimParam::PrintParams() const {
 
   std::cout << "Rate of secretion of immunostimulatory factor of tumor cells "
                "per minute: "
-            << kRateSecretionImmunostimulatoryFactor << "\n";
+            << rate_secretion_immunostimulatory_factor << "\n";
   std::cout
       << "Saturation density of immunostimulatory factor for tumor cells: "
-      << kSaturationDensityImmunostimulatoryFactor << "\n";
+      << saturation_density_immunostimulatory_factor << "\n";
   std::cout << "Mean level of oncoprotein expression in tumor cells: "
-            << kOncoproteinMean << "\n";
+            << oncoprotein_mean << "\n";
   std::cout << "Standard deviation of oncoprotein expression in tumor cells: "
-            << kOncoproteinStandardDeviation << "\n";
+            << oncoprotein_standard_deviation << "\n";
   std::cout << "Oxygen saturation level in tumor cells for proliferation: "
-            << kOxygenSaturationInProliferation << "\n";
+            << oxygen_saturation_for_proliferation << "\n";
   std::cout << "Limit of oxygen level for tumor cell proliferation: "
-            << kOxygenLimitForProliferation << "\n";
+            << oxygen_limit_for_proliferation << "\n";
   std::cout << "Limit of oxygen to start causing necrosis: "
-            << kOxygenLimitForNecrosis << "\n";
+            << oxygen_limit_for_necrosis << "\n";
   std::cout << "Limit of oxygen to maximum necrosis probability: "
-            << kOxygenLimitForNecrosisMaximum << "\n";
+            << oxygen_limit_for_necrosis_maximum << "\n";
   std::cout << "Time in minutes until a lysed necrotic cell is removed: "
-            << kTimeLysis << "\n";
+            << time_lysis << "\n";
   std::cout << "Maximum rate per minute of necrosis for tumor cells: "
-            << kMaximumNecrosisRate << "\n";
+            << maximum_necrosis_rate << "\n";
   std::cout << "Default oxygen consumption rate of tumor cell: "
-            << kDefaultOxygenConsumptionTumorCell << "\n";
+            << default_oxygen_consumption_tumor_cell << "\n";
 
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new tumor cell (μm³): "
-            << kDefaultVolumeNewTumorCell << "\n";
+            << default_volume_new_tumor_cell << "\n";
   std::cout << "Default volume of the nucleus of a new tumor cell (μm³): "
-            << kDefaultVolumeNucleusTumorCell << "\n";
+            << default_volume_nucleus_tumor_cell << "\n";
   std::cout << "Default fraction of fluid volume in a new tumor cell: "
-            << kDefaultFractionFluidTumorCell << "\n";
+            << default_fraction_fluid_tumor_cell << "\n";
 
   std::cout << "\nTransformation and adhesion parameters:\n";
   std::cout << "Average time for transformation Random Rate (hours): "
-            << kAverageTimeTransformationRandomRate << "\n";
+            << average_time_transformation_random_rate << "\n";
   std::cout << "Standard Deviation for transformation Random Rate (hours): "
-            << kStandardDeviationTransformationRandomRate << "\n";
+            << standard_deviation_transformation_random_rate << "\n";
   std::cout
       << "Average adhesion time for Tumor Cell under CAR-T attack (minutes): "
-      << kAdhesionTime << "\n";
+      << adhesion_time << "\n";
   std::cout << "Min oncoprotein level to be killed by a CAR-T cell: "
-            << kOncoproteinLimit << "\n";
-  std::cout << "Max oncoprotein level: " << kOncoproteinSaturation << "\n";
+            << oncoprotein_limit << "\n";
+  std::cout << "Max oncoprotein level: " << oncoprotein_saturation << "\n";
   std::cout << "Oncoprotein difference (saturation - limit): "
-            << kOncoproteinDifference << "\n";
+            << oncoprotein_difference << "\n";
 
   std::cout << "\nVolume relaxation rates for alive cells:\n";
   std::cout << "Volume relaxation rate alive cytoplasm (min⁻¹): "
-            << kVolumeRelaxationRateAliveCytoplasm << "\n";
+            << volume_relaxation_rate_alive_tumor_cell_cytoplasm << "\n";
   std::cout << "Volume relaxation rate alive nucleus (min⁻¹): "
-            << kVolumeRelaxationRateAliveNucleus << "\n";
+            << volume_relaxation_rate_alive_tumor_cell_nucleus << "\n";
   std::cout << "Volume relaxation rate alive fluid (min⁻¹): "
-            << kVolumeRelaxationRateAliveFluid << "\n";
+            << volume_relaxation_rate_alive_tumor_cell_fluid << "\n";
 
   std::cout << "\nVolume relaxation rates for necrotic swelling:\n";
   std::cout << "Volume relaxation rate cytoplasm necrotic swelling (min⁻¹): "
-            << kVolumeRelaxationRateCytoplasmNecroticSwelling << "\n";
+            << volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell
+            << "\n";
   std::cout << "Volume relaxation rate nucleus necrotic swelling (min⁻¹): "
-            << kVolumeRelaxationRateNucleusNecroticSwelling << "\n";
+            << volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell
+            << "\n";
   std::cout << "Volume relaxation rate fluid necrotic swelling (min⁻¹): "
-            << kVolumeRelaxationRateFluidNecroticSwelling << "\n";
+            << volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell
+            << "\n";
 
   std::cout << "\nVolume relaxation rates for necrotic lysed:\n";
   std::cout << "Volume relaxation rate cytoplasm necrotic lysed (min⁻¹): "
-            << kVolumeRelaxationRateCytoplasmNecroticLysed << "\n";
+            << volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell
+            << "\n";
   std::cout << "Volume relaxation rate nucleus necrotic lysed (min⁻¹): "
-            << kVolumeRelaxationRateNucleusNecroticLysed << "\n";
+            << volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell << "\n";
   std::cout << "Volume relaxation rate fluid necrotic lysed (min⁻¹): "
-            << kVolumeRelaxationRateFluidNecroticLysed << "\n";
+            << volume_relaxation_rate_fluid_necrotic_lysed_tumor_cell << "\n";
 
   std::cout << "\nThresholds in oncoprotein levels for differentiating cancer "
                "cell types:\n";
-  std::cout << "Threshold Cancer Cell Type 1: " << kThresholdCancerCellType1
+  std::cout << "Threshold Cancer Cell Type 1: " << threshold_cancer_cell_type1
             << "\n";
-  std::cout << "Threshold Cancer Cell Type 2: " << kThresholdCancerCellType2
+  std::cout << "Threshold Cancer Cell Type 2: " << threshold_cancer_cell_type2
             << "\n";
-  std::cout << "Threshold Cancer Cell Type 3: " << kThresholdCancerCellType3
+  std::cout << "Threshold Cancer Cell Type 3: " << threshold_cancer_cell_type3
             << "\n";
-  std::cout << "Threshold Cancer Cell Type 4: " << kThresholdCancerCellType4
+  std::cout << "Threshold Cancer Cell Type 4: " << threshold_cancer_cell_type4
             << "\n\n";
 
   ///
@@ -841,40 +463,40 @@ void SimParam::PrintParams() const {
   std::cout << "///\n\n";
 
   std::cout << "Average time in minutes until a CAR-T cell dies: "
-            << kAverageMaximumTimeUntillApoptosisCart << "\n";
+            << average_maximum_time_untill_apoptosis_cart << "\n";
   std::cout << "Default oxygen consumption rate of CAR-T cell: "
-            << kDefaultOxygenConsumptionCarT << "\n";
+            << default_oxygen_consumption_cart << "\n";
 
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new CAR-T cell (μm³): "
-            << kDefaultVolumeNewCarTCell << "\n";
+            << default_volume_new_cart_cell << "\n";
 
   std::cout << "\nKilling and adhesion rates:\n";
   std::cout << "How often a CAR-T cell tries to kill an attached cancer cell "
                "(1/min): "
-            << kKillRateCart << "\n";
+            << kill_rate_cart << "\n";
   std::cout
       << "How often a CAR-T cell tries to attach to a cancer cell (1/min): "
-      << kAdhesionRateCart << "\n";
+      << adhesion_rate_cart << "\n";
   std::cout << "Maximum adhesion distance between CAR-T and tumor cells "
                "(micrometers): "
-            << kMaxAdhesionDistanceCart << "\n";
+            << max_adhesion_distance_cart << "\n";
   std::cout << "Minimum adhesion distance between CAR-T and tumor cells "
                "(micrometers): "
-            << kMinAdhesionDistanceCart << "\n";
+            << min_adhesion_distance_cart << "\n";
 
   std::cout << "\nSpawning parameters:\n";
   std::cout << "Minimum distance from the tumor for spawning CAR-T cells "
                "(micrometers): "
-            << kMinimumDistanceCarTFromTumor << "\n";
+            << minimum_distance_from_tumor_to_spawn_cart << "\n";
 
   std::cout << "\nMotility parameters:\n";
   std::cout << "Average persistence time before CAR-T cell moves: "
-            << kPersistenceTimeCart << "\n";
+            << persistence_time_cart << "\n";
   std::cout << "Migration bias (higher values = more directed movement): "
-            << kMigrationBiasCart << "\n";
-  std::cout << "Migration speed: " << kMigrationSpeedCart << "\n";
-  std::cout << "Elastic constant: " << kElasticConstantCart << "\n\n";
+            << migration_bias_cart << "\n";
+  std::cout << "Migration speed: " << migration_speed_cart << "\n";
+  std::cout << "Elastic constant: " << elastic_constant_cart << "\n\n";
 
   std::cout << "========================================\n";
   std::cout << "      END OF PARAMETERS SUMMARY\n";

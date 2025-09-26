@@ -50,15 +50,18 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
   Real3 displacement = a->GetPosition() - b->GetPosition();
 
   // For periodic boundary conditions, we need to adjust the displacement
-  displacement[0] = displacement[0] -
-                    (sparams->kBoundedSpaceLength) *
-                        round(displacement[0] / (sparams->kBoundedSpaceLength));
-  displacement[1] = displacement[1] -
-                    (sparams->kBoundedSpaceLength) *
-                        round(displacement[1] / (sparams->kBoundedSpaceLength));
-  displacement[2] = displacement[2] -
-                    (sparams->kBoundedSpaceLength) *
-                        round(displacement[2] / (sparams->kBoundedSpaceLength));
+  displacement[0] =
+      displacement[0] -
+      (sparams->bounded_space_length) *
+          round(displacement[0] / (sparams->bounded_space_length));
+  displacement[1] =
+      displacement[1] -
+      (sparams->bounded_space_length) *
+          round(displacement[1] / (sparams->bounded_space_length));
+  displacement[2] =
+      displacement[2] -
+      (sparams->bounded_space_length) *
+          round(displacement[2] / (sparams->bounded_space_length));
 
   const real_t dist_sq = displacement[0] * displacement[0] +
                          displacement[1] * displacement[1] +
@@ -83,17 +86,17 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
 
     if ((a_tumor != nullptr) && (b_tumor != nullptr)) {
       // two tumor cells
-      // std::sqrt(sparams->kRepulsionTumorTumor *
-      // sparams->kRepulsionTumorTumor);
-      repulsion = sparams->kRepulsionTumorTumor;
+      // std::sqrt(sparams->cell_repulsion_between_tumor_tumor *
+      // sparams->cell_repulsion_between_tumor_tumor);
+      repulsion = sparams->cell_repulsion_between_tumor_tumor;
     } else if ((a_tumor == nullptr) && (b_tumor == nullptr)) {
       // two CAR-T cells
-      // std::sqrt(sparams->kRepulsionCartCart*sparams->kRepulsionCartCart);
-      repulsion = sparams->kRepulsionCartCart;
+      // std::sqrt(sparams->cell_repulsion_between_cart_cart*sparams->cell_repulsion_between_cart_cart);
+      repulsion = sparams->cell_repulsion_between_cart_cart;
     } else {
       // one tumor cell and one CAR-T
-      repulsion = std::sqrt(sparams->kRepulsionCartTumor *
-                            sparams->kRepulsionTumorCart);
+      repulsion = std::sqrt(sparams->cell_repulsion_between_cart_tumor *
+                            sparams->cell_repulsion_between_tumor_cart);
     }
 
     temp_r *= repulsion;
@@ -101,7 +104,7 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
 
   // Adhesion
   const real_t max_interaction_distance =
-      sparams->kMaxRelativeAdhesionDistance * combined_radius;
+      sparams->max_relative_adhesion_distance * combined_radius;
 
   if (distance < max_interaction_distance) {
     // 1 - d/S
@@ -112,14 +115,14 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
     real_t adhesion = NAN;
     if ((a_tumor != nullptr) && (b_tumor != nullptr)) {
       // two tumor cells
-      adhesion = sparams->kAdhesionTumorTumor;
+      adhesion = sparams->cell_adhesion_between_tumor_tumor;
     } else if ((a_tumor == nullptr) && (b_tumor == nullptr)) {
       // two CAR-T cells
-      adhesion = sparams->kAdhesionCartCart;
+      adhesion = sparams->cell_adhesion_between_cart_cart;
     } else {
       // one tumor cell and one CAR-T
-      adhesion =
-          std::sqrt(sparams->kAdhesionCartTumor * sparams->kAdhesionTumorCart);
+      adhesion = std::sqrt(sparams->cell_adhesion_between_cart_tumor *
+                           sparams->cell_adhesion_between_tumor_cart);
     }
 
     temp_a *= adhesion;

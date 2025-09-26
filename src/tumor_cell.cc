@@ -48,30 +48,30 @@ TumorCell::TumorCell(const Real3& position) {
       Simulation::GetActive()->GetParam()->Get<SimParam>();
   // volumes
   // Set default volume
-  SetVolume(sparams->kDefaultVolumeNewTumorCell);
+  SetVolume(sparams->default_volume_new_tumor_cell);
   // Set default fluid fraction
-  SetFluidFraction(sparams->kDefaultFractionFluidTumorCell);
+  SetFluidFraction(sparams->default_fraction_fluid_tumor_cell);
   // Set default nuclear volume
-  SetNuclearVolume(sparams->kDefaultVolumeNucleusTumorCell);
+  SetNuclearVolume(sparams->default_volume_nucleus_tumor_cell);
   // target volumes
   // Set target fraction of fluid
-  SetTargetFractionFluid(sparams->kDefaultFractionFluidTumorCell);
+  SetTargetFractionFluid(sparams->default_fraction_fluid_tumor_cell);
   // Set target relation between cytoplasm and nucleus
   SetTargetRelationCytoplasmNucleus(
-      (sparams->kDefaultVolumeNewTumorCell -
-       sparams->kDefaultVolumeNucleusTumorCell) /
-      (kEpsilon + sparams->kDefaultVolumeNucleusTumorCell));
+      (sparams->default_volume_new_tumor_cell -
+       sparams->default_volume_nucleus_tumor_cell) /
+      (kEpsilon + sparams->default_volume_nucleus_tumor_cell));
   // Set target nucleus solid volume
-  SetTargetNucleusSolid(sparams->kDefaultVolumeNucleusTumorCell *
-                        (1 - sparams->kDefaultFractionFluidTumorCell));
+  SetTargetNucleusSolid(sparams->default_volume_nucleus_tumor_cell *
+                        (1 - sparams->default_fraction_fluid_tumor_cell));
   // Set target cytoplasm solid volume
-  SetTargetCytoplasmSolid((sparams->kDefaultVolumeNewTumorCell -
-                           sparams->kDefaultVolumeNucleusTumorCell) *
-                          (1 - sparams->kDefaultFractionFluidTumorCell));
+  SetTargetCytoplasmSolid((sparams->default_volume_new_tumor_cell -
+                           sparams->default_volume_nucleus_tumor_cell) *
+                          (1 - sparams->default_fraction_fluid_tumor_cell));
 
   // Set initial oncoprotein level with a truncated normal distribution
   SetOncoproteinLevel(SamplePositiveGaussian(
-      sparams->kOncoproteinMean, sparams->kOncoproteinStandardDeviation));
+      sparams->oncoprotein_mean, sparams->oncoprotein_standard_deviation));
   ResourceManager* rm = Simulation::GetActive()->GetResourceManager();
   // Pointer to oxygen diffusion grid
   oxygen_dgrid_ = rm->GetDiffusionGrid("oxygen");
@@ -83,10 +83,10 @@ TumorCell::TumorCell(const Real3& position) {
 
   // Add Consumption and Secretion
   // Set default oxygen consumption rate
-  SetOxygenConsumptionRate(sparams->kDefaultOxygenConsumptionTumorCell);
+  SetOxygenConsumptionRate(sparams->default_oxygen_consumption_tumor_cell);
   // Set default immunostimulatory factor secretion rate
   SetImmunostimulatoryFactorSecretionRate(
-      sparams->kRateSecretionImmunostimulatoryFactor);
+      sparams->rate_secretion_immunostimulatory_factor);
   // Compute constants for all ConsumptionSecretion of Oxygen and
   // Immunostimulatory Factor
   ComputeConstantsConsumptionSecretion();
@@ -152,17 +152,17 @@ void TumorCell::SetOncoproteinLevel(real_t level) {
   const SimParam* sparams =
       Simulation::GetActive()->GetParam()->Get<SimParam>();
   // cell type
-  if (level >= sparams->kThresholdCancerCellType1) {
+  if (level >= sparams->threshold_cancer_cell_type1) {
     // between 1.5 and 2.0
     type_ = TumorCellType::kType1;
-  } else if (level >= sparams->kThresholdCancerCellType2 &&
-             level < sparams->kThresholdCancerCellType1) {
+  } else if (level >= sparams->threshold_cancer_cell_type2 &&
+             level < sparams->threshold_cancer_cell_type1) {
     type_ = TumorCellType::kType2;
-  } else if (level >= sparams->kThresholdCancerCellType3 &&
-             level < sparams->kThresholdCancerCellType2) {
+  } else if (level >= sparams->threshold_cancer_cell_type3 &&
+             level < sparams->threshold_cancer_cell_type2) {
     type_ = TumorCellType::kType3;
-  } else if (level >= sparams->kThresholdCancerCellType4 &&
-             level < sparams->kThresholdCancerCellType3) {
+  } else if (level >= sparams->threshold_cancer_cell_type4 &&
+             level < sparams->threshold_cancer_cell_type3) {
     type_ = TumorCellType::kType4;
   } else {
     // undefined type
@@ -175,11 +175,12 @@ void TumorCell::SetTransformationRandomRate() {
       Simulation::GetActive()->GetParam()->Get<SimParam>();
   // avoid division by zero with kEpsilon
   transformation_random_rate_ =
-      1 / (std::max(SamplePositiveGaussian(
-                        sparams->kAverageTimeTransformationRandomRate,
-                        sparams->kStandardDeviationTransformationRandomRate) *
-                        kMinutesInAnHour,
-                    kEpsilon));
+      1 /
+      (std::max(SamplePositiveGaussian(
+                    sparams->average_time_transformation_random_rate,
+                    sparams->standard_deviation_transformation_random_rate) *
+                    kMinutesInAnHour,
+                kEpsilon));
 }
 
 real_t TumorCell::GetTargetTotalVolume() const {
@@ -210,7 +211,7 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(
   // Update fluid volume
   real_t new_fluid =
       current_fluid +
-      sparams->kDtCycle * relaxation_rate_fluid *
+      sparams->dt_cycle * relaxation_rate_fluid *
           (GetTargetFractionFluid() * current_total_volume - current_fluid);
   // Clamp to zero to prevent negative volumes
   if (new_fluid < 0.0) {
@@ -222,7 +223,7 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(
   // real_t cytoplasm_fluid = new_fluid - nuclear_fluid;
 
   real_t nuclear_solid = current_nuclear_solid +
-                         sparams->kDtCycle * relaxation_rate_nucleus *
+                         sparams->dt_cycle * relaxation_rate_nucleus *
                              (GetTargetNucleusSolid() - current_nuclear_solid);
   // Clamp to zero to prevent negative volumes
   if (nuclear_solid < 0.0) {
@@ -233,7 +234,7 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(
       GetTargetRelationCytoplasmNucleus() * GetTargetNucleusSolid();
   real_t cytoplasm_solid =
       current_cytoplasm_solid +
-      sparams->kDtCycle * relaxation_rate_cytoplasm *
+      sparams->dt_cycle * relaxation_rate_cytoplasm *
           (target_cytoplasm_solid - current_cytoplasm_solid);
   // Clamp to zero to prevent negative volumes
   if (cytoplasm_solid < 0.0) {
@@ -271,7 +272,7 @@ Real3 TumorCell::CalculateDisplacement(const InteractionForce* force,
   Real3 movement_at_next_step{0, 0, 0};
   // this should be chaged in a future version of BioDynaMo in order to have a
   // cleaner code instead of hardcoding it here
-  squared_radius = sparams->kSquaredMaxDistanceNeighborsForce;
+  squared_radius = sparams->squared_max_distance_neighbors_force;
 
   Real3 translation_velocity_on_point_mass{0, 0, 0};
 
@@ -302,8 +303,8 @@ Real3 TumorCell::CalculateDisplacement(const InteractionForce* force,
   // Two step Adams-Bashforth approximation of the time derivative for position
   // position(t + dt) ≈ position(t) + dt * [ 1.5 * velocity(t) - 0.5 *
   // velocity(t - dt) ]
-  movement_at_next_step += translation_velocity_on_point_mass * sparams->kDnew +
-                           older_velocity_ * sparams->kDold;
+  movement_at_next_step += translation_velocity_on_point_mass * sparams->dnew +
+                           older_velocity_ * sparams->dold;
 
   older_velocity_ = translation_velocity_on_point_mass;
 
@@ -352,17 +353,17 @@ void TumorCell::ComputeConstantsConsumptionSecretion() {
   // Scale by the volume of the cell in the Voxel and time step
   constant1_immunostimulatory_factor_ =
       immunostimulatory_factor_secretion_rate_ *
-      sparams->kSaturationDensityImmunostimulatoryFactor *
-      sparams->kDtSubstances * (new_volume / sparams->kVoxelVolume);
+      sparams->saturation_density_immunostimulatory_factor *
+      sparams->dt_substances * (new_volume / sparams->voxel_volume);
   // 1 + dt*(cell_volume/voxel_volume)*(quantity_secretion +
   // quantity_consumption ) = [1 + dt · (V_k / V_voxel) · (S_k + U_k)]
   //  Scale by the volume of the cell in the Voxel and time step
-  constant2_oxygen_ = 1 + sparams->kDtSubstances *
-                              (new_volume / sparams->kVoxelVolume) *
+  constant2_oxygen_ = 1 + sparams->dt_substances *
+                              (new_volume / sparams->voxel_volume) *
                               (oxygen_consumption_rate_);
   // Scale by the volume of the cell in the Voxel and time step
   constant2_immunostimulatory_factor_ =
-      1 + sparams->kDtSubstances * (new_volume / sparams->kVoxelVolume) *
+      1 + sparams->dt_substances * (new_volume / sparams->voxel_volume) *
               (immunostimulatory_factor_secretion_rate_);
 }
 
@@ -388,7 +389,7 @@ void TumorCell::StartApoptosis() {
   SetTargetRelationCytoplasmNucleus(0.0);
   // Reduce oxygen consumption
   SetOxygenConsumptionRate(GetOxygenConsumptionRate() *
-                           sparams->kReductionConsumptionDeadCells);
+                           sparams->reduction_consumption_dead_cells);
   // Stop Immunostimulatory Factor Secretion
   SetImmunostimulatoryFactorSecretionRate(0.0);
   // Update constants for consumption/secretion differential equation solving
@@ -399,9 +400,11 @@ void TumorCell::StartApoptosis() {
 void StateControlGrowProliferate::Run(Agent* agent) {
   Simulation* sim = Simulation::GetActive();
   const SimParam* sparams = sim->GetParam()->Get<SimParam>();
-  // Run only every sparams->kDtCycle minutes, fmod does not work with the type
+  // Run only every sparams->dt_cycle minutes, fmod does not work with the type
   // returned by GetSimulatedTime()
-  if (sim->GetScheduler()->GetSimulatedSteps() % sparams->kStepsPerCycle != 0) {
+  if (sim->GetScheduler()->GetSimulatedSteps() %
+          sparams->steps_per_cell_cycle !=
+      0) {
     return;
   }
 
@@ -419,9 +422,9 @@ void StateControlGrowProliferate::Run(Agent* agent) {
     switch (cell->GetState()) {
       case TumorCellState::kAlive: {
         // the cell is growing to real_t its size before mitosis
-        // Increase timer_state to track time in this state (sparams->kDtCycle
+        // Increase timer_state to track time in this state (sparams->dt_cycle
         // minutes per step)
-        cell->SetTimerState(cell->GetTimerState() + sparams->kDtCycle);
+        cell->SetTimerState(cell->GetTimerState() + sparams->dt_cycle);
 
         // Enter necrosis if oxygen level is too low
         if (ShouldEnterNecrosis(oxygen_level, cell)) {
@@ -433,18 +436,20 @@ void StateControlGrowProliferate::Run(Agent* agent) {
       }
       case TumorCellState::kNecroticSwelling: {
         // the cell is swelling before lysing
-        // Increase timer_state to track time in this state (sparams->kDtCycle
+        // Increase timer_state to track time in this state (sparams->dt_cycle
         // minutes per step)
-        cell->SetTimerState(cell->GetTimerState() + sparams->kDtCycle);
+        cell->SetTimerState(cell->GetTimerState() + sparams->dt_cycle);
         // volume change
         //  The cell swells
         cell->ChangeVolumeExponentialRelaxationEquation(
-            sparams->kVolumeRelaxationRateCytoplasmNecroticSwelling,
-            sparams->kVolumeRelaxationRateNucleusNecroticSwelling,
-            sparams->kVolumeRelaxationRateFluidNecroticSwelling);
+            sparams
+                ->volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell,
+            sparams
+                ->volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell,
+            sparams->volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell);
 
         // If the cell has swollen to 2 times its original volume, it lyses
-        if (cell->GetVolume() >= 2 * sparams->kDefaultVolumeNewTumorCell) {
+        if (cell->GetVolume() >= 2 * sparams->default_volume_new_tumor_cell) {
           // Change state to necrotic lysed
           cell->SetState(TumorCellState::kNecroticLysed);
           // Reset timer_state
@@ -467,18 +472,18 @@ void StateControlGrowProliferate::Run(Agent* agent) {
       }
       case TumorCellState::kNecroticLysed: {
         // the cell is shrinking and will be removed after a certain time
-        // Increase timer_state to track time in this state (sparams->kDtCycle
+        // Increase timer_state to track time in this state (sparams->dt_cycle
         // minutes per step)
-        cell->SetTimerState(cell->GetTimerState() + sparams->kDtCycle);
+        cell->SetTimerState(cell->GetTimerState() + sparams->dt_cycle);
         // volume change
         //  The cell shrinks
         cell->ChangeVolumeExponentialRelaxationEquation(
-            sparams->kVolumeRelaxationRateCytoplasmNecroticLysed,
-            sparams->kVolumeRelaxationRateNucleusNecroticLysed,
-            sparams->kVolumeRelaxationRateFluidNecroticLysed);
+            sparams->volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell,
+            sparams->volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell,
+            sparams->volume_relaxation_rate_fluid_necrotic_lysed_tumor_cell);
         // If the timer_state exceeds the time to transition (this is a fixed
         // duration transition)
-        if (sparams->kTimeLysis < cell->GetTimerState()) {
+        if (sparams->time_lysis < cell->GetTimerState()) {
           // remove the cell from the simulation
           ExecutionContext* ctxt = sim->GetExecutionContext();
           ctxt->RemoveAgent(agent->GetUid());
@@ -486,18 +491,18 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         break;
       }
       case TumorCellState::kApoptotic: {
-        // Increase timer_state to track time in this state (sparams->kDtCycle
+        // Increase timer_state to track time in this state (sparams->dt_cycle
         // minutes per step)
-        cell->SetTimerState(cell->GetTimerState() + sparams->kDtCycle);
+        cell->SetTimerState(cell->GetTimerState() + sparams->dt_cycle);
 
         //  The cell shrinks
         cell->ChangeVolumeExponentialRelaxationEquation(
-            sparams->kVolumeRelaxationRateCytoplasmApoptotic,
-            sparams->kVolumeRelaxationRateNucleusApoptotic,
-            sparams->kVolumeRelaxationRateFluidApoptotic);
+            sparams->volume_relaxation_rate_cytoplasm_apoptotic_cells,
+            sparams->volume_relaxation_rate_nucleus_apoptotic_cells,
+            sparams->volume_relaxation_rate_fluid_apoptotic_cells);
         // If the timer_state exceeds the time to transition (this is a fixed
         // duration transition)
-        if (sparams->kTimeApoptosis < cell->GetTimerState()) {
+        if (sparams->time_apoptosis < cell->GetTimerState()) {
           // remove the cell from the simulation
           ExecutionContext* ctxt = sim->GetExecutionContext();
           ctxt->RemoveAgent(agent->GetUid());
@@ -525,18 +530,18 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
       Simulation::GetActive()->GetParam()->Get<SimParam>();
   // volume change
   cell->ChangeVolumeExponentialRelaxationEquation(
-      sparams->kVolumeRelaxationRateAliveCytoplasm,
-      sparams->kVolumeRelaxationRateAliveNucleus,
-      sparams->kVolumeRelaxationRateAliveFluid);
+      sparams->volume_relaxation_rate_alive_tumor_cell_cytoplasm,
+      sparams->volume_relaxation_rate_alive_tumor_cell_nucleus,
+      sparams->volume_relaxation_rate_alive_tumor_cell_fluid);
   // cell state control
   // oxygen threshold for considering an effect on the proliferation cycle
-  if (oxygen_level < sparams->kOxygenSaturationInProliferation) {
-    multiplier = (oxygen_level - sparams->kOxygenLimitForProliferation) /
-                 (sparams->kOxygenSaturationInProliferation -
-                  sparams->kOxygenLimitForProliferation);
+  if (oxygen_level < sparams->oxygen_saturation_for_proliferation) {
+    multiplier = (oxygen_level - sparams->oxygen_limit_for_proliferation) /
+                 (sparams->oxygen_saturation_for_proliferation -
+                  sparams->oxygen_limit_for_proliferation);
   }
   // If oxygen is below the limit, set multiplier to 0
-  if (oxygen_level < sparams->kOxygenLimitForProliferation) {
+  if (oxygen_level < sparams->oxygen_limit_for_proliferation) {
     multiplier = 0.0;
   }
   // Calculate the rate of state change based on oxygen level and oncoprotein
@@ -570,20 +575,20 @@ bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level,
   // Default multiplier for necrosis probability
   real_t multiplier = 0.0;
   // oxygen threshold for considering necrosis
-  if (oxygen_level < sparams->kOxygenLimitForNecrosis) {
-    multiplier = (sparams->kOxygenLimitForNecrosis - oxygen_level) /
-                 (sparams->kOxygenLimitForNecrosis -
-                  sparams->kOxygenLimitForNecrosisMaximum);
+  if (oxygen_level < sparams->oxygen_limit_for_necrosis) {
+    multiplier = (sparams->oxygen_limit_for_necrosis - oxygen_level) /
+                 (sparams->oxygen_limit_for_necrosis -
+                  sparams->oxygen_limit_for_necrosis_maximum);
   }
   // threshold for maximum necrosis probability
-  if (oxygen_level < sparams->kOxygenLimitForNecrosisMaximum) {
+  if (oxygen_level < sparams->oxygen_limit_for_necrosis_maximum) {
     multiplier = 1.0;
   }
   // Calculate the probability of necrosis based on oxygen level
-  // and multiply by sparams->kDtCycle since each timestep is sparams->kDtCycle
+  // and multiply by sparams->dt_cycle since each timestep is sparams->dt_cycle
   // minutes
   const real_t probability_necrosis =
-      sparams->kDtCycle * sparams->kMaximumNecrosisRate * multiplier;
+      sparams->dt_cycle * sparams->maximum_necrosis_rate * multiplier;
 
   Random* random = sim->GetRandom();
   const bool enter_necrosis = random->Uniform(0, 1) < probability_necrosis;
@@ -599,7 +604,7 @@ bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level,
     cell->SetImmunostimulatoryFactorSecretionRate(0.0);
     // Reduce consumption
     cell->SetOxygenConsumptionRate(cell->GetOxygenConsumptionRate() *
-                                   sparams->kReductionConsumptionDeadCells);
+                                   sparams->reduction_consumption_dead_cells);
     // Update constants for all ConsumptionSecretion of Oxygen and
     // Immunostimulatory Factors
     cell->ComputeConstantsConsumptionSecretion();
