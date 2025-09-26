@@ -652,7 +652,6 @@ void SimParam::PrintParams() const {
             << kBoundedSpaceLength << "\n\n";
 
   /// Treatment Dosages
-  ///
   std::cout << "/// Treatment Dosages\n";
   std::cout << "///\n\n";
   std::cout << "CAR-T cell infusion schedule:\n";
