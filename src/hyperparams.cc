@@ -98,32 +98,46 @@ void SimParam::LoadParams(const std::string& filename) {
     output_csv_interval = 12 * 60 / dt_step;
   }
 
-  load_double("volume_relaxation_rate_cytoplasm_apoptotic_cells", volume_relaxation_rate_cytoplasm_apoptotic_cells);
-  load_double("volume_relaxation_rate_nucleus_apoptotic_cells", volume_relaxation_rate_nucleus_apoptotic_cells);
-  load_double("volume_relaxation_rate_fluid_apoptotic_cells", volume_relaxation_rate_fluid_apoptotic_cells);
+  load_double("volume_relaxation_rate_cytoplasm_apoptotic_cells",
+              volume_relaxation_rate_cytoplasm_apoptotic_cells);
+  load_double("volume_relaxation_rate_nucleus_apoptotic_cells",
+              volume_relaxation_rate_nucleus_apoptotic_cells);
+  load_double("volume_relaxation_rate_fluid_apoptotic_cells",
+              volume_relaxation_rate_fluid_apoptotic_cells);
 
   load_double("time_apoptosis", time_apoptosis);
-  load_double("reduction_consumption_dead_cells", reduction_consumption_dead_cells);
+  load_double("reduction_consumption_dead_cells",
+              reduction_consumption_dead_cells);
   load_int("resolution_grid_substances", resolution_grid_substances);
 
   load_double("diffusion_coefficient_oxygen", diffusion_coefficient_oxygen);
   load_double("decay_constant_oxygen", decay_constant_oxygen);
-  load_double("diffusion_coefficient_immunostimulatory_factor", diffusion_coefficient_immunostimulatory_factor);
-  load_double("decay_constant_immunostimulatory_factor", decay_constant_immunostimulatory_factor);
+  load_double("diffusion_coefficient_immunostimulatory_factor",
+              diffusion_coefficient_immunostimulatory_factor);
+  load_double("decay_constant_immunostimulatory_factor",
+              decay_constant_immunostimulatory_factor);
   load_double("oxygen_reference_level", oxygen_reference_level);
   load_double("initial_oxygen_level", initial_oxygen_level);
   load_double("oxygen_saturation", oxygen_saturation);
 
-  load_double("cell_repulsion_between_tumor_tumor", cell_repulsion_between_tumor_tumor);
-  load_double("cell_repulsion_between_cart_cart", cell_repulsion_between_cart_cart);
-  load_double("cell_repulsion_between_cart_tumor", cell_repulsion_between_cart_tumor);
-  load_double("cell_repulsion_between_tumor_cart", cell_repulsion_between_tumor_cart);
+  load_double("cell_repulsion_between_tumor_tumor",
+              cell_repulsion_between_tumor_tumor);
+  load_double("cell_repulsion_between_cart_cart",
+              cell_repulsion_between_cart_cart);
+  load_double("cell_repulsion_between_cart_tumor",
+              cell_repulsion_between_cart_tumor);
+  load_double("cell_repulsion_between_tumor_cart",
+              cell_repulsion_between_tumor_cart);
 
   load_double("max_relative_adhesion_distance", max_relative_adhesion_distance);
-  load_double("cell_adhesion_between_tumor_tumor", cell_adhesion_between_tumor_tumor);
-  load_double("cell_adhesion_between_cart_cart", cell_adhesion_between_cart_cart);
-  load_double("cell_adhesion_between_cart_tumor", cell_adhesion_between_cart_tumor);
-  load_double("cell_adhesion_between_tumor_cart", cell_adhesion_between_tumor_cart);
+  load_double("cell_adhesion_between_tumor_tumor",
+              cell_adhesion_between_tumor_tumor);
+  load_double("cell_adhesion_between_cart_cart",
+              cell_adhesion_between_cart_cart);
+  load_double("cell_adhesion_between_cart_tumor",
+              cell_adhesion_between_cart_tumor);
+  load_double("cell_adhesion_between_tumor_cart",
+              cell_adhesion_between_tumor_cart);
   load_double("length_box_mechanics", length_box_mechanics);
 
   if (jfile.contains("dnew")) {
@@ -138,23 +152,32 @@ void SimParam::LoadParams(const std::string& filename) {
     dold = -0.5 * dt_mechanics;
   }
 
-  load_double("rate_secretion_immunostimulatory_factor", rate_secretion_immunostimulatory_factor);
-  load_double("saturation_density_immunostimulatory_factor", saturation_density_immunostimulatory_factor);
+  load_double("rate_secretion_immunostimulatory_factor",
+              rate_secretion_immunostimulatory_factor);
+  load_double("saturation_density_immunostimulatory_factor",
+              saturation_density_immunostimulatory_factor);
   load_double("oncoprotein_mean", oncoprotein_mean);
   load_double("oncoprotein_standard_deviation", oncoprotein_standard_deviation);
-  load_double("oxygen_saturation_for_proliferation", oxygen_saturation_for_proliferation);
+  load_double("oxygen_saturation_for_proliferation",
+              oxygen_saturation_for_proliferation);
   load_double("oxygen_limit_for_proliferation", oxygen_limit_for_proliferation);
   load_double("oxygen_limit_for_necrosis", oxygen_limit_for_necrosis);
-  load_double("oxygen_limit_for_necrosis_maximum", oxygen_limit_for_necrosis_maximum);
+  load_double("oxygen_limit_for_necrosis_maximum",
+              oxygen_limit_for_necrosis_maximum);
   load_double("time_lysis", time_lysis);
   load_double("maximum_necrosis_rate", maximum_necrosis_rate);
 
-  load_double("default_oxygen_consumption_tumor_cell", default_oxygen_consumption_tumor_cell);
+  load_double("default_oxygen_consumption_tumor_cell",
+              default_oxygen_consumption_tumor_cell);
   load_double("default_volume_new_tumor_cell", default_volume_new_tumor_cell);
-  load_double("default_volume_nucleus_tumor_cell", default_volume_nucleus_tumor_cell);
-  load_double("default_fraction_fluid_tumor_cell", default_fraction_fluid_tumor_cell);
-  load_double("average_time_transformation_random_rate", average_time_transformation_random_rate);
-  load_double("standard_deviation_transformation_random_rate", standard_deviation_transformation_random_rate);
+  load_double("default_volume_nucleus_tumor_cell",
+              default_volume_nucleus_tumor_cell);
+  load_double("default_fraction_fluid_tumor_cell",
+              default_fraction_fluid_tumor_cell);
+  load_double("average_time_transformation_random_rate",
+              average_time_transformation_random_rate);
+  load_double("standard_deviation_transformation_random_rate",
+              standard_deviation_transformation_random_rate);
   load_double("adhesion_time", adhesion_time);
   load_double("oncoprotein_limit", oncoprotein_limit);
   load_double("oncoprotein_saturation", oncoprotein_saturation);
@@ -162,17 +185,26 @@ void SimParam::LoadParams(const std::string& filename) {
   // Difference between saturation and limit. This is always calculated here
   oncoprotein_difference = oncoprotein_saturation - oncoprotein_limit;
 
-  load_double("volume_relaxation_rate_alive_tumor_cell_cytoplasm", volume_relaxation_rate_alive_tumor_cell_cytoplasm);
-  load_double("volume_relaxation_rate_alive_tumor_cell_nucleus", volume_relaxation_rate_alive_tumor_cell_nucleus);
-  load_double("volume_relaxation_rate_alive_tumor_cell_fluid", volume_relaxation_rate_alive_tumor_cell_fluid);
+  load_double("volume_relaxation_rate_alive_tumor_cell_cytoplasm",
+              volume_relaxation_rate_alive_tumor_cell_cytoplasm);
+  load_double("volume_relaxation_rate_alive_tumor_cell_nucleus",
+              volume_relaxation_rate_alive_tumor_cell_nucleus);
+  load_double("volume_relaxation_rate_alive_tumor_cell_fluid",
+              volume_relaxation_rate_alive_tumor_cell_fluid);
 
-  load_double("volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell", volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell);
-  load_double("volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell", volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell);
-  load_double("volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell", volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell);
+  load_double("volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell",
+              volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell);
+  load_double("volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell",
+              volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell);
+  load_double("volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell",
+              volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell);
 
-  load_double("volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell", volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell);
-  load_double("volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell", volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell);
-  load_double("volume_relaxation_rate_fluid_necrotic_lysed_tumor_cell", volume_relaxation_rate_fluid_necrotic_lysed_tumor_cell);
+  load_double("volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell",
+              volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell);
+  load_double("volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell",
+              volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell);
+  load_double("volume_relaxation_rate_fluid_necrotic_lysed_tumor_cell",
+              volume_relaxation_rate_fluid_necrotic_lysed_tumor_cell);
 
   load_double("threshold_cancer_cell_type1", threshold_cancer_cell_type1);
   load_double("threshold_cancer_cell_type2", threshold_cancer_cell_type2);
@@ -186,13 +218,15 @@ void SimParam::LoadParams(const std::string& filename) {
     average_maximum_time_untill_apoptosis_cart = dt_cycle * 10.0 * 24.0 * 60.0;
   }
 
-  load_double("default_oxygen_consumption_cart", default_oxygen_consumption_cart);
+  load_double("default_oxygen_consumption_cart",
+              default_oxygen_consumption_cart);
   load_double("default_volume_new_cart_cell", default_volume_new_cart_cell);
   load_double("kill_rate_cart", kill_rate_cart);
   load_double("adhesion_rate_cart", adhesion_rate_cart);
   load_double("max_adhesion_distance_cart", max_adhesion_distance_cart);
   load_double("min_adhesion_distance_cart", min_adhesion_distance_cart);
-  load_double("minimum_distance_from_tumor_to_spawn_cart", minimum_distance_from_tumor_to_spawn_cart);
+  load_double("minimum_distance_from_tumor_to_spawn_cart",
+              minimum_distance_from_tumor_to_spawn_cart);
   load_double("persistence_time_cart", persistence_time_cart);
   load_double("migration_bias_cart", migration_bias_cart);
   load_double("migration_speed_cart", migration_speed_cart);
