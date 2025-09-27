@@ -54,7 +54,7 @@ constexpr real_t kHoursInADay = 24.0;
 
 /// Contains the default values of the hyperparameters used in the simulation.
 struct SimParam : public ParamGroup {
-  // NOLINTNEXTLINE(modernize-type-traits)
+  // NOLINTNEXTLINE(modernize-type-traits,llvm-else-after-return,readability-else-after-return,cppcoreguidelines-owning-memory)
   BDM_PARAM_GROUP_HEADER(SimParam, 1);
 
   SimParam(const SimParam&) = default;

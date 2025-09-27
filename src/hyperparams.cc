@@ -22,7 +22,9 @@
 #include "hyperparams.h"
 #include "core/param/param_group.h"
 #include "core/real_t.h"
+#include "core/util/math.h"
 #include <cmath>
+#include <cstddef>
 #include <exception>
 #include <fstream>
 #include <iostream>
