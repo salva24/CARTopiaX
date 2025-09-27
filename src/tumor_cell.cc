@@ -44,8 +44,7 @@ namespace bdm {
 
 TumorCell::TumorCell(const Real3& position) {
   SetPosition(position);
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // volumes
   // Set default volume
   SetVolume(sparams->default_volume_new_tumor_cell);
@@ -149,8 +148,7 @@ void TumorCell::Initialize(const NewAgentEvent& event) {
 
 void TumorCell::SetOncoproteinLevel(real_t level) {
   oncoprotein_level_ = level;
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // cell type
   if (level >= sparams->threshold_cancer_cell_type1) {
     // between 1.5 and 2.0
@@ -171,8 +169,7 @@ void TumorCell::SetOncoproteinLevel(real_t level) {
 }
 
 void TumorCell::SetTransformationRandomRate() {
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // avoid division by zero with kEpsilon
   transformation_random_rate_ =
       1 /
@@ -195,8 +192,7 @@ real_t TumorCell::GetTargetTotalVolume() const {
 void TumorCell::ChangeVolumeExponentialRelaxationEquation(
     real_t relaxation_rate_cytoplasm, real_t relaxation_rate_nucleus,
     real_t relaxation_rate_fluid) {
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // Exponential relaxation towards the target volume
   const real_t current_total_volume = GetVolume();
   const real_t fluid_fraction = GetFluidFraction();
@@ -267,8 +263,7 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(
 // compute Displacement
 Real3 TumorCell::CalculateDisplacement(const InteractionForce* force,
                                        real_t squared_radius, real_t /*dt*/) {
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   Real3 movement_at_next_step{0, 0, 0};
   // this should be chaged in a future version of BioDynaMo in order to have a
   // cleaner code instead of hardcoding it here
@@ -342,8 +337,7 @@ void TumorCell::ComputeConstantsConsumptionSecretion() {
   // V_k    = volume of the cell k
   // V_voxel = volume of the voxel containing the cell
   // dt     = simulation time step
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   const real_t new_volume = GetVolume();
   // compute the constants for the differential equation explicit solution: for
   // oxygen and immunostimulatory factor
@@ -372,8 +366,7 @@ void TumorCell::StartApoptosis() {
   if (IsDead()) {
     return;
   }
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
 
   // The cell Dies
   SetState(TumorCellState::kApoptotic);
@@ -399,7 +392,7 @@ void TumorCell::StartApoptosis() {
 /// Main behavior executed at each simulation step
 void StateControlGrowProliferate::Run(Agent* agent) {
   Simulation* sim = Simulation::GetActive();
-  const SimParam* sparams = sim->GetParam()->Get<SimParam>();
+  const auto* sparams = sim->GetParam()->Get<SimParam>();
   // Run only every sparams->dt_cycle minutes, fmod does not work with the type
   // returned by GetSimulatedTime()
   if (sim->GetScheduler()->GetSimulatedSteps() %
@@ -526,8 +519,7 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
                                                    real_t oxygen_level) {
   // Initialize multiplier
   real_t multiplier = 1.0;
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // volume change
   cell->ChangeVolumeExponentialRelaxationEquation(
       sparams->volume_relaxation_rate_alive_tumor_cell_cytoplasm,
@@ -570,7 +562,7 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
 bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level,
                                                       TumorCell* cell) {
   Simulation* sim = Simulation::GetActive();
-  const SimParam* sparams = sim->GetParam()->Get<SimParam>();
+  const auto* sparams = sim->GetParam()->Get<SimParam>();
   // necrosis probability
   // Default multiplier for necrosis probability
   real_t multiplier = 0.0;

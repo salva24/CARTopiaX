@@ -48,7 +48,7 @@ int Simulate(int argc, const char** argv) {
   custom_parameters->LoadParams("params.json");
 
   // Keep a reference to the parameters before releasing
-  const SimParam* sparam_ref = custom_parameters.get();
+  const auto* sparam_ref = custom_parameters.get();
 
   // Transfer ownership to BioDynaMo parameter system
   Param::RegisterParamGroup(custom_parameters.release());
@@ -65,7 +65,7 @@ int Simulate(int argc, const char** argv) {
   };
 
   Simulation simulation(argc, argv, set_param);
-  const SimParam* sparam = simulation.GetParam()->Get<SimParam>();
+  const auto* sparam = simulation.GetParam()->Get<SimParam>();
   // Print parameters
   sparam->PrintParams();
 
@@ -163,7 +163,9 @@ int Simulate(int argc, const char** argv) {
   // Run simulation
   std::cout << "Running simulation..." << std::endl;
   // simulate total_minutes_to_simulate minutes including the last minute
-  scheduler->Simulate(1 + sparam->total_minutes_to_simulate / sparam->dt_step);
+  scheduler->Simulate(1 +
+                      static_cast<uint64_t>(sparam->total_minutes_to_simulate /
+                                            sparam->dt_step));
   std::cout << "Simulation completed successfully!" << std::endl;
   return 0;
 }

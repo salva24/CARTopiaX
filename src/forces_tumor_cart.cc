@@ -44,8 +44,7 @@ Real4 InteractionVelocity::Calculate(const Agent* lhs, const Agent* rhs) const {
     return {0.0, 0.0, 0.0, 0.0};
   }
 
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
 
   Real3 displacement = a->GetPosition() - b->GetPosition();
 

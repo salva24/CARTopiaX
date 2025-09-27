@@ -62,8 +62,7 @@ real_t SamplePositiveGaussian(float mean, float sigma) {
 }
 
 std::vector<Real3> CreateSphereOfTumorCells(real_t sphere_radius) {
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // V = (4/3)*pi*r^3 = (pi/6)*diameter^3
   const real_t cell_radius =
       std::cbrt(sparams->default_volume_new_tumor_cell * 6 / Math::kPi) / kHalf;
@@ -191,7 +190,7 @@ AnalyzeTumor() {
 // Function to output summary CSV
 void OutputSummary::operator()() {
   Simulation* simulation = Simulation::GetActive();
-  const SimParam* sparams = simulation->GetParam()->Get<SimParam>();
+  const auto* sparams = simulation->GetParam()->Get<SimParam>();
   Scheduler* scheduler = simulation->GetScheduler();
   const uint64_t current_step = scheduler->GetSimulatedSteps();
 
@@ -233,7 +232,7 @@ void OutputSummary::operator()() {
                average_oxygen_cancer_cells) = AnalyzeTumor();
       size_t total_num_cells = simulation->GetResourceManager()->GetNumAgents();
 
-      const SimParam* sparams =
+      const auto* sparams =
           Simulation::GetActive()->GetParam()->Get<SimParam>();
 
       // If a dosage is administred this exact time the numbers are not seen in
@@ -265,7 +264,7 @@ void OutputSummary::operator()() {
 // Function to spawn CAR-T cell dosages
 void SpawnCart::operator()() {
   Simulation* simulation = Simulation::GetActive();
-  const SimParam* sparams = simulation->GetParam()->Get<SimParam>();
+  const auto* sparams = simulation->GetParam()->Get<SimParam>();
 
   Scheduler* scheduler = simulation->GetScheduler();
   const uint64_t current_step = scheduler->GetSimulatedSteps();

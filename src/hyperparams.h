@@ -178,7 +178,7 @@ struct SimParam : public ParamGroup {
   /// Box length for mechanics calculations (in micrometers). Smaller values
   /// improve simulation efficiency
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t length_box_mechanics = 22;
+  int length_box_mechanics = 22;
   // Coefficientes for the two step Adams-Bashforth approximation of the time
   // derivative for position position(t + dt) ≈ position(t) + dt * [ 1.5 *
   // velocity(t) - 0.5 * velocity(t - dt) ]

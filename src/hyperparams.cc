@@ -20,8 +20,10 @@
  */
 
 #include "hyperparams.h"
+#include "core/param/param_group.h"
 #include "core/real_t.h"
 #include <cmath>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -76,8 +78,8 @@ void SimParam::LoadParams(const std::string& filename) {
     treatment.clear();
     // Parse the JSON object to handle string keys
     for (auto& [key, value] : jfile["treatment"].items()) {
-      int day = std::stoi(key);
-      int dose = value.get<int>();
+      int const day = std::stoi(key);
+      int const dose = value.get<int>();
       treatment[day] = dose;
     }
   }
@@ -95,7 +97,8 @@ void SimParam::LoadParams(const std::string& filename) {
   if (jfile.contains("output_csv_interval")) {
     output_csv_interval = jfile["output_csv_interval"].get<int>();
   } else {
-    output_csv_interval = 12 * 60 / dt_step;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    output_csv_interval = static_cast<int>(12 * 60 / dt_step);
   }
 
   load_double("volume_relaxation_rate_cytoplasm_apoptotic_cells",
@@ -138,17 +141,19 @@ void SimParam::LoadParams(const std::string& filename) {
               cell_adhesion_between_cart_tumor);
   load_double("cell_adhesion_between_tumor_cart",
               cell_adhesion_between_tumor_cart);
-  load_double("length_box_mechanics", length_box_mechanics);
+  load_int("length_box_mechanics", length_box_mechanics);
 
   if (jfile.contains("dnew")) {
     dnew = jfile["dnew"].get<double>();
   } else {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     dnew = 1.5 * dt_mechanics;
   }
 
   if (jfile.contains("dold")) {
     dold = jfile["dold"].get<double>();
   } else {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     dold = -0.5 * dt_mechanics;
   }
 
@@ -238,6 +243,7 @@ void SimParam::LoadParams(const std::string& filename) {
   // Calculate steps per cycle. This is always calculated here
   steps_per_cell_cycle = dt_cycle / dt_step;
   // Calculate steps per day. This is always calculated here
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   steps_in_one_day = 24 * 60 / dt_step;
   // Calculate the volume of a single mechanical voxel in μm³
   voxel_volume =
@@ -259,9 +265,11 @@ void SimParam::LoadParams(const std::string& filename) {
   difference_cart_adhesion_distances =
       max_adhesion_distance_cart - min_adhesion_distance_cart;
   // Radius tumor cell
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   radius_tumor_cell =
       std::cbrt(default_volume_new_tumor_cell * 3. / (4. * Math::kPi));
   // Radius cart cell
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   radius_cart_cell =
       std::cbrt(default_volume_new_cart_cell * 3. / (4. * Math::kPi));
   // Max Distance for considering two cells as neighbours for force calculations

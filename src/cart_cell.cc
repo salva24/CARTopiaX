@@ -47,7 +47,7 @@ namespace bdm {
 CarTCell::CarTCell(const Real3& position) {
   SetPosition(position);
   Simulation* sim = Simulation::GetActive();
-  const SimParam* sparams = sim->GetParam()->Get<SimParam>();
+  const auto* sparams = sim->GetParam()->Get<SimParam>();
   SetVolume(sparams->default_volume_new_cart_cell);
   const ResourceManager& rm = *sim->GetResourceManager();
   oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen");
@@ -80,8 +80,7 @@ real_t CarTCell::GetTargetTotalVolume() const {
 void CarTCell::ChangeVolumeExponentialRelaxationEquation(
     real_t relaxation_rate_cytoplasm, real_t relaxation_rate_nucleus,
     real_t relaxation_rate_fluid) {
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // Exponential relaxation towards the target volume
   const real_t current_total_volume = GetVolume();
   const real_t fluid_fraction = GetFluidFraction();
@@ -153,7 +152,7 @@ void CarTCell::ChangeVolumeExponentialRelaxationEquation(
 Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
                                       real_t squared_radius, real_t /*dt*/) {
   Simulation* sim = Simulation::GetActive();
-  const SimParam* sparams = sim->GetParam()->Get<SimParam>();
+  const auto* sparams = sim->GetParam()->Get<SimParam>();
   // real_t h = dt;
   Real3 movement_at_next_step{0, 0, 0};
   // this should be chaged in a future version of BioDynaMo in order to have a
@@ -287,8 +286,7 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
 // Try to get attached to a tumor cell
 void CarTCell::TryToGetAttachedTo(TumorCell* victim, real_t squared_distance,
                                   Random* rng) {
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // If the tumor cell is not already attached to a CAR-T cell, is not dead and
   // is not too far away.
   if (!victim->IsAttachedToCart() && !victim->IsDead() &&
@@ -349,8 +347,7 @@ bool CarTCell::TryToInduceApoptosis(bdm::AgentPointer<TumorCell> attached_cell,
     return false;
   }
 
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
 
   // factor of how high is the oncoprotein levelof the cancer cell
   real_t scale_factor =
@@ -413,8 +410,7 @@ void CarTCell::ComputeConstantsConsumptionSecretion() {
   // V_voxel = volume of the voxel containing the cell
   // dt     = simulation time step
   const real_t volume = GetVolume();
-  const SimParam* sparams =
-      Simulation::GetActive()->GetParam()->Get<SimParam>();
+  const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // compute the constants for the differential equation explicit solution: for
   // oxygen and immunostimulatory factor
   // dt*(cell_volume/voxel_volume)*quantity_secretion*substance_saturation =  dt
@@ -431,7 +427,7 @@ void CarTCell::ComputeConstantsConsumptionSecretion() {
 /// Main behavior executed at each simulation step
 void StateControlCart::Run(Agent* agent) {
   Simulation* sim = Simulation::GetActive();
-  const SimParam* sparams = sim->GetParam()->Get<SimParam>();
+  const auto* sparams = sim->GetParam()->Get<SimParam>();
 
   // Run only every dt_cycle minutes, fmod does not work with the type
   // returned by GetSimulatedTime()
