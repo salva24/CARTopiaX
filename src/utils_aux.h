@@ -43,7 +43,7 @@ class TumorCell;
 /// @param mean Mean value of the Gaussian distribution
 /// @param sigma Standard deviation of the Gaussian distribution
 /// @return Sampled positive value (negative values mapped to zero)
-real_t SamplePositiveGaussian(float mean, float sigma);
+real_t SamplePositiveGaussian(real_t mean, real_t sigma);
 
 /// Create a spherical arrangement of tumor cells
 ///

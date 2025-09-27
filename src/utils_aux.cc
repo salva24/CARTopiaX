@@ -52,7 +52,7 @@ namespace bdm {
 
 // Samples a Gaussian value with given mean and standard deviation but all
 // negative values are mapped to zero
-real_t SamplePositiveGaussian(float mean, float sigma) {
+real_t SamplePositiveGaussian(real_t mean, real_t sigma) {
   Random* random = Simulation::GetActive()->GetRandom();
   real_t value = random->Gaus(mean, sigma);
   if (value < 0.) {
@@ -239,7 +239,7 @@ void OutputSummary::operator()() {
       // the resource manager yet because of how BioDynaMo is built
       // therefore we need to add the just added new cells to the statistics
       // here.
-      const auto current_day_int = static_cast<size_t>(total_days);
+      const auto current_day_int = static_cast<int>(total_days);
       if (current_step % sparams->steps_in_one_day == 0 &&
           sparams->treatment.find(current_day_int) !=
               sparams->treatment.end()) {
@@ -273,13 +273,13 @@ void SpawnCart::operator()() {
     return;
   }
   // See if there is any dosage to apply in this day
-  const auto current_day =
-      static_cast<size_t>(static_cast<double>(current_step) * sparams->dt_step /
-                          (kMinutesInAnHour * kHoursInADay));
+  const auto current_day_int =
+      static_cast<int>(static_cast<double>(current_step) * sparams->dt_step /
+                       (kMinutesInAnHour * kHoursInADay));
   size_t cells_to_spawn = 0;
 
-  if (sparams->treatment.find(current_day) != sparams->treatment.end()) {
-    cells_to_spawn = sparams->treatment.at(current_day);
+  if (sparams->treatment.find(current_day_int) != sparams->treatment.end()) {
+    cells_to_spawn = sparams->treatment.at(current_day_int);
   }
 
   // if there are cells to spawn in the treatment

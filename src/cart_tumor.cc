@@ -36,6 +36,7 @@
 #include "core/resource_manager.h"
 #include "core/scheduler.h"
 #include "core/simulation.h"
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <vector>

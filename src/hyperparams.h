@@ -28,7 +28,6 @@
 #include <cmath>
 #include <cstddef>
 #include <map>
-#include <nlohmann/json.hpp>
 #include <string>
 
 namespace bdm {
@@ -44,6 +43,8 @@ constexpr real_t kHalf = 2.0;
 constexpr real_t kEpsilon = 1e-10;
 /// kEpsilon distance
 constexpr real_t kEpsilonDistance = 1e-5;
+/// Epsilon for avoiding division by 0 in probabilities
+constexpr real_t kEpsilonProbability = 1e-15;
 /// Large time to avoid division by 0
 constexpr real_t kTimeTooLarge = 1e100;
 /// Minutes in an hour
@@ -52,10 +53,16 @@ constexpr real_t kMinutesInAnHour = 60.0;
 constexpr real_t kHoursInADay = 24.0;
 
 /// Contains the default values of the hyperparameters used in the simulation.
-// NOLINT(misc-non-private-member-variables-in-classes)
 struct SimParam : public ParamGroup {
+  // NOLINTNEXTLINE(modernize-type-traits)
   BDM_PARAM_GROUP_HEADER(SimParam, 1);
 
+  SimParam(const SimParam&) = default;
+  SimParam(SimParam&&) = default;
+  SimParam& operator=(const SimParam&) = default;
+  SimParam& operator=(SimParam&&) = default;
+
+  // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
   ///
   /// General Hyperparameters
   ///
@@ -273,18 +280,18 @@ struct SimParam : public ParamGroup {
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t volume_relaxation_rate_alive_tumor_cell_fluid = 0.0216667;
 
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t volume_relaxation_rate_cytoplasm_necrotic_swelling_tumor_cell =
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       5.33333e-05;
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t volume_relaxation_rate_nucleus_necrotic_swelling_tumor_cell =
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       0.000216667;
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t volume_relaxation_rate_fluid_necrotic_swelling_tumor_cell =
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       0.000833333;
 
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t volume_relaxation_rate_cytoplasm_necrotic_lysed_tumor_cell =
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       5.33333e-05;
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t volume_relaxation_rate_nucleus_necrotic_lysed_tumor_cell = 0.000216667;
@@ -396,6 +403,7 @@ struct SimParam : public ParamGroup {
   /// + 0.1 to avoid mismatch because of numerical errors)**2
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t squared_max_distance_neighbors_force = 446.552;
+  // NOLINTEND(misc-non-private-member-variables-in-classes)
 
   ///
   /// Function to load the parameters

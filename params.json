@@ -3,7 +3,6 @@
   "output_performance_statistics": true,
   "total_minutes_to_simulate": 43200,
   "initial_tumor_radius": 150.0,
-  "bounded_space_length": 1000,
   "treatment": {
     "0": 3957,
     "8": 3957

@@ -220,6 +220,7 @@ void SimParam::LoadParams(const std::string& filename) {
     average_maximum_time_untill_apoptosis_cart =
         jfile["average_maximum_time_untill_apoptosis_cart"].get<double>();
   } else {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     average_maximum_time_untill_apoptosis_cart = dt_cycle * 10.0 * 24.0 * 60.0;
   }
 
@@ -241,10 +242,10 @@ void SimParam::LoadParams(const std::string& filename) {
   // Computed constants that should not be directly changed
   //
   // Calculate steps per cycle. This is always calculated here
-  steps_per_cell_cycle = dt_cycle / dt_step;
+  steps_per_cell_cycle = static_cast<int>(dt_cycle / dt_step);
   // Calculate steps per day. This is always calculated here
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  steps_in_one_day = 24 * 60 / dt_step;
+  steps_in_one_day = static_cast<size_t>(24 * 60 / dt_step);
   // Calculate the volume of a single mechanical voxel in μm³
   voxel_volume =
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances) *
@@ -257,7 +258,8 @@ void SimParam::LoadParams(const std::string& filename) {
   motility_probability_cart = dt_mechanics / persistence_time_cart;
   // Probability of a Tumor cell to escape in a given
   // mechanical time step
-  probability_escape_from_cart = dt_mechanics / (adhesion_time + 1e-15);
+  probability_escape_from_cart =
+      dt_mechanics / (adhesion_time + kEpsilonProbability);
   // Maximum adhesion distance squared
   squared_max_adhesion_distance_cart =
       max_adhesion_distance_cart * max_adhesion_distance_cart;
@@ -265,17 +267,18 @@ void SimParam::LoadParams(const std::string& filename) {
   difference_cart_adhesion_distances =
       max_adhesion_distance_cart - min_adhesion_distance_cart;
   // Radius tumor cell
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   radius_tumor_cell =
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       std::cbrt(default_volume_new_tumor_cell * 3. / (4. * Math::kPi));
   // Radius cart cell
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   radius_cart_cell =
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       std::cbrt(default_volume_new_cart_cell * 3. / (4. * Math::kPi));
   // Max Distance for considering two cells as neighbours for force calculations
   // in μm (twice cell radius times max_relative_adhesion_distance + 0.1 to
   // avoid mismatch because of numerical errors)**2
   squared_max_distance_neighbors_force =
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       std::pow(0.1 + 2 * radius_tumor_cell * max_relative_adhesion_distance, 2);
 
   //
