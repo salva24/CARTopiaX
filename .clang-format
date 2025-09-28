@@ -93,6 +93,8 @@ TabWidth:        8
 UseTab:          Never
 ---
 Language:        Json
-DisableFormat:   true
+IndentWidth:     2
+UseTab:          Never
+ColumnLimit:     80
 ...
 
