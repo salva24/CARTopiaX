@@ -26,6 +26,7 @@
 #include "core/agent/agent.h"
 #include "core/container/math_array.h"
 #include "core/diffusion/diffusion_grid.h"
+#include "core/param/param.h"
 #include "core/real_t.h"
 #include "core/resource_manager.h"
 #include <cstddef>
@@ -44,12 +45,15 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
     : DiffusionGrid(substance_id, std::move(substance_name), dc, mu,
                     resolution),
       resolution_(static_cast<int>(GetResolution())),
-      d_space_(static_cast<real_t>(kBoundedSpaceLength) /
+      d_space_(static_cast<real_t>(Simulation::GetActive()
+                                       ->GetParam()
+                                       ->Get<SimParam>()
+                                       ->bounded_space_length) /
                static_cast<real_t>(resolution_)),
       dirichlet_border_(dirichlet_border),
       jump_i_(1),
       jump_j_(resolution_),
-      jump_k_(resolution_ * resolution_),
+      jump_(resolution_ * resolution_),
       spatial_diffusion_coeff_(dc * dt / (d_space_ * d_space_)),
       neg_diffusion_factor_(-spatial_diffusion_coeff_),
       temporal_decay_coeff_(mu * dt / 3.0),
@@ -63,7 +67,6 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
       thomas_c_z_(resolution_, neg_diffusion_factor_),
       thomas_denom_z_(resolution_, central_coeff_) {
   SetTimeStep(dt);
-
   // Initialize the denominators and coefficients for the Thomas algorithm
   InitializeThomasAlgorithmVectors(thomas_denom_x_, thomas_c_x_);
   InitializeThomasAlgorithmVectors(thomas_denom_y_, thomas_c_y_);
@@ -245,7 +248,7 @@ void DiffusionThomasAlgorithm::SolveDirectionThomas(int direction) {
       return jump_j_;
     }
     // direction == 2
-    return jump_k_;
+    return jump_;
   }();
 
 #pragma omp parallel for collapse(2)

@@ -91,5 +91,10 @@ SpacesInSquareBrackets: false
 Standard:        Auto
 TabWidth:        8
 UseTab:          Never
+---
+Language:        Json
+IndentWidth:     2
+UseTab:          Never
+ColumnLimit:     80
 ...
 

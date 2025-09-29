@@ -43,7 +43,7 @@ class TumorCell;
 /// @param mean Mean value of the Gaussian distribution
 /// @param sigma Standard deviation of the Gaussian distribution
 /// @return Sampled positive value (negative values mapped to zero)
-real_t SamplePositiveGaussian(float mean, float sigma);
+real_t SamplePositiveGaussian(real_t mean, real_t sigma);
 
 /// Create a spherical arrangement of tumor cells
 ///
@@ -86,7 +86,7 @@ Real3 GenerateRandomDirection();
 ///
 /// Called automatically by the simulation scheduler at the specified frequency.
 /// Spawns a dosage of CAR-T cells around the tumor following the map
-/// gKTreatment where
+/// sparams->treatment where
 ///   - The key represents the day of treatment (starting from day 0).
 ///   - The value represents the number of CAR-T cells administered on that day.
 struct SpawnCart : public StandaloneOperationImpl {

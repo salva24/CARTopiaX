@@ -43,7 +43,7 @@ class DiffusionThomasAlgorithm : public DiffusionGrid {
         dirichlet_border_(false),
         jump_i_(0),
         jump_j_(0),
-        jump_k_(0),
+        jump_(0),
         spatial_diffusion_coeff_(0.0),
         neg_diffusion_factor_(0.0),
         temporal_decay_coeff_(0.0),
@@ -138,7 +138,7 @@ class DiffusionThomasAlgorithm : public DiffusionGrid {
   int jump_j_;
 
   /// Index jump for k-direction (z-axis)
-  int jump_k_;
+  int jump_;
 
   /// First diffusion constant
   real_t spatial_diffusion_coeff_;
