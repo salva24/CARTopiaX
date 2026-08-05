@@ -74,9 +74,14 @@ TumorCell::TumorCell(const Real3& position) {
   ResourceManager* rm = Simulation::GetActive()->GetResourceManager();
   // Pointer to oxygen diffusion grid
   oxygen_dgrid_ = rm->GetDiffusionGrid("oxygen");
-  // Pointer to immunostimulatory_factor diffusion grid
+  // Pointer to immunostimulatory_factor diffusion grid if it is added in the simulation
   immunostimulatory_factor_dgrid_ =
-      rm->GetDiffusionGrid("immunostimulatory_factor");
+    sparams->add_immunostimulatory_factor
+        ? rm->GetDiffusionGrid("immunostimulatory_factor")
+        : nullptr;
+  glucose_dgrid_ = sparams->add_glucose
+        ? rm->GetDiffusionGrid("glucose")//Debug
+        : nullptr;
   // Set state transition random rate
   SetTransformationRandomRate();
   // Set basal death probability
@@ -88,7 +93,8 @@ TumorCell::TumorCell(const Real3& position) {
   // Set default immunostimulatory factor secretion rate
   SetImmunostimulatoryFactorSecretionRate(
       sparams->rate_secretion_immunostimulatory_factor);
-  // Compute constants for all ConsumptionSecretion of Oxygen and
+  SetGlucoseConsumptionRate(sparams->default_glucose_consumption_tumor_cell);
+  // Compute constants for all ConsumptionSecretion of Oxygen, glucose and
   // Immunostimulatory Factor
   ComputeConstantsConsumptionSecretion();
 }
@@ -108,7 +114,11 @@ void TumorCell::Initialize(const NewAgentEvent& event) {
       // Pointer to the oxygen diffusion grid
       oxygen_dgrid_ = mother->oxygen_dgrid_;
       // Pointer to the immunostimulatory_factor diffusion grid
-      immunostimulatory_factor_dgrid_ = mother->immunostimulatory_factor_dgrid_;
+      immunostimulatory_factor_dgrid_ = mother->IsImmunostimulatoryFactorDefined()
+                                           ? mother->immunostimulatory_factor_dgrid_
+                                           : nullptr;
+      // Pointer to the glucose diffusion grid
+      glucose_dgrid_ = mother->IsGlucoseDefined() ? mother->glucose_dgrid_ : nullptr;
       // inherit oncoprotein level from mother cell
       this->SetOncoproteinLevel(mother->oncoprotein_level_);
       // inherit oxygen consumption from mother cell
@@ -116,6 +126,8 @@ void TumorCell::Initialize(const NewAgentEvent& event) {
       // inherit immunostimulatory factor secretion rate from mother cell
       this->SetImmunostimulatoryFactorSecretionRate(
           mother->GetImmunostimulatoryFactorSecretionRate());
+      // inherit glucose consumption from mother cell
+      this->SetGlucoseConsumptionRate(mother->GetGlucoseConsumptionRate());
 
       // Update the constants for all ConsumptionSecretion
       mother->ComputeConstantsConsumptionSecretion();
@@ -256,7 +268,7 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(
   // if the volume has changed
   if (new_volume != current_total_volume) {
     SetVolume(new_volume);
-    // Update constants for all ConsumptionSecretion of Oxygen and
+    // Update constants for all ConsumptionSecretion of Oxygen, Glucose and
     // Immunostimulatory Factors
     ComputeConstantsConsumptionSecretion();
   }
@@ -332,11 +344,15 @@ real_t TumorCell::ConsumeSecreteSubstance(int substance_id,
   if (substance_id == oxygen_dgrid_->GetContinuumId()) {
     // consuming oxygen
     res = (old_concentration + constant1_oxygen_) / constant2_oxygen_;
-  } else if (substance_id ==
-             immunostimulatory_factor_dgrid_->GetContinuumId()) {
+  } else if (IsImmunostimulatoryFactorDefined() && substance_id == immunostimulatory_factor_dgrid_->GetContinuumId()) {
+    // There is a definde immunostimulatory factor grid and this is the one being updated
     // secreting immunostimulatory factor
     res = (old_concentration + constant1_immunostimulatory_factor_) /
           constant2_immunostimulatory_factor_;
+  } else if (IsGlucoseDefined() && substance_id == glucose_dgrid_->GetContinuumId()) {
+    // There is a defined glucose grid and this is the one being updated
+    // CAR-T do not change glucose levels
+    res = (old_concentration + constant1_glucose_) / constant2_glucose_;
   } else {
     throw std::invalid_argument("Unknown substance id: " +
                                 std::to_string(substance_id));
@@ -357,25 +373,42 @@ void TumorCell::ComputeConstantsConsumptionSecretion() {
   const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   const real_t new_volume = GetVolume();
   // compute the constants for the differential equation explicit solution: for
-  // oxygen and immunostimulatory factor
+  // oxygen glucose and immunostimulatory factor
   // dt*(cell_volume/voxel_volume)*quantity_secretion*substance_saturation =  dt
   // · (V_k / V_voxel) · S_k · ρ*_k)
   constant1_oxygen_ = 0.;
-  // Scale by the volume of the cell in the Voxel and time step
-  constant1_immunostimulatory_factor_ =
-      immunostimulatory_factor_secretion_rate_ *
-      sparams->saturation_density_immunostimulatory_factor *
-      sparams->dt_substances * (new_volume / sparams->voxel_volume);
   // 1 + dt*(cell_volume/voxel_volume)*(quantity_secretion +
   // quantity_consumption ) = [1 + dt · (V_k / V_voxel) · (S_k + U_k)]
   //  Scale by the volume of the cell in the Voxel and time step
   constant2_oxygen_ = 1 + sparams->dt_substances *
                               (new_volume / sparams->voxel_volume) *
                               (oxygen_consumption_rate_);
-  // Scale by the volume of the cell in the Voxel and time step
-  constant2_immunostimulatory_factor_ =
-      1 + sparams->dt_substances * (new_volume / sparams->voxel_volume) *
-              (immunostimulatory_factor_secretion_rate_);
+  if (IsImmunostimulatoryFactorDefined()) {
+    // dt*(cell_volume/voxel_volume)*quantity_secretion*substance_saturation =  dt
+    // · (V_k / V_voxel) · S_k · ρ*_k)
+    // Scale by the volume of the cell in the Voxel and time step
+    constant1_immunostimulatory_factor_ =
+        immunostimulatory_factor_secretion_rate_ *
+        sparams->saturation_density_immunostimulatory_factor *
+        sparams->dt_substances * (new_volume / sparams->voxel_volume);
+    // 1 + dt*(cell_volume/voxel_volume)*(quantity_secretion +
+    // quantity_consumption ) = [1 + dt · (V_k / V_voxel) · (S_k + U_k)]
+    // Scale by the volume of the cell in the Voxel and time step
+    constant2_immunostimulatory_factor_ =
+        1 + sparams->dt_substances * (new_volume / sparams->voxel_volume) *
+                (immunostimulatory_factor_secretion_rate_);
+  }
+
+  if (IsGlucoseDefined()) {
+    // dt*(cell_volume/voxel_volume)*quantity_secretion*substance_saturation =  dt
+    // · (V_k / V_voxel) · S_k · ρ*_k)
+    constant1_glucose_ = 0.;
+    // 1 + dt*(cell_volume/voxel_volume)*(quantity_secretion +
+    // quantity_consumption ) = [1 + dt · (V_k / V_voxel) · (S_k + U_k)]
+    constant2_glucose_ = 1 + sparams->dt_substances *
+                                (new_volume / sparams->voxel_volume) *
+                                (glucose_consumption_rate_);
+  }
 }
 
 void TumorCell::StartApoptosis() {
@@ -619,6 +652,8 @@ bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level,
     cell->SetImmunostimulatoryFactorSecretionRate(0.0);
     // Reduce consumption
     cell->SetOxygenConsumptionRate(cell->GetOxygenConsumptionRate() *
+                                   sparams->reduction_consumption_dead_cells);
+    cell->SetGlucoseConsumptionRate(cell->GetGlucoseConsumptionRate() *
                                    sparams->reduction_consumption_dead_cells);
     // Update constants for all ConsumptionSecretion of Oxygen and
     // Immunostimulatory Factors

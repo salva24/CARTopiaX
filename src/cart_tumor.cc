@@ -90,6 +90,20 @@ int Simulate(int argc, const char** argv) {
   // Define Substances
   ResourceManager* rm = Simulation::GetActive()->GetResourceManager();
 
+  // Obtain the tumor shape from the parameters
+  const std::string tumor_shape = sparam->tumor_shape;
+  bool is_tumor_shape_spherical = false;
+  bool is_tumor_shape_cylindrical = false;
+  if (tumor_shape == "sphere") {
+    is_tumor_shape_spherical = true;
+  } else if (tumor_shape == "cylinder") {
+    is_tumor_shape_cylindrical = true;
+  } else {
+    Log::Error("Simulate", "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
+    // Exit with an error code
+    return 1;
+  }   
+
   // Oxygen
   // substance_id, name, diffusion_coefficient, decay_constant, resolution,
   // time_step
@@ -100,17 +114,6 @@ int Simulate(int argc, const char** argv) {
           sparam->dt_substances,
           /*dirichlet_border=*/true);
   rm->AddContinuum(oxygen_grid.release());
-
-  // Immunostimulatory Factor
-  // substance_id, name, diffusion_coefficient, decay_constant, resolution
-  std::unique_ptr<DiffusionThomasAlgorithm> immunostimulatory_factor_grid =
-      std::make_unique<DiffusionThomasAlgorithm>(
-          kImmunostimulatoryFactor, "immunostimulatory_factor",
-          sparam->diffusion_coefficient_immunostimulatory_factor,
-          sparam->decay_constant_immunostimulatory_factor,
-          sparam->resolution_grid_substances, sparam->dt_substances,
-          /*dirichlet_border=*/false);
-  rm->AddContinuum(immunostimulatory_factor_grid.release());
 
   // Boundary Conditions Dirichlet: simulating absorption or total loss at the
   // boundaries of the space.
@@ -137,26 +140,78 @@ int Simulate(int argc, const char** argv) {
           sparam->lateral_oxygen_production_min_z,
           sparam->lateral_oxygen_production_max_z));
 
-  // This is useless now but should be added this way in a future version of
-  // BioDynaMo
-  ModelInitializer::AddBoundaryConditions(
-      kImmunostimulatoryFactor, BoundaryConditionType::kNeumann, nullptr);
-
+  const real_t min_initial_z_substances = sparam->min_initial_z_substances;
+  const real_t max_initial_z_substances = sparam->max_initial_z_substances;
+  const real_t initial_oxygen_level = sparam->initial_oxygen_level;
   // Initialize oxygen voxels
   ModelInitializer::InitializeSubstance(
-      kOxygen, [sparam](real_t /*x*/, real_t /*y*/, real_t /*z*/) {
-        // Set all voxels to initial_oxygen_level mmHg
-        return sparam->initial_oxygen_level;
+      kOxygen, [initial_oxygen_level, min_initial_z_substances, max_initial_z_substances](real_t x, real_t y, real_t z) {
+        if (z <= max_initial_z_substances && z >= min_initial_z_substances) {
+            return initial_oxygen_level;
+        }
+        return 0.0;
       });
 
+  // Immunostimulatory Factor
+  if (sparam->add_immunostimulatory_factor) {
+    // substance_id, name, diffusion_coefficient, decay_constant, resolution
+    std::unique_ptr<DiffusionThomasAlgorithm> immunostimulatory_factor_grid =
+        std::make_unique<DiffusionThomasAlgorithm>(
+            kImmunostimulatoryFactor, "immunostimulatory_factor",
+            sparam->diffusion_coefficient_immunostimulatory_factor,
+            sparam->decay_constant_immunostimulatory_factor,
+            sparam->resolution_grid_substances, sparam->dt_substances,
+            /*dirichlet_border=*/false);
+    rm->AddContinuum(immunostimulatory_factor_grid.release());
+
+    // This is useless now but should be added this way in a future version of BioDynaMo.
+    // Neumann boundary condition: the is not consumed nor produced at the boundaries
+    ModelInitializer::AddBoundaryConditions(
+        kImmunostimulatoryFactor, BoundaryConditionType::kNeumann, nullptr);
+  }
+  // Glucose
+  // substance_id, name, diffusion_coefficient, decay_constant, resolution,
+  // time_step
+  if (sparam->add_glucose) {
+    std::unique_ptr<DiffusionThomasAlgorithm> glucose_grid =
+        std::make_unique<DiffusionThomasAlgorithm>(
+            kGlucose, "glucose", sparam->diffusion_coefficient_glucose,
+            sparam->decay_constant_glucose, sparam->resolution_grid_substances,
+            sparam->dt_substances,
+            /*dirichlet_border=*/false);
+    rm->AddContinuum(glucose_grid.release());
+
+    // This is useless now but should be added this way in a future version of BioDynaMo.
+    // Neumann boundary condition: the is not consumed nor produced at the boundaries
+    ModelInitializer::AddBoundaryConditions(
+        kGlucose, BoundaryConditionType::kNeumann, nullptr);
+    const real_t initial_glucose_level = sparam->initial_glucose_level;
+    const real_t squared_radius_glucose_initialization = sparam->max_radius_glucose_initialization*sparam->max_radius_glucose_initialization;
+    // Initialize oxygen voxels
+     ModelInitializer::InitializeSubstance(
+        kGlucose, [initial_glucose_level, min_initial_z_substances, max_initial_z_substances, is_tumor_shape_spherical, is_tumor_shape_cylindrical, squared_radius_glucose_initialization](real_t x, real_t y, real_t z) {
+        if (z <= max_initial_z_substances &&
+            z >= min_initial_z_substances) { 
+            if(is_tumor_shape_spherical && (x*x + y*y + z*z <= squared_radius_glucose_initialization)){
+                // Its spherical and the voxel is within the maximun spherical radius
+                return initial_glucose_level;
+            } else if(is_tumor_shape_cylindrical && (x*x + y*y <= squared_radius_glucose_initialization)){
+                // Its cylindrical and the voxel is within the maximun cylindrical radius
+                return initial_glucose_level;
+            }
+            return initial_glucose_level;
+        }
+        return 0.0;
+        });
+  }
+  
   // Tumor cells initialization
-  const std::string tumor_shape = sparam->tumor_shape;
   std::vector<Real3> positions;
-  if (tumor_shape == "sphere") {
+  if (is_tumor_shape_spherical) {
     // One spherical tumor of radius initial_spherical_tumor_radius in the center of the
     // simulation space
     positions = CreateSphereOfTumorCells(sparam->initial_spherical_tumor_radius);
-  } else if (tumor_shape == "cylinder") {
+  } else if (is_tumor_shape_cylindrical) {
     // One cylindrical tumor of radius initial_spherical_tumor_radius and height
     // cylindrical_tumor_height in the center of the simulation space
     positions = CreateCylinderOfTumorCells(

@@ -51,15 +51,21 @@ CarTCell::CarTCell(const Real3& position) {
   SetVolume(sparams->default_volume_new_cart_cell);
   const ResourceManager& rm = *sim->GetResourceManager();
   oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen");
-  immunostimulatory_factor_dgrid_ =
-      rm.GetDiffusionGrid("immunostimulatory_factor");
+  immunostimulatory_factor_dgrid_ = sparams->add_immunostimulatory_factor
+        ? rm.GetDiffusionGrid("immunostimulatory_factor")
+        : nullptr;
+  glucose_dgrid_ = sparams->add_glucose
+        ? rm.GetDiffusionGrid("glucose")
+        : nullptr;
 
   SetCurrentLiveTime((sparams->dt_cycle + 1) *
                      sparams->average_maximum_time_untill_apoptosis_cart);
   // Add Consumption and Secretion
   //  Set default oxygen consumption rate
   SetOxygenConsumptionRate(sparams->default_oxygen_consumption_cart);
-  // Compute constants for all ConsumptionSecretion of Oxygen
+  // Set default glucose consumption rate
+  SetGlucoseConsumptionRate(sparams->default_glucose_consumption_cart);
+  // Compute constants for all ConsumptionSecretion of Oxygen and glucose
   ComputeConstantsConsumptionSecretion();
 }
 
@@ -141,7 +147,7 @@ void CarTCell::ChangeVolumeExponentialRelaxationEquation(
   // if the volume has changed
   if (new_volume != current_total_volume) {
     SetVolume(new_volume);
-    // Update constants for all ConsumptionSecretion of Oxygen and
+    // Update constants for all ConsumptionSecretion of Oxygen, glucose and
     // Immunostimulatory Factors
     ComputeConstantsConsumptionSecretion();
   }
@@ -176,15 +182,22 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
     if (rng->Uniform(0.0, 1.0) < sparams->motility_probability_cart) {
       // random direction as unitary vector
       const Real3 random_direction = GenerateRandomDirection();
-      Real3 direction_to_immunostimulatory_factor;
-      // returns normalized gradient towards the immunostimulatory factor source
-      immunostimulatory_factor_dgrid_->GetGradient(
-          current_position, &direction_to_immunostimulatory_factor, true);
-      // motility = bias * direction_to_immunostimulatory_factor +
-      // (1-bias)*random_direction
-      motility =
-          sparams->migration_bias_cart * direction_to_immunostimulatory_factor +
-          sparams->migration_one_minus_bias_cart * random_direction;
+      //initialize motility with random direction
+      motility = random_direction;
+
+      if (IsImmunostimulatoryFactorDefined()) {
+        // if there is an immunostimulatory factor gradient set, the CAR-T cell will moves partially towards it, otherwise it will move randomly
+        Real3 direction_to_immunostimulatory_factor;
+        // returns normalized gradient towards the immunostimulatory factor source
+        immunostimulatory_factor_dgrid_->GetGradient(
+            current_position, &direction_to_immunostimulatory_factor, true);
+        // motility = bias * direction_to_immunostimulatory_factor +
+        // (1-bias)*random_direction
+        motility =
+            sparams->migration_bias_cart * direction_to_immunostimulatory_factor +
+            sparams->migration_one_minus_bias_cart * random_direction;
+      }
+      
       const real_t motility_norm_squared = motility[0] * motility[0] +
                                            motility[1] * motility[1] +
                                            motility[2] * motility[2];
@@ -399,10 +412,14 @@ real_t CarTCell::ConsumeSecreteSubstance(int substance_id,
   if (substance_id == oxygen_dgrid_->GetContinuumId()) {
     // consuming oxygen
     res = (old_concentration + constant1_oxygen_) / constant2_oxygen_;
-  } else if (substance_id ==
-             immunostimulatory_factor_dgrid_->GetContinuumId()) {
+  } else if (IsImmunostimulatoryFactorDefined() && substance_id == immunostimulatory_factor_dgrid_->GetContinuumId()) {
+    // There is a definde immunostimulatory factor grid and this is the one being updated
     // CAR-T do not change immunostimulatory factor levels
     res = old_concentration;
+  } else if (IsGlucoseDefined() && substance_id == glucose_dgrid_->GetContinuumId()) {
+    // There is a definde glucose grid and this is the one being updated
+    // CAR-T do not change glucose levels
+    res = (old_concentration + constant1_glucose_) / constant2_glucose_;
   } else {
     throw std::invalid_argument("Unknown substance id: " +
                                 std::to_string(substance_id));
@@ -425,7 +442,7 @@ void CarTCell::ComputeConstantsConsumptionSecretion() {
   const real_t volume = GetVolume();
   const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // compute the constants for the differential equation explicit solution: for
-  // oxygen and immunostimulatory factor
+  // oxygen and glucose
   // dt*(cell_volume/voxel_volume)*quantity_secretion*substance_saturation =  dt
   // · (V_k / V_voxel) · S_k · ρ*_k)
   constant1_oxygen_ = 0.;
@@ -435,6 +452,17 @@ void CarTCell::ComputeConstantsConsumptionSecretion() {
   constant2_oxygen_ = 1 + sparams->dt_substances *
                               (volume / sparams->voxel_volume) *
                               (oxygen_consumption_rate_);
+  // Compute constants for glucose consumption if glucose is defined
+  if (IsGlucoseDefined()) {
+    // dt*(cell_volume/voxel_volume)*quantity_secretion*substance_saturation =  dt
+    // · (V_k / V_voxel) · S_k · ρ*_k)
+    constant1_glucose_ = 0.;
+    // 1 + dt*(cell_volume/voxel_volume)*(quantity_secretion +
+    // quantity_consumption ) = [1 + dt · (V_k / V_voxel) · (S_k + U_k)]
+    constant2_glucose_ = 1 + sparams->dt_substances *
+                                (volume / sparams->voxel_volume) *
+                                (glucose_consumption_rate_);
+  }
 }
 
 /// Main behavior executed at each simulation step
@@ -470,6 +498,10 @@ void StateControlCart::Run(Agent* agent) {
           // Reduce oxygen consumption
           cell->SetOxygenConsumptionRate(
               cell->GetOxygenConsumptionRate() *
+              sparams->reduction_consumption_dead_cells);
+          // Reduce glucose consumption
+          cell->SetGlucoseConsumptionRate(
+              cell->GetGlucoseConsumptionRate() *
               sparams->reduction_consumption_dead_cells);
           // Update constants for all Consumption of oxygen
           cell->ComputeConstantsConsumptionSecretion();

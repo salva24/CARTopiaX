@@ -1,5 +1,5 @@
 [visualization]
-export = true
+export = false
 interval = 300
 
 [[visualize_agent]]
@@ -16,6 +16,3 @@ additional_data_members = ["diameter_","volume_"]
 
 [[visualize_diffusion]]
 name = "oxygen"
-
-[[visualize_diffusion]]
-name = "immunostimulatory_factor"

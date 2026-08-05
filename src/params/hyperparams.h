@@ -161,12 +161,22 @@ struct SimParam : public ParamGroup {
   ///  Number of voxels per axis for the substances grid
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   int resolution_grid_substances = 50;
+
+  /// Minimum height (μm) at which the substances grid is initialized to a value different from 0. Heights are expressed in the simulation coordinate system,
+  /// where the domain extends from -bounded_space_length / 2 to +bounded_space_length / 2  By default it is automatically set to -bounded_space_length/2 to avoid any restrictions.
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t min_initial_z_substances = -500;
+  /// Maximum height (μm) at which the substances grid is initialized to a value different from 0. Heights are expressed in the simulation coordinate system,
+  /// where the domain extends from -bounded_space_length / 2 to +bounded_space_length / 2  By default it is automatically set to +bounded_space_length/2 to avoid any restrictions.
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t max_initial_z_substances = 500;
+
   /// Minimum height (μm) at which lateral Dirichlet oxygen boundary conditions
   /// are applied. Heights are expressed in the simulation coordinate system,
   /// where the domain extends from -bounded_space_length / 2 to +bounded_space_length / 2
   /// along the z-axis. Setting this value equal to the minimum domain height
   /// (-bounded_space_length / 2) causes the floor boundary (z = -bounded_space_length / 2)
-  /// to also act as an oxygen-producing Dirichlet boundary.
+  /// to also act as an oxygen-producing Dirichlet boundary.  By default it is automatically set to -bounded_space_length/2 to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t lateral_oxygen_production_min_z = -500.0;
   /// Maximum height (μm) at which lateral Dirichlet oxygen boundary conditions
@@ -174,7 +184,7 @@ struct SimParam : public ParamGroup {
   /// where the domain extends from -bounded_space_length / 2 to +bounded_space_length / 2
   /// along the z-axis. Setting this value equal to the maximum domain height
   /// (+bounded_space_length / 2) causes the roof boundary (z = +bounded_space_length / 2)
-  /// to also act as an oxygen-producing Dirichlet boundary.
+  /// to also act as an oxygen-producing Dirichlet boundary.  By default it is automatically set to bounded_space_length/2 to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t lateral_oxygen_production_max_z = 500.0;
   /// Wether the Thomas algortithm should also diffuse the Chemicals in the z-axis or not. 
@@ -187,19 +197,37 @@ struct SimParam : public ParamGroup {
   /// Decay constant of oxygen in min⁻¹
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t decay_constant_oxygen = 0.1;
-  /// Diffusion coefficient of immunostimulatory factor in μm²/min
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t diffusion_coefficient_immunostimulatory_factor = 1000;
-  /// Decay constant of immunostimulatory factor in min⁻¹
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t decay_constant_immunostimulatory_factor = 0.016;
   /// Reference level of oxygen at the boundaries in mmHg
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t oxygen_reference_level = 38;
   /// Initial oxygen concentration in each voxel in mmHg
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t initial_oxygen_level = 38;
+  /// Wether to add immunostimulatory factor grid or not
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  bool add_immunostimulatory_factor = true;
+  /// Diffusion coefficient of immunostimulatory factor in μm²/min
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t diffusion_coefficient_immunostimulatory_factor = 1000;
+  /// Decay constant of immunostimulatory factor in min⁻¹
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t decay_constant_immunostimulatory_factor = 0.016;
+  /// Wether to add glucose gradient grid or not
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  bool add_glucose = false;
+  /// Diffusion coefficient of immunostimulatory factor in μm²/min
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t diffusion_coefficient_glucose = 7800;
+  /// Decay constant of immunostimulatory factor in min⁻¹
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t decay_constant_glucose = 0.01;
+  /// Initial glucose concentration in each voxel in mmol/L
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t initial_glucose_level = 24.98;
 
+    /// Maximum radius for glucose initialization in micrometers. If the tumor is spherical, the glucose will be initialized in a sphere of this radius. If the tumor is cylindrical, the glucose will be initialized in a cylinder of this radius. Outside of this radius, the glucose will be initialized to 0. By default it is set to the bounded_space_length to avoid any restrictions.
+  real_t max_radius_glucose_initialization = 1000;
+  
   /// Forces
   ///  Repulsion coeficient between tumor cells
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -294,6 +322,9 @@ struct SimParam : public ParamGroup {
   /// Default oxygen consumption rate of tumor cell
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_oxygen_consumption_tumor_cell = 10;
+  /// Default glucose consumption rate of tumor cell
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t default_glucose_consumption_tumor_cell = 0.0007;
   /// Volume parameters
   /// Default total volume of a new tumor cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -371,6 +402,9 @@ struct SimParam : public ParamGroup {
   /// Default oxygen consumption rate of CAR-T cell
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_oxygen_consumption_cart = 1;
+  /// Default glucose consumption rate of CAR-T cell
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t default_glucose_consumption_cart = 0.0007;
   /// Volume parameters
   ///  Default total volume of a new CAR-T cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

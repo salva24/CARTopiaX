@@ -121,9 +121,9 @@ std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius, real_t cyl
 
 // Function to compute the number of tumor cells of each type, the radius of the
 // tumor, the number of alive and dead cart cells, the average oncoprotein level, the average oxygen level of the
-// cancer cells and the average oxygen level of all cells. Only considering cells within the specified inner and outer radius.
+// cancer cells, the average oxygen level of all cells, the average glucose level of the cancer cells and the average glucose level of all cells. Only considering cells within the specified inner and outer radius.
 std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t,
-           real_t, real_t, real_t>
+           real_t, real_t, real_t, real_t, real_t>
 AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
   real_t inner_radius_squared = inner_radius_considered * inner_radius_considered;
   real_t outer_radius_squared = outer_radius_considered * outer_radius_considered;
@@ -132,6 +132,12 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
   ResourceManager* rm = sim->GetResourceManager();
   DiffusionGrid* oxygen_dgrid = rm->GetDiffusionGrid("oxygen");
   const auto* sparams = sim->GetParam()->Get<SimParam>(); 
+
+  // Pointer to glucose diffusion grid only if it is added in the simulation
+  DiffusionGrid* glucose_dgrid = nullptr;
+  if (sparams->add_glucose) {
+    glucose_dgrid = rm->GetDiffusionGrid("glucose");
+  }
 
   int total_num_tumor_cells = 0;
   int num_tumor_cells_type1 = 0;
@@ -146,6 +152,8 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
   real_t acumulator_oncoprotein = 0.0;
   real_t acumulator_oxygen_cancer_cells = 0.0;
   real_t acumulator_oxygen_all_cells = 0.0;
+  real_t acumulator_glucose_cancer_cells = 0.0;
+  real_t acumulator_glucose_all_cells = 0.0;
 
   bool tumor_shape_is_cylindrical = sparams->tumor_shape == "cylinder";
   bool tumor_shape_is_spherical = sparams->tumor_shape == "sphere";
@@ -180,6 +188,11 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
       // Accumulate oxygen level for average calculation
       acumulator_oxygen_cancer_cells += oxygen_dgrid->GetValue(pos);
 
+      if (glucose_dgrid!= nullptr) {
+        // Accumulate glucose level for average calculation
+        acumulator_glucose_all_cells += glucose_dgrid->GetValue(pos);
+        acumulator_glucose_cancer_cells += glucose_dgrid->GetValue(pos);
+      }
 
       // computing tumor radius
       if (dist_sq > max_dist_sq) {
@@ -212,13 +225,15 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
           break;
       }
     } else if (const auto* cart_cell = dynamic_cast<const CarTCell*>(agent)) {
+      // Accumulate oxygen level for average calculation
+      acumulator_oxygen_all_cells += oxygen_dgrid->GetValue(pos);
+      if (glucose_dgrid!= nullptr) {
+        // Accumulate glucose level for average calculation
+        acumulator_glucose_all_cells += glucose_dgrid->GetValue(pos);
+      }
       if (cart_cell->GetState() == CarTCellState::kAlive) {
-        // Accumulate oxygen level for average calculation
-        acumulator_oxygen_all_cells += oxygen_dgrid->GetValue(pos);
         num_alive_cart++;
       } else if (cart_cell->GetState() == CarTCellState::kApoptotic) {
-        // Accumulate oxygen level for average calculation
-        acumulator_oxygen_all_cells += oxygen_dgrid->GetValue(pos);
         //Dead CART cell
         num_dead_cart++;
       }
@@ -237,11 +252,20 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
       (total_num_tumor_cells + num_alive_cart + num_dead_cart > 0)
           ? (acumulator_oxygen_all_cells / (total_num_tumor_cells + num_alive_cart + num_dead_cart))
           : 0.0;
+  const real_t average_glucose_cancer_cells =
+      (total_num_tumor_cells > 0 && glucose_dgrid != nullptr)
+          ? (acumulator_glucose_cancer_cells / total_num_tumor_cells)
+          : 0.0;
+  const real_t average_glucose_all_cells =
+      (total_num_tumor_cells + num_alive_cart + num_dead_cart > 0 && glucose_dgrid != nullptr)
+          ? (acumulator_glucose_all_cells / (total_num_tumor_cells + num_alive_cart + num_dead_cart))
+          : 0.0;
   return {total_num_tumor_cells, num_tumor_cells_type1,
           num_tumor_cells_type2, num_tumor_cells_type3,
           num_tumor_cells_type4, num_tumor_cells_type5_dead,
           num_alive_cart, num_dead_cart, std::sqrt(max_dist_sq),
-          average_oncoprotein,   average_oxygen_cancer_cells, average_oxygen_all_cells};
+          average_oncoprotein,   average_oxygen_cancer_cells, average_oxygen_all_cells,
+          average_glucose_cancer_cells, average_glucose_all_cells};
 }
 
 // Function to output summary CSV
@@ -266,7 +290,7 @@ void OutputSummary::operator()() {
             << "total_days,total_hours,total_minutes,tumor_radius,num_cells,"
                "num_tumor_cells,tumor_cells_type1,tumor_cells_type2,tumor_"
                "cells_type3,tumor_cells_type4,tumor_cells_type5_dead,num_alive_"
-               "cart,num_dead_cart,average_oncoprotein,average_oxygen_cancer_cells,average_oxygen_all_cells\n";  // Header
+               "cart,num_dead_cart,average_oncoprotein,average_oxygen_cancer_cells,average_oxygen_all_cells,average_glucose_cancer_cells,average_glucose_all_cells\n";  // Header
                                                                           // for
                                                                           // CSV
                                                                           // file
@@ -285,12 +309,14 @@ void OutputSummary::operator()() {
       real_t average_oncoprotein = 0.0;
       real_t average_oxygen_cancer_cells = 0.0;
       real_t average_oxygen_all_cells = 0.0;
+      real_t average_glucose_cancer_cells = 0.0;
+      real_t average_glucose_all_cells = 0.0;
       // Analyze tumor with no limits on inner and outer radius
       std::tie(total_num_tumor_cells, num_tumor_cells_type1,
                num_tumor_cells_type2, num_tumor_cells_type3,
                num_tumor_cells_type4, num_tumor_cells_type5_dead,
                num_alive_cart, num_dead_cart, tumor_radius, average_oncoprotein,
-               average_oxygen_cancer_cells, average_oxygen_all_cells) = AnalyzeTumor(0, sparams->bounded_space_length);
+               average_oxygen_cancer_cells, average_oxygen_all_cells, average_glucose_cancer_cells, average_glucose_all_cells) = AnalyzeTumor(0, sparams->bounded_space_length);
       size_t total_num_cells = simulation->GetResourceManager()->GetNumAgents();
 
       // If a dosage is administred this exact time the numbers are not seen in
@@ -314,7 +340,8 @@ void OutputSummary::operator()() {
            << num_tumor_cells_type2 << "," << num_tumor_cells_type3 << ","
            << num_tumor_cells_type4 << "," << num_tumor_cells_type5_dead << ","
            << num_alive_cart << ","<< num_dead_cart << "," << average_oncoprotein << ","
-           << average_oxygen_cancer_cells << "," << average_oxygen_all_cells << "\n";
+           << average_oxygen_cancer_cells << "," << average_oxygen_all_cells << "," 
+           << average_glucose_cancer_cells << "," << average_glucose_all_cells << "\n";
     }
 
     if (sparams->output_information_dependent_on_radius) {
@@ -351,7 +378,9 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step, const real_t
         file << ",tumor_cells_type5_dead_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size;
         file << ",average_oncoprotein_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size;
         file << ",average_oxygen_cancer_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size;
-        file << ",average_oxygen_all_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size;  
+        file << ",average_oxygen_all_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size; 
+        file << ",average_glucose_cancer_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size;
+        file << ",average_glucose_all_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size; 
       }
       // End of header line
       file << "\n";
@@ -378,12 +407,14 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step, const real_t
       real_t average_oncoprotein = 0.0;
       real_t average_oxygen_cancer_cells = 0.0;
       real_t average_oxygen_all_cells = 0.0;
+      real_t average_glucose_cancer_cells = 0.0;
+      real_t average_glucose_all_cells = 0.0;
       // Analyze tumor with no limits on inner and outer radius
       std::tie(total_num_tumor_cells, num_tumor_cells_type1,
               num_tumor_cells_type2, num_tumor_cells_type3,
               num_tumor_cells_type4, num_tumor_cells_type5_dead,
               num_alive_cart, num_dead_cart, tumor_radius, average_oncoprotein,
-              average_oxygen_cancer_cells, average_oxygen_all_cells) = AnalyzeTumor(inner_radius_considered, outer_radius_considered);
+              average_oxygen_cancer_cells, average_oxygen_all_cells, average_glucose_cancer_cells, average_glucose_all_cells) = AnalyzeTumor(inner_radius_considered, outer_radius_considered);
 
       const int num_alive_tumor_cells = num_tumor_cells_type1 + num_tumor_cells_type2 + num_tumor_cells_type3 + num_tumor_cells_type4;
       const int num_alive_cells = num_alive_cart + num_alive_tumor_cells;
@@ -405,7 +436,9 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step, const real_t
             << "," << num_tumor_cells_type5_dead
             << "," << average_oncoprotein
             << "," << average_oxygen_cancer_cells
-            << "," << average_oxygen_all_cells;
+            << "," << average_oxygen_all_cells
+            << "," << average_glucose_cancer_cells
+            << "," << average_glucose_all_cells;
     }  
     // End of line for the current step
     file << "\n";

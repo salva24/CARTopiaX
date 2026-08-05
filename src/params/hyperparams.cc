@@ -146,19 +146,52 @@ void SimParam::LoadParams(const std::string& filename) {
               reduction_consumption_dead_cells);
   load_int("resolution_grid_substances", resolution_grid_substances);
 
-  load_double("lateral_oxygen_production_min_z",
-              lateral_oxygen_production_min_z);
+  if (jfile.contains("min_initial_z_substances")) {
+    min_initial_z_substances = jfile["min_initial_z_substances"].get<double>();
+  } else {
+    min_initial_z_substances = -bounded_space_length/2;
+  }
 
+  if (jfile.contains("max_initial_z_substances")) {
+    max_initial_z_substances = jfile["max_initial_z_substances"].get<double>();
+  } else {
+    max_initial_z_substances = -bounded_space_length/2;
+  }
+
+  if (jfile.contains("lateral_oxygen_production_min_z")) {
+    lateral_oxygen_production_min_z = jfile["lateral_oxygen_production_min_z"].get<double>();
+  } else {
+    lateral_oxygen_production_min_z = -bounded_space_length/2;
+  }
+
+  if (jfile.contains("lateral_oxygen_production_max_z")) {
+    lateral_oxygen_production_max_z = jfile["lateral_oxygen_production_max_z"].get<double>();
+  } else {
+    lateral_oxygen_production_max_z = -bounded_space_length/2;
+  }
   load_bool("diffuse_on_z_axis", diffuse_on_z_axis);
 
   load_double("diffusion_coefficient_oxygen", diffusion_coefficient_oxygen);
   load_double("decay_constant_oxygen", decay_constant_oxygen);
+  load_double("oxygen_reference_level", oxygen_reference_level);
+  load_double("initial_oxygen_level", initial_oxygen_level);
+  load_bool("add_immunostimulatory_factor", add_immunostimulatory_factor);
   load_double("diffusion_coefficient_immunostimulatory_factor",
               diffusion_coefficient_immunostimulatory_factor);
   load_double("decay_constant_immunostimulatory_factor",
               decay_constant_immunostimulatory_factor);
-  load_double("oxygen_reference_level", oxygen_reference_level);
-  load_double("initial_oxygen_level", initial_oxygen_level);
+  load_bool("add_glucose", add_glucose);
+  load_double("diffusion_coefficient_glucose", diffusion_coefficient_glucose);
+  load_double("decay_constant_glucose", decay_constant_glucose);
+  load_double("initial_glucose_level", initial_glucose_level);
+
+  if (jfile.contains("max_radius_glucose_initialization")) {
+    max_radius_glucose_initialization = jfile["max_radius_glucose_initialization"].get<double>();
+  } else {
+    max_radius_glucose_initialization = bounded_space_length;
+  }
+
+
 
   if (jfile.contains("diffuse_on_z_axis")) {
     diffuse_on_z_axis = jfile["diffuse_on_z_axis"].get<bool>();
@@ -227,6 +260,8 @@ void SimParam::LoadParams(const std::string& filename) {
 
   load_double("default_oxygen_consumption_tumor_cell",
               default_oxygen_consumption_tumor_cell);
+  load_double("default_glucose_consumption_tumor_cell",
+              default_glucose_consumption_tumor_cell);
   load_double("default_volume_new_tumor_cell", default_volume_new_tumor_cell);
   load_double("default_volume_nucleus_tumor_cell",
               default_volume_nucleus_tumor_cell);
@@ -280,6 +315,8 @@ void SimParam::LoadParams(const std::string& filename) {
 
   load_double("default_oxygen_consumption_cart",
               default_oxygen_consumption_cart);
+  load_double("default_glucose_consumption_cart",
+              default_glucose_consumption_cart);
   load_double("default_volume_new_cart_cell", default_volume_new_cart_cell);
   load_double("kill_rate_cart", kill_rate_cart);
   load_double("adhesion_rate_cart", adhesion_rate_cart);
@@ -440,6 +477,10 @@ void SimParam::PrintParams() const {
   std::cout << "///\n\n";
   std::cout << "Number of voxels per axis for the substances grid: "
             << resolution_grid_substances << "\n";
+  std::cout << "Minimum initial z-coordinate for substances values different than 0 (micrometers): "
+            << min_initial_z_substances << "\n";
+  std::cout << "Maximum initial z-coordinate for substances values different than 0 (micrometers): "
+            << max_initial_z_substances << "\n";
   std::cout << "Minimum z-coordinate for lateral oxygen production (micrometers): "
             << lateral_oxygen_production_min_z << "\n";
   std::cout << "Maximum z-coordinate for lateral oxygen production (micrometers): "
@@ -450,14 +491,26 @@ void SimParam::PrintParams() const {
             << diffusion_coefficient_oxygen << "\n";
   std::cout << "Decay constant of oxygen (min⁻¹): " << decay_constant_oxygen
             << "\n";
-  std::cout << "Diffusion coefficient of immunostimulatory factor (μm²/min): "
-            << diffusion_coefficient_immunostimulatory_factor << "\n";
-  std::cout << "Decay constant of immunostimulatory factor (min⁻¹): "
-            << decay_constant_immunostimulatory_factor << "\n";
   std::cout << "Reference level of oxygen at the boundaries (mmHg): "
             << oxygen_reference_level << "\n";
   std::cout << "Initial oxygen concentration in each voxel (mmHg): "
             << initial_oxygen_level << "\n";
+  std::cout << "Whether to add immunostimulatory factor: " <<
+            (add_immunostimulatory_factor ? "true" : "false") << "\n";
+  std::cout << "Diffusion coefficient of immunostimulatory factor (μm²/min): "
+            << diffusion_coefficient_immunostimulatory_factor << "\n";
+  std::cout << "Decay constant of immunostimulatory factor (min⁻¹): "
+            << decay_constant_immunostimulatory_factor << "\n";
+  std::cout << "Whether to add glucose: " <<
+            (add_glucose ? "true" : "false") << "\n";
+  std::cout << "Diffusion coefficient of glucose (μm²/min): "
+            << diffusion_coefficient_glucose << "\n";
+  std::cout << "Decay constant of glucose (min⁻¹): " 
+            << decay_constant_glucose << "\n";
+  std::cout << "Initial glucose concentration in each voxel (mM): " 
+            << initial_glucose_level << "\n\n";
+  std::cout << "Maximum radius for glucose initialization (micrometers): "
+            << max_radius_glucose_initialization << "\n\n";
 
   /// Forces
   ///
@@ -527,6 +580,8 @@ void SimParam::PrintParams() const {
             << maximum_necrosis_rate << "\n";
   std::cout << "Default oxygen consumption rate of tumor cell: "
             << default_oxygen_consumption_tumor_cell << "\n";
+  std::cout << "Default glucose consumption rate of tumor cell: "
+            << default_glucose_consumption_tumor_cell << "\n";
 
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new tumor cell (μm³): "
@@ -600,6 +655,8 @@ void SimParam::PrintParams() const {
             << average_maximum_time_untill_apoptosis_cart << "\n";
   std::cout << "Default oxygen consumption rate of CAR-T cell: "
             << default_oxygen_consumption_cart << "\n";
+  std::cout << "Default glucose consumption rate of CAR-T cell: " 
+            << default_glucose_consumption_cart << "\n";
 
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new CAR-T cell (μm³): "

@@ -3,8 +3,6 @@
   "num_radius_intervals": 20,
   "lateral_oxygen_production_min_z": -300.0,
   "lateral_oxygen_production_max_z": 300.0,
-  "min_initial_z_substances": -300.0,
-  "max_initial_z_substances": 300.0,
   "diffuse_on_z_axis": false,
   "output_performance_statistics": false,
   "total_minutes_to_simulate": 4320,
@@ -12,7 +10,7 @@
   "bounded_space_length": 6500.0,
   "tumor_shape": "cylinder",
   "output_information_dependent_on_radius": true,
-  "cylindrical_tumor_radius": 3000.0,
+  "cylindrical_tumor_radius": 2875.0,
   "max_radius_analysis_csv_dependent_on_radius": 3000.0,
   "cylindrical_tumor_height": 100.0,
   "initial_number_of_cylindrical_tumor_cells": 28000,
@@ -23,12 +21,11 @@
   "initial_oxygen_level": 0.0,
   "oxygen_reference_level": 165.0,
   "default_oxygen_consumption_tumor_cell": 77.47,
-  "default_oxygen_consumption_cart": 0,
   "diffusion_coefficient_oxygen": 180000.0,
   "decay_constant_oxygen": 0.01,
   "time_apoptosis": 6000.0,
   "treatment": {
-    "0": 0
+    "0": 560000
   },
   "average_time_transformation_random_rate": 72.0,
   "standard_deviation_transformation_random_rate": 15.0,
@@ -46,9 +43,6 @@
   "add_immunostimulatory_factor": false,
   "add_glucose": true,
   "diffusion_coefficient_glucose": 7800,
-  "decay_constant_glucose": 0.000001,
-  "initial_glucose_level": 24.98,
-  "max_radius_glucose_initialization": 3100.0,
-  "default_glucose_consumption_tumor_cell": 0.145,
-  "default_glucose_consumption_cart": 0.145
+  "decay_constant_glucose": 0.01,
+  "initial_glucose_level": 24.98
 }

@@ -24,7 +24,7 @@
 namespace bdm {
 
 /// List the diffused substances
-enum Substances { kImmunostimulatoryFactor, kOxygen };
+enum Substances { kImmunostimulatoryFactor, kOxygen , kGlucose};
 
 /// Function declaration for the main simulation
 int Simulate(int argc, const char** argv);
