@@ -29,12 +29,12 @@ import optuna
 import pandas as pd
 
 # Change this: File Parameters for the desired experiment
-EXPERIMENT_ID = 30
+EXPERIMENT_ID = 31
 SEED = 42
 # You can set the number of trials to 0 to skip the optimization and just load the best result from the database
-NUMBER_OF_TRIALS = 1000000
+NUMBER_OF_TRIALS = 0
 # Number of Monte Carlo simulations to run for each trial. Use one for an aproximation of the error with a single montecarlo run
-NUMBER_MONTE_CARLO = 1
+NUMBER_MONTE_CARLO = 3
 # BioDynaMo directory to execute the comand source thisbdm.sh, you can change it to your own path
 BIODYNAMO_DIR = " /home/usuario/Desktop/biodynamo/build/bin/thisbdm.sh"
 
@@ -59,14 +59,11 @@ def run_ABM(params, seed):
     #     "basal_necrosis_probability_cancer_cells"
     # ]
 
-    # nutrient_starvation_factor_cancer_cells = params[
-    #     "nutrient_starvation_factor_cancer_cells"
-    # # ]
     # oxygen_limit_for_proliferation = params[
     #     "oxygen_limit_for_proliferation"
     # ]
-    default_glucose_consumption_tumor_cell = params[
-        "default_glucose_consumption_tumor_cell"
+    basal_necrosis_probability_cancer_cells = params[
+        "basal_necrosis_probability_cancer_cells"
     ]
     # oxygen_saturation_for_proliferation = params[
     #     "oxygen_saturation_for_proliferation"
@@ -74,7 +71,7 @@ def run_ABM(params, seed):
 
     # Change this configuration for the ABM run
     config = {
-  "seed": 42,
+  "seed": seed,
   "num_radius_intervals": 20,
   "lateral_oxygen_production_min_z": -300.0,
   "lateral_oxygen_production_max_z": 300.0,
@@ -82,7 +79,7 @@ def run_ABM(params, seed):
   "max_initial_z_substances": 300.0,
   "diffuse_on_z_axis": False,
   "output_performance_statistics": False,
-  "total_minutes_to_simulate": 4320,
+  "total_minutes_to_simulate": 1440,
   "output_csv_interval": 600,
   "bounded_space_length": 6500.0,
   "tumor_shape": "cylinder",
@@ -90,7 +87,7 @@ def run_ABM(params, seed):
   "cylindrical_tumor_radius": 3000.0,
   "max_radius_analysis_csv_dependent_on_radius": 3000.0,
   "cylindrical_tumor_height": 100.0,
-  "initial_number_of_cylindrical_tumor_cells": 2800,
+  "initial_number_of_cylindrical_tumor_cells": 28000,
   "default_volume_new_tumor_cell": 1468.0,
   "default_volume_new_cart_cell": 269.0,
   "oncoprotein_mean": 1.0,
@@ -107,25 +104,25 @@ def run_ABM(params, seed):
   },
   "average_time_transformation_random_rate": 72.0,
   "standard_deviation_transformation_random_rate": 15.0,
-  "oxygen_saturation_for_proliferation": 13.74,
-  "oxygen_limit_for_proliferation": 5.9,
+  "oxygen_saturation_for_proliferation": 0,
+  "oxygen_limit_for_proliferation": 0.0,
   "oxygen_limit_for_necrosis_maximum": 0.0,
-  "oxygen_limit_for_necrosis": 45.0,
-  "maximum_necrosis_rate": 0.0000216,
+  "oxygen_limit_for_necrosis": 0.0,
+  "maximum_necrosis_lack_of_oxygen_rate": 0.0000216,
   "reduction_consumption_dead_cells": 0.0,
-  "basal_necrosis_probability_cancer_cells": 0.0000166,
-  "nutrient_starvation_factor_cancer_cells": 1.00,
+  "basal_necrosis_probability_cancer_cells": basal_necrosis_probability_cancer_cells,
   "bounded_space_min_allowed_z": -50.0,
   "bounded_space_max_allowed_z": 50.0,
   "minimum_distance_from_tumor_to_spawn_cart": 20.0,
   "add_immunostimulatory_factor": False,
-  "add_glucose": True,
+  "add_glucose": False,
   "diffusion_coefficient_glucose": 7800,
   "decay_constant_glucose": 0.000001,
   "initial_glucose_level": 24.98,
   "max_radius_glucose_initialization": 3000.0,
-  "default_glucose_consumption_tumor_cell": 1,
-  "default_glucose_consumption_cart": 0.0
+  "default_glucose_consumption_tumor_cell": 0.145,
+  "default_glucose_consumption_cart": 0.145,
+  "dt_substances": 4320
 }
     # Save the config parameters for the run to the params.json file
     with open(PARAMS_PATH, "w") as f:
@@ -192,14 +189,14 @@ def compute_error():
     # target_tumor_cells_type5_dead_2880 = 350
 
    # take the value at the minute 4320 for the number of dead tumor cells in the simulation data
-    row = df_s[df_s["total_minutes"] == 2880].iloc[0]
-    average_glucose_all_cells_2880 = row["average_glucose_all_cells"]
-    target_average_glucose_all_cells_2880 = 5.5
+    row = df_s[df_s["total_minutes"] == 1440].iloc[0]
+    dead_cells_1440 = row["tumor_cells_type5_dead"]
+    dead_cells_1440_target = 200
     # total_tumor_cells_4320 = row["num_tumor_cells"]
     # target_total_tumor_cells_4320 = 38266
 
     # Compute absolute errors
-    error_total_tumor_cells = abs(average_glucose_all_cells_2880 - target_average_glucose_all_cells_2880)
+    error_total_tumor_cells = abs(dead_cells_1440 - dead_cells_1440_target)
 
     return float(error_total_tumor_cells)
 
@@ -326,9 +323,8 @@ def objective(trial):
     # Change this: Define the parameters to be optimized and their ranges
     params = {
         # "oxygen_limit_for_proliferation": trial.suggest_float("oxygen_limit_for_proliferation", 0.0, 40, step=0.1),
-        # "maximum_necrosis_rate": trial.suggest_float("maximum_necrosis_rate", 0.00002, 0.000022, step=0.0000004),
-        "default_glucose_consumption_tumor_cell": trial.suggest_float("default_glucose_consumption_tumor_cell", 1.4, 1.6, step=0.04),
-        # "nutrient_starvation_factor_cancer_cells": trial.suggest_float("nutrient_starvation_factor_cancer_cells", 1.000501, 1.000609, step=0.000001),
+        # "maximum_necrosis_lack_of_oxygen_rate": trial.suggest_float("maximum_necrosis_lack_of_oxygen_rate", 0.00002, 0.000022, step=0.0000004),
+        "basal_necrosis_probability_cancer_cells": trial.suggest_float("basal_necrosis_probability_cancer_cells", 0.0000040, 0.0000060, step=0.0000001),
     }
 
     logging.info(f"Trial {trial.number} | params={params}")

@@ -325,7 +325,7 @@ These are all the other hyperparameters that are not adviced to be modified unle
 | `oxygen_limit_for_necrosis` | 5 | mmHg | Oxygen level below which necrosis begins |
 | `oxygen_limit_for_necrosis_maximum` | 2.5 | mmHg | Oxygen level for maximum necrosis probability |
 | `time_lysis` | 86400 | minutes | Time until lysed necrotic cell removal |
-| `maximum_necrosis_rate` | 0.00277778 | min⁻¹ | Maximum necrosis rate at 0 oxygen (1/360 min⁻¹) |
+| `maximum_necrosis_lack_of_oxygen_rate` | 0.00277778 | min⁻¹ | Maximum necrosis rate at 0 oxygen (1/360 min⁻¹) |
 | `default_oxygen_consumption_tumor_cell` | 10 | 1/min | Baseline oxygen consumption rate of tumor cells |
 | `default_volume_new_tumor_cell` | 2494 | μm³ | Total volume of newly created tumor cell |
 | `default_volume_nucleus_tumor_cell` | 540 | μm³ | Nuclear volume of newly created tumor cell |

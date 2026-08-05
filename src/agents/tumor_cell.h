@@ -378,12 +378,13 @@ struct StateControlGrowProliferate : public Behavior {
  private:
   /// Compute the probability of the cell entering necrosis
   ///
-  /// Determines whether a cell should enter necrosis based on oxygen levels
+  /// Determines whether a cell should enter necrosis based on oxygen and, if deffined, glucose levels
   ///
   /// @param oxygen_level Current oxygen concentration at the cell's location
+  /// @param glucose_level Current glucose concentration at the cell's location
   /// @param cell Pointer to the tumor cell being evaluated
   /// @return True if the cell should enter necrosis, false otherwise
-  static bool ShouldEnterNecrosis(real_t oxygen_level, TumorCell* cell);
+  static bool ShouldEnterNecrosis(real_t oxygen_level, real_t glucose_level, TumorCell* cell);
 
   /// Manage the behavior of a living tumor cell
   ///

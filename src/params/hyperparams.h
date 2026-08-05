@@ -224,8 +224,7 @@ struct SimParam : public ParamGroup {
   /// Initial glucose concentration in each voxel in mmol/L
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t initial_glucose_level = 24.98;
-
-    /// Maximum radius for glucose initialization in micrometers. If the tumor is spherical, the glucose will be initialized in a sphere of this radius. If the tumor is cylindrical, the glucose will be initialized in a cylinder of this radius. Outside of this radius, the glucose will be initialized to 0. By default it is set to the bounded_space_length to avoid any restrictions.
+  /// Maximum radius for glucose initialization in micrometers. If the tumor is spherical, the glucose will be initialized in a sphere of this radius. If the tumor is cylindrical, the glucose will be initialized in a cylinder of this radius. Outside of this radius, the glucose will be initialized to 0. By default it is set to the bounded_space_length to avoid any restrictions.
   real_t max_radius_glucose_initialization = 1000;
   
   /// Forces
@@ -306,19 +305,26 @@ struct SimParam : public ParamGroup {
   /// Limit of oxygen to maximum necrosis probability
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t oxygen_limit_for_necrosis_maximum = 2.5;
+  /// Maximum rate per minute of necrosis for tumor cells in case of hypoxia
+  /// with oxygen_limit_for_necrosis_maximum oxygen
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t maximum_necrosis_lack_of_oxygen_rate = 0.00277778;
+  /// Limit of glucose to start causing necrosis
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t glucose_limit_for_necrosis = 0;
+  /// Limit of glucose to maximum necrosis probability
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t glucose_limit_for_necrosis_maximum = 0;
+  /// Maximum rate per minute of necrosis for tumor cells in case of lack of nutrients
+  /// with glucose_limit_for_necrosis_maximum glucose
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t maximum_necrosis_lack_of_glucose_rate = 0.0;
   /// Basal necrosis probability for cancer cells per minute: death due to natural random causes
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t basal_necrosis_probability_cancer_cells = 0.0;
-  /// Nutrient starvation factor (>= 1.0) that multiplies the basal necrosis probability for cancer cells per minute: death due to natural random causes
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t nutrient_starvation_factor_cancer_cells = 1.0;
   /// Time in minutes until a lysed necrotic cell is removed from the simulation
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t time_lysis = 86400;
-  /// Maximum rate per minute of necrosis for tumor cells in case of hypoxia
-  /// with 0 oxygen
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t maximum_necrosis_rate = 0.00277778;
   /// Default oxygen consumption rate of tumor cell
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_oxygen_consumption_tumor_cell = 10;
@@ -455,10 +461,6 @@ struct SimParam : public ParamGroup {
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   size_t steps_in_one_day = 14400;
 
-  /// Scaled nutrient starvation factor for cancer cells considering the time step
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t scaled_nutrient_starvation_factor_cancer_cells = 1.0;
-  
   /// Volume of a single voxel in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t voxel_volume = 8000;

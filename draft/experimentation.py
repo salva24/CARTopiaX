@@ -73,10 +73,9 @@ def run_ABM(seed):
     "oxygen_limit_for_proliferation": 5.9,
     "oxygen_limit_for_necrosis_maximum": 0.0,
     "oxygen_limit_for_necrosis": 45.0,
-    "maximum_necrosis_rate": 0.0000216,
+    "maximum_necrosis_lack_of_oxygen_rate": 0.0000216,
     "reduction_consumption_dead_cells": 0.0,
     "basal_necrosis_probability_cancer_cells": 0.0000166,
-    "nutrient_starvation_factor_cancer_cells": 1.00
     }
 
     # Save the config parameters for this run to the params.json file

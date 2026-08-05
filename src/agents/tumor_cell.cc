@@ -456,12 +456,6 @@ void StateControlGrowProliferate::Run(Agent* agent) {
       // If the cell is attached to a cart, skip the state control and growth
       return;
     }
-    // Oxygen levels
-    const Real3 current_position = cell->GetPosition();
-    // Pointer to the oxygen diffusion grid
-    DiffusionGrid* oxygen_dgrid = cell->GetOxygenDiffusionGrid();
-    const real_t oxygen_level = oxygen_dgrid->GetValue(current_position);
-
     switch (cell->GetState()) {
       case TumorCellState::kAlive: {
         // the cell is growing to real_t its size before mitosis
@@ -469,8 +463,21 @@ void StateControlGrowProliferate::Run(Agent* agent) {
         // minutes per step)
         cell->SetTimerState(cell->GetTimerState() + sparams->dt_cycle);
 
-        // Enter necrosis if oxygen level is too low
-        if (ShouldEnterNecrosis(oxygen_level, cell)) {
+          // Oxygen levels
+          const Real3 current_position = cell->GetPosition();
+          // Pointer to the oxygen diffusion grid
+          DiffusionGrid* oxygen_dgrid = cell->GetOxygenDiffusionGrid();
+          const real_t oxygen_level = oxygen_dgrid->GetValue(current_position);
+
+          // Glucose levels if a glucose diffusion grid is defined
+          real_t glucose_level = 0.0;
+          if (cell->IsGlucoseDefined()) {
+            DiffusionGrid* glucose_dgrid = cell->GetGlucoseDiffusionGrid();
+            glucose_level = glucose_dgrid->GetValue(current_position);
+          }
+
+        // Enter necrosis if oxygen or glucose levels are too low
+        if (ShouldEnterNecrosis(oxygen_level, glucose_level, cell)) {
           // Exit the function to prevent further processing
           return;
         }
@@ -609,12 +616,13 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
 }
 
 // computes the probability of the cell entering necrosis
-bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level,
+bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level, real_t glucose_level,
                                                       TumorCell* cell) {
   Simulation* sim = Simulation::GetActive();
   const auto* sparams = sim->GetParam()->Get<SimParam>();
   // necrosis probability
-  // Default multiplier for necrosis probability
+  // Oxygen
+  // Default multiplier for necrosis probability because of low oxygen level
   real_t multiplier = 0.0;
   // oxygen threshold for considering necrosis
   if (oxygen_level < sparams->oxygen_limit_for_necrosis) {
@@ -627,16 +635,33 @@ bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level,
     multiplier = 1.0;
   }
   // Calculate the probability of necrosis based on oxygen level
-  // and multiply by sparams->dt_cycle since each timestep is sparams->dt_cycle
-  // minutes
+  const real_t maximum_necrosis_rate_oxygen_multiplier = sparams->maximum_necrosis_lack_of_oxygen_rate * multiplier;
+  // Glucose (only if glucose is defined in the simulation)
+  // Default multiplier for necrosis probability because of low glucose level
+  multiplier = 0.0;
+  if (cell->IsGlucoseDefined()) {
+    //there is a glucose diffusion grid defined in the simulation
+    // glucose threshold for considering necrosis
+    if (glucose_level < sparams->glucose_limit_for_necrosis) {
+      multiplier = (sparams->glucose_limit_for_necrosis - glucose_level) /
+                  (sparams->glucose_limit_for_necrosis -
+                    sparams->glucose_limit_for_necrosis_maximum);
+    }
+    // threshold for maximum necrosis probability
+    if (glucose_level < sparams->glucose_limit_for_necrosis_maximum) {
+      multiplier = 1.0;
+    }
+  }
+  // Calculate the probability of necrosis based on glucose level. If no glucose gradient is defined it will be zero
+  const real_t maximum_necrosis_rate_glucose_multiplier = sparams->maximum_necrosis_lack_of_glucose_rate * multiplier;
+  // Random natural causes
   const real_t current_basal_death_probability = cell->GetBasalDeathProbability();
-  const real_t maximum_necrosis_rate_multiplier = sparams->maximum_necrosis_rate * multiplier;
+  // Final probability: multiply by sparams->dt_cycle since each timestep is sparams->dt_cycle minutes
+  // The probability of necrosis is calculated as the complement of the product of the complements of the individual probabilities, scaled by the time step.
   const real_t probability_necrosis =
-      sparams->dt_cycle * ( maximum_necrosis_rate_multiplier + current_basal_death_probability
-                          - maximum_necrosis_rate_multiplier * current_basal_death_probability);
-
-  //increase basal death with nutrient_starvation
-  cell->SetBasalDeathProbability(current_basal_death_probability * sparams->scaled_nutrient_starvation_factor_cancer_cells);
+      sparams->dt_cycle * (1.0 - (1.0 - maximum_necrosis_rate_oxygen_multiplier) *
+                                  (1.0 - maximum_necrosis_rate_glucose_multiplier) *
+                                  (1.0 - current_basal_death_probability));
 
   Random* random = sim->GetRandom();
   const bool enter_necrosis = random->Uniform(0, 1) < probability_necrosis;
