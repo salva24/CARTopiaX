@@ -296,6 +296,12 @@ struct SimParam : public ParamGroup {
   /// Oxygen saturation level in tumor cells for proliferation
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t oxygen_saturation_for_proliferation = 38;
+  /// Glucose saturation level in tumor cells for proliferation
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t glucose_saturation_for_proliferation = 0;
+  /// Limit of glucose level for tumor cell proliferation
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t glucose_limit_for_proliferation = 0;
   /// Limit of oxygen level for tumor cell proliferation
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t oxygen_limit_for_proliferation = 10;

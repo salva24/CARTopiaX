@@ -249,13 +249,22 @@ void SimParam::LoadParams(const std::string& filename) {
   load_double("oxygen_saturation_for_proliferation",
               oxygen_saturation_for_proliferation);
   load_double("oxygen_limit_for_proliferation", oxygen_limit_for_proliferation);
+  load_double("glucose_saturation_for_proliferation",
+              glucose_saturation_for_proliferation);
+  load_double("glucose_limit_for_proliferation", glucose_limit_for_proliferation);
   load_double("oxygen_limit_for_necrosis", oxygen_limit_for_necrosis);
   load_double("oxygen_limit_for_necrosis_maximum",
               oxygen_limit_for_necrosis_maximum);
+  load_double("maximum_necrosis_lack_of_oxygen_rate", maximum_necrosis_lack_of_oxygen_rate);
+  load_double("glucose_limit_for_necrosis", glucose_limit_for_necrosis);
+  load_double("glucose_limit_for_necrosis_maximum",
+              glucose_limit_for_necrosis_maximum);
+  load_double("maximum_necrosis_lack_of_glucose_rate",
+              maximum_necrosis_lack_of_glucose_rate);
   load_double("basal_necrosis_probability_cancer_cells",
               basal_necrosis_probability_cancer_cells);
   load_double("time_lysis", time_lysis);
-  load_double("maximum_necrosis_lack_of_oxygen_rate", maximum_necrosis_lack_of_oxygen_rate);
+  
 
   load_double("default_oxygen_consumption_tumor_cell",
               default_oxygen_consumption_tumor_cell);
@@ -563,6 +572,10 @@ void SimParam::PrintParams() const {
             << oxygen_saturation_for_proliferation << "\n";
   std::cout << "Limit of oxygen level for tumor cell proliferation: "
             << oxygen_limit_for_proliferation << "\n";
+  std::cout << "Glucose saturation level in tumor cells for proliferation: "  
+            << glucose_saturation_for_proliferation << "\n";
+  std::cout << "Limit of glucose level for tumor cell proliferation: "
+            << glucose_limit_for_proliferation << "\n";
   std::cout << "Limit of oxygen to start causing necrosis: "
             << oxygen_limit_for_necrosis << "\n";
   std::cout << "Limit of oxygen to maximum necrosis probability: "

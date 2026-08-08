@@ -27,18 +27,18 @@ import matplotlib.pyplot as plt
 
 # ---- settings ----
 CSV_PATH = "./output/data_dependent_on_radius_tumor.csv"
-MINUTE = 2880 # change this to the minute you want to plot
-# MINUTE = 4320 # change this to the minute you want to plot
-ATTRIBUTE = "average_oxygen_all_cells_radius"  # change this to the attribute you want to plot #average_glucose_all_cells
-ATTRIBUTE = "average_glucose_all_cells_radius"  # change this to the attribute you want to plot
+# MINUTE = 3240 # change this to the minute you want to plot
+MINUTE = 4320 # change this to the minute you want to plot
+# ATTRIBUTE = "average_oxygen_all_cells_radius"  # change this to the attribute you want to plot #average_glucose_all_cells
+ATTRIBUTE = "num_dead_cells_radius"  # change this to the attribute you want to plot #num_dead_cells_radius
 # DIVIDING_FACTOR = 585  # change this to the factor you want to divide by. Use 525 to pass from mmHg to mol/m3
 DIVIDING_FACTOR = 1  # change this to the factor you want to divide by. Use 525 to pass from mmHg to mol/m3
-# other examples: "average_oncoprotein_radius", "average_oxygen_cancer_cells_radius",
+# other examples: "average_glucose_all_cells_radius", "average_oxygen_cancer_cells_radius",
 # "num_alive_cells_radius", "num_alive_tumor_cells_radius", etc.
-APPLY_RADIAL_NORMALIZATION = False  # change this to True if you want to apply radial normalization to the attribute
-# APPLY_RADIAL_NORMALIZATION = True  # change this to True if you want to apply radial normalization to the attribute
+# APPLY_RADIAL_NORMALIZATION = False  # change this to True if you want to apply radial normalization to the attribute
+APPLY_RADIAL_NORMALIZATION = True  # change this to True if you want to apply radial normalization to the attribute
 Y_MIN = 0
-Y_MAX = 25
+Y_MAX = None
 
 # ---- load data ----
 df = pd.read_csv(CSV_PATH)

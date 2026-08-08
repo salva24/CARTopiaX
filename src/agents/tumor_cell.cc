@@ -481,7 +481,7 @@ void StateControlGrowProliferate::Run(Agent* agent) {
           // Exit the function to prevent further processing
           return;
         }
-        ManageLivingCell(cell, oxygen_level);
+        ManageLivingCell(cell, oxygen_level, glucose_level);
         break;
       }
       case TumorCellState::kNecroticSwelling: {
@@ -573,9 +573,8 @@ void StateControlGrowProliferate::Run(Agent* agent) {
 
 // ManageLivingCell function to handle living cell behavior
 void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
-                                                   real_t oxygen_level) {
-  // Initialize multiplier
-  real_t multiplier = 1.0;
+                                                   real_t oxygen_level, real_t glucose_level) {
+
   const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // volume change
   cell->ChangeVolumeExponentialRelaxationEquation(
@@ -583,20 +582,39 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
       sparams->volume_relaxation_rate_alive_tumor_cell_nucleus,
       sparams->volume_relaxation_rate_alive_tumor_cell_fluid);
   // cell state control
+  // The division rate depends on the available resources
+  // Oxygen
+  // Initialize multiplier
+  real_t multiplier_oxygen = 1.0;
   // oxygen threshold for considering an effect on the proliferation cycle
   if (oxygen_level < sparams->oxygen_saturation_for_proliferation) {
-    multiplier = (oxygen_level - sparams->oxygen_limit_for_proliferation) /
+    multiplier_oxygen = (oxygen_level - sparams->oxygen_limit_for_proliferation) /
                  (sparams->oxygen_saturation_for_proliferation -
                   sparams->oxygen_limit_for_proliferation);
   }
   // If oxygen is below the limit, set multiplier to 0
   if (oxygen_level < sparams->oxygen_limit_for_proliferation) {
-    multiplier = 0.0;
+    multiplier_oxygen = 0.0;
   }
-  // Calculate the rate of state change based on oxygen level and oncoprotein
+  // Glucose, only if a glucose gradient is defined in the simulation
+  // Initialize multiplier
+  real_t multiplier_glucose = 1.0;
+  if(cell->IsGlucoseDefined()) {
+    // glucose threshold for considering an effect on the proliferation cycle
+    if (glucose_level < sparams->glucose_saturation_for_proliferation) {
+      multiplier_glucose = (glucose_level - sparams->glucose_limit_for_proliferation) /
+                  (sparams->glucose_saturation_for_proliferation -
+                    sparams->glucose_limit_for_proliferation);
+    }
+    // If glucose is below the limit, set multiplier to 0
+    if (glucose_level < sparams->glucose_limit_for_proliferation) {
+      multiplier_glucose = 0.0;
+    }
+  }
+  // Calculate the rate of state change based on oxygen level, glucose level and oncoprotein
   // (min^-1)
   const real_t final_rate_transition = cell->GetTransformationRandomRate() *
-                                       multiplier * cell->GetOncoproteinLevel();
+                                       multiplier_oxygen * multiplier_glucose * cell->GetOncoproteinLevel();
 
   // Calculate the time to wait (in minutes)
   real_t time_to_wait = kTimeTooLarge;

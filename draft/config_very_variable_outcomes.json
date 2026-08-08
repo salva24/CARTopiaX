@@ -1,5 +1,5 @@
 {
-  "seed": 37,
+  "seed": 9,
   "num_radius_intervals": 20,
   "lateral_oxygen_production_min_z": -300.0,
   "lateral_oxygen_production_max_z": 300.0,
@@ -31,7 +31,7 @@
     "0": 0
   },
   "average_time_transformation_random_rate": 49,
-  "standard_deviation_transformation_random_rate": 15.0,
+  "standard_deviation_transformation_random_rate": 14.0,
   "glucose_saturation_for_proliferation": 25,
   "default_glucose_consumption_tumor_cell": 0.045,
   "decay_constant_glucose": 0.0005,
@@ -39,9 +39,9 @@
   "oxygen_limit_for_proliferation": 0,
   "oxygen_limit_for_necrosis_maximum": 0.0,
   "oxygen_limit_for_necrosis": 0.0,
-  "maximum_necrosis_lack_of_oxygen_rate": 0.0000216,
+  "maximum_necrosis_lack_of_oxygen_rate": 2.16e-05,
   "reduction_consumption_dead_cells": 0.0,
-  "basal_necrosis_probability_cancer_cells": 0.0000047,
+  "basal_necrosis_probability_cancer_cells": 4.7e-06,
   "bounded_space_min_allowed_z": -50.0,
   "bounded_space_max_allowed_z": 50.0,
   "minimum_distance_from_tumor_to_spawn_cart": 20.0,

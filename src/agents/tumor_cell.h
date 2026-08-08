@@ -390,7 +390,8 @@ struct StateControlGrowProliferate : public Behavior {
   ///
   /// @param cell Pointer to the tumor cell being managed
   /// @param oxygen_level Current oxygen concentration at the cell's location
-  static void ManageLivingCell(TumorCell* cell, real_t oxygen_level);
+  /// @param glucose_level Current glucose concentration at the cell's location
+  static void ManageLivingCell(TumorCell* cell, real_t oxygen_level, real_t glucose_level);
 };
 
 }  // namespace bdm
