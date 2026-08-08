@@ -1,3 +1,0 @@
-number,value,datetime_start,datetime_complete,duration,params_default_glucose_consumption_tumor_cell,state
-0,,2026-08-05 00:39:58.109630,2026-08-05 00:40:02.715461,0 days 00:00:04.605831,0.19,FAIL
-1,,2026-08-05 00:40:45.953539,2026-08-05 01:21:47.307931,0 days 00:41:01.354392,0.19,FAIL

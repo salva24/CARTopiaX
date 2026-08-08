@@ -296,12 +296,12 @@ struct SimParam : public ParamGroup {
   /// Oxygen saturation level in tumor cells for proliferation
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t oxygen_saturation_for_proliferation = 38;
-  /// Glucose saturation level in tumor cells for proliferation
+  /// Glucose saturation level in tumor cells for cell growth: it affects plorifereation since if cells are not big enough they will not divide
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t glucose_saturation_for_proliferation = 0;
-  /// Limit of glucose level for tumor cell proliferation
+  real_t glucose_saturation_for_tumor_cell_growth = 0;
+  /// Limit of glucose level for tumor cell growth: it affects plorifereation since if cells are not big enough they will not divide
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t glucose_limit_for_proliferation = 0;
+  real_t glucose_limit_for_tumor_cell_growth = 0;
   /// Limit of oxygen level for tumor cell proliferation
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t oxygen_limit_for_proliferation = 10;
@@ -341,6 +341,9 @@ struct SimParam : public ParamGroup {
   /// Default total volume of a new tumor cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_volume_new_tumor_cell = 2494;
+  /// Standard deviation of the total volume of a new tumor cell in μm³
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t std_volume_new_tumor_cell = 0;
   /// Default volume of the nucleus of a new tumor cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_volume_nucleus_tumor_cell = 540;
@@ -353,6 +356,9 @@ struct SimParam : public ParamGroup {
   /// Standard Deviation for transformation Random Rate in hours
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t standard_deviation_transformation_random_rate = 3.7;
+  /// Minimum tumor cell volume for division. If the tumor cell volume is below this value times the target volume, it will not divide. This is used to avoid division of tumor cells that are too small due to lack of nutrients.
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t minimum_tumor_cell_target_volume_fraction_for_division = 0.0;
   /// Average adhesion time in minutes for Tumor Cell under CAR-T attack before
   /// escaping
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -421,7 +427,9 @@ struct SimParam : public ParamGroup {
   ///  Default total volume of a new CAR-T cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_volume_new_cart_cell = 2494;
-
+  /// Standard deviation of the total volume of a new CAR-T cell in μm³
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t std_volume_new_cart_cell = 0;
   /// How often a CAR-T cell tries to kill an attached cancer cell in 1/min
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t kill_rate_cart = 0.06667;

@@ -48,7 +48,7 @@ CarTCell::CarTCell(const Real3& position) {
   SetPosition(position);
   Simulation* sim = Simulation::GetActive();
   const auto* sparams = sim->GetParam()->Get<SimParam>();
-  SetVolume(sparams->default_volume_new_cart_cell);
+  SetVolume(SamplePositiveGaussian(sparams->default_volume_new_cart_cell,sparams->std_volume_new_cart_cell));
   const ResourceManager& rm = *sim->GetResourceManager();
   oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen");
   immunostimulatory_factor_dgrid_ = sparams->add_immunostimulatory_factor

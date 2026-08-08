@@ -47,7 +47,7 @@ TumorCell::TumorCell(const Real3& position) {
   const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // volumes
   // Set default volume
-  SetVolume(sparams->default_volume_new_tumor_cell);
+  SetVolume(SamplePositiveGaussian(sparams->default_volume_new_tumor_cell,sparams->std_volume_new_tumor_cell));
   // Set default fluid fraction
   SetFluidFraction(sparams->default_fraction_fluid_tumor_cell);
   // Set default nuclear volume
@@ -577,10 +577,31 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
 
   const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // volume change
-  cell->ChangeVolumeExponentialRelaxationEquation(
-      sparams->volume_relaxation_rate_alive_tumor_cell_cytoplasm,
-      sparams->volume_relaxation_rate_alive_tumor_cell_nucleus,
-      sparams->volume_relaxation_rate_alive_tumor_cell_fluid);
+  // If this tumoral cell is already bigger than the target volume, the volume does not change since it is already big enough to divide and it should not shrink
+  if(cell->GetVolume() < cell->GetTargetTotalVolume()) {
+    // If there is a glucose diffusion grid defined it affects the speed of growth of the cell
+    // Initialize multiplier
+    real_t multiplier_glucose = 1.0;
+    if(cell->IsGlucoseDefined()) {
+      //if there is a definde glucose gradient in the simulation
+      // glucose threshold for considering an effect on the growth speed
+      if (glucose_level < sparams->glucose_saturation_for_tumor_cell_growth) {
+        multiplier_glucose = (glucose_level - sparams->glucose_limit_for_tumor_cell_growth) /
+                    (sparams->glucose_saturation_for_tumor_cell_growth -
+                      sparams->glucose_limit_for_tumor_cell_growth);
+      }
+      // If glucose is below the limit, set multiplier to 0
+      if (glucose_level < sparams->glucose_limit_for_tumor_cell_growth) {
+        multiplier_glucose = 0.0;
+      }
+    }
+    //change volume change speed depending on the vailable glucose. This also affects ploriferation because if the cells do not grow big enough they cannot divide
+    cell->ChangeVolumeExponentialRelaxationEquation(
+        sparams->volume_relaxation_rate_alive_tumor_cell_cytoplasm * multiplier_glucose,
+        sparams->volume_relaxation_rate_alive_tumor_cell_nucleus * multiplier_glucose,
+        sparams->volume_relaxation_rate_alive_tumor_cell_fluid * multiplier_glucose);
+  }
+
   // cell state control
   // The division rate depends on the available resources
   // Oxygen
@@ -596,25 +617,15 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
   if (oxygen_level < sparams->oxygen_limit_for_proliferation) {
     multiplier_oxygen = 0.0;
   }
-  // Glucose, only if a glucose gradient is defined in the simulation
-  // Initialize multiplier
-  real_t multiplier_glucose = 1.0;
-  if(cell->IsGlucoseDefined()) {
-    // glucose threshold for considering an effect on the proliferation cycle
-    if (glucose_level < sparams->glucose_saturation_for_proliferation) {
-      multiplier_glucose = (glucose_level - sparams->glucose_limit_for_proliferation) /
-                  (sparams->glucose_saturation_for_proliferation -
-                    sparams->glucose_limit_for_proliferation);
-    }
-    // If glucose is below the limit, set multiplier to 0
-    if (glucose_level < sparams->glucose_limit_for_proliferation) {
-      multiplier_glucose = 0.0;
-    }
-  }
-  // Calculate the rate of state change based on oxygen level, glucose level and oncoprotein
+  // Calculate the rate of state change based on oxygen level and oncoprotein
   // (min^-1)
-  const real_t final_rate_transition = cell->GetTransformationRandomRate() *
-                                       multiplier_oxygen * multiplier_glucose * cell->GetOncoproteinLevel();
+  real_t final_rate_transition = cell->GetTransformationRandomRate() *
+                                       multiplier_oxygen * cell->GetOncoproteinLevel();
+
+  // Check the dimensions of the cell, if it is too small, it cannot divide: it needs to grow more before dividing
+  if(cell->GetVolume() < cell->GetTargetTotalVolume()*sparams->minimum_tumor_cell_target_volume_fraction_for_division) {
+    final_rate_transition=0;
+  }
 
   // Calculate the time to wait (in minutes)
   real_t time_to_wait = kTimeTooLarge;

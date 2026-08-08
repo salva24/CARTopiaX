@@ -249,9 +249,9 @@ void SimParam::LoadParams(const std::string& filename) {
   load_double("oxygen_saturation_for_proliferation",
               oxygen_saturation_for_proliferation);
   load_double("oxygen_limit_for_proliferation", oxygen_limit_for_proliferation);
-  load_double("glucose_saturation_for_proliferation",
-              glucose_saturation_for_proliferation);
-  load_double("glucose_limit_for_proliferation", glucose_limit_for_proliferation);
+  load_double("glucose_saturation_for_tumor_cell_growth",
+              glucose_saturation_for_tumor_cell_growth);
+  load_double("glucose_limit_for_tumor_cell_growth", glucose_limit_for_tumor_cell_growth);
   load_double("oxygen_limit_for_necrosis", oxygen_limit_for_necrosis);
   load_double("oxygen_limit_for_necrosis_maximum",
               oxygen_limit_for_necrosis_maximum);
@@ -271,6 +271,7 @@ void SimParam::LoadParams(const std::string& filename) {
   load_double("default_glucose_consumption_tumor_cell",
               default_glucose_consumption_tumor_cell);
   load_double("default_volume_new_tumor_cell", default_volume_new_tumor_cell);
+  load_double("std_volume_new_tumor_cell", std_volume_new_tumor_cell);
   load_double("default_volume_nucleus_tumor_cell",
               default_volume_nucleus_tumor_cell);
   load_double("default_fraction_fluid_tumor_cell",
@@ -279,6 +280,9 @@ void SimParam::LoadParams(const std::string& filename) {
               average_time_transformation_random_rate);
   load_double("standard_deviation_transformation_random_rate",
               standard_deviation_transformation_random_rate);
+  load_double("minimum_tumor_cell_target_volume_fraction_for_division",
+              minimum_tumor_cell_target_volume_fraction_for_division);
+  
   load_double("adhesion_time", adhesion_time);
   load_double("oncoprotein_limit", oncoprotein_limit);
   load_double("oncoprotein_saturation", oncoprotein_saturation);
@@ -326,6 +330,7 @@ void SimParam::LoadParams(const std::string& filename) {
   load_double("default_glucose_consumption_cart",
               default_glucose_consumption_cart);
   load_double("default_volume_new_cart_cell", default_volume_new_cart_cell);
+  load_double("std_volume_new_cart_cell", std_volume_new_cart_cell);
   load_double("kill_rate_cart", kill_rate_cart);
   load_double("adhesion_rate_cart", adhesion_rate_cart);
   load_double("max_adhesion_distance_cart", max_adhesion_distance_cart);
@@ -572,10 +577,10 @@ void SimParam::PrintParams() const {
             << oxygen_saturation_for_proliferation << "\n";
   std::cout << "Limit of oxygen level for tumor cell proliferation: "
             << oxygen_limit_for_proliferation << "\n";
-  std::cout << "Glucose saturation level in tumor cells for proliferation: "  
-            << glucose_saturation_for_proliferation << "\n";
-  std::cout << "Limit of glucose level for tumor cell proliferation: "
-            << glucose_limit_for_proliferation << "\n";
+  std::cout << "Glucose saturation level in tumor cells for growth: "
+            << glucose_saturation_for_tumor_cell_growth << "\n";
+  std::cout << "Limit of glucose level for tumor cell growth: "
+            << glucose_limit_for_tumor_cell_growth << "\n";
   std::cout << "Limit of oxygen to start causing necrosis: "
             << oxygen_limit_for_necrosis << "\n";
   std::cout << "Limit of oxygen to maximum necrosis probability: "
@@ -594,6 +599,8 @@ void SimParam::PrintParams() const {
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new tumor cell (μm³): "
             << default_volume_new_tumor_cell << "\n";
+  std::cout << "Standard deviation of the total volume of a new tumor cell (μm³): "
+            << std_volume_new_tumor_cell << "\n";
   std::cout << "Default volume of the nucleus of a new tumor cell (μm³): "
             << default_volume_nucleus_tumor_cell << "\n";
   std::cout << "Default fraction of fluid volume in a new tumor cell: "
@@ -604,6 +611,8 @@ void SimParam::PrintParams() const {
             << average_time_transformation_random_rate << "\n";
   std::cout << "Standard Deviation for transformation Random Rate (hours): "
             << standard_deviation_transformation_random_rate << "\n";
+  std::cout << "Minimum tumor cell target volume fraction for division: "
+            << minimum_tumor_cell_target_volume_fraction_for_division << "\n";
   std::cout
       << "Average adhesion time for Tumor Cell under CAR-T attack (minutes): "
       << adhesion_time << "\n";
@@ -669,6 +678,8 @@ void SimParam::PrintParams() const {
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new CAR-T cell (μm³): "
             << default_volume_new_cart_cell << "\n";
+  std::cout << "Standard deviation of the total volume of a new CAR-T cell (μm³): "
+            << std_volume_new_cart_cell << "\n";
 
   std::cout << "\nKilling and adhesion rates:\n";
   std::cout << "How often a CAR-T cell tries to kill an attached cancer cell "
