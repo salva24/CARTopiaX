@@ -48,10 +48,15 @@ TumorCell::TumorCell(const Real3& position) {
   // volumes
   // Set default volume
   SetVolume(SamplePositiveGaussian(sparams->default_volume_new_tumor_cell,sparams->std_volume_new_tumor_cell));
+  if(GetVolume() == 0.0){//Debug
+    std::cout << "TumorCell::TumorCell: Volume is zero, setting to default volume" << std::endl;
+    SetVolume(5);
+  }
   // Set default fluid fraction
   SetFluidFraction(sparams->default_fraction_fluid_tumor_cell);
   // Set default nuclear volume
-  SetNuclearVolume(sparams->default_volume_nucleus_tumor_cell);
+  // SetNuclearVolume(sparams->default_volume_nucleus_tumor_cell);//Debug
+  SetNuclearVolume(0.216*sparams->default_volume_new_tumor_cell);
   // target volumes
   // Set target fraction of fluid
   SetTargetFractionFluid(sparams->default_fraction_fluid_tumor_cell);
@@ -80,7 +85,7 @@ TumorCell::TumorCell(const Real3& position) {
         ? rm->GetDiffusionGrid("immunostimulatory_factor")
         : nullptr;
   glucose_dgrid_ = sparams->add_glucose
-        ? rm->GetDiffusionGrid("glucose")//Debug
+        ? rm->GetDiffusionGrid("glucose")
         : nullptr;
   // Set state transition random rate
   SetTransformationRandomRate();
@@ -260,6 +265,21 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(
   // real_t total_cytoplasm= cytoplasm_solid + cytoplasm_fluid;
 
   const real_t new_volume = new_total_solid + new_fluid;
+
+//Debug
+if (std::isnan(total_nuclear)) {
+    std::cout << "new_volume is NaN"
+              << " | new_total_solid: " << new_total_solid
+              << " | nuclear_solid: " << nuclear_solid
+              << " | cytoplasm_solid: " << cytoplasm_solid
+              << " | current_cytoplasm_solid: " << current_cytoplasm_solid
+              << " | target_cytoplasm_solid: " << target_cytoplasm_solid
+              << " | nuclear_volume: " << nuclear_volume
+              << " | new_fluid: " << new_fluid
+              << " | current_volume: " << GetVolume()
+              << " | target_volume: " << GetTargetTotalVolume()
+              << std::endl;
+}
 
   // Avoid division by zero
   const real_t new_fraction_fluid = new_fluid / (kEpsilon + new_volume);

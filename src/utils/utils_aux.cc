@@ -248,6 +248,7 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
       (total_num_tumor_cells > 0)
           ? (acumulator_oxygen_cancer_cells / total_num_tumor_cells)
           : 0.0;
+          
   const real_t average_oxygen_all_cells =
       (total_num_tumor_cells + num_alive_cart + num_dead_cart > 0)
           ? (acumulator_oxygen_all_cells / (total_num_tumor_cells + num_alive_cart + num_dead_cart))

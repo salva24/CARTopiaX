@@ -32,7 +32,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 PARAMS_PATH = BASE_DIR / "params.json"
 
 BIODYNAMO_DIR = " /home/usuario/Desktop/biodynamo/build/bin/thisbdm.sh"
-NUMBER_EXECUTIONS = 10
+NUMBER_EXECUTIONS = 70
 
 SIM_DIR = BASE_DIR / "output"        # folder where the ABM writes its results
 DRAFT_DIR = BASE_DIR / "draft"       # base destination folder
