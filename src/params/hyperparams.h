@@ -187,10 +187,18 @@ struct SimParam : public ParamGroup {
   /// to also act as an oxygen-producing Dirichlet boundary.  By default it is automatically set to bounded_space_length/2 to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t lateral_oxygen_production_max_z = 500.0;
-  /// Wether the Thomas algortithm should also diffuse the Chemicals in the z-axis or not. 
-  /// If false, the diffusion will only be done in the x and y axis.
+  /// Wether the Thomas algortithm should also diffuse the oxygen Chemical in the z-axis or not. 
+  /// If false, the diffusion will only be done in the x and y axis, ideal for a 2D model
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  bool diffuse_on_z_axis = true;
+  bool diffuse_oxygen_on_z_axis = true;
+  /// Wether the Thomas algortithm should also diffuse the immunostimulatory_factor Chemical in the z-axis or not.
+    /// If false, the diffusion will only be done in the x and y axis, ideal for a 2D model
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    bool diffuse_immunostimulatory_factor_on_z_axis = true;
+  /// Wether the Thomas algortithm should also diffuse the glucose Chemical in the z-axis or not. By default it will be true if the tumor shape is spherical and false if the tumor shape is cylindrical.
+    /// If false, the diffusion will only be done in the x and y axis, ideal for a 2D model
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    bool diffuse_glucose_on_z_axis = true;
   /// Diffusion coefficient of oxygen in μm²/min
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t diffusion_coefficient_oxygen = 100000;

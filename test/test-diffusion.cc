@@ -21,7 +21,7 @@ class DiffusionThomasAlgorithmTest : public ::testing::Test {
 
 // case: valid index computes correctly
 TEST_F(DiffusionThomasAlgorithmTest, GetBoxIndexValidCoordinates) {
-  DiffusionThomasAlgorithm grid(0, "test", 1.0, 0.1, 10, 0.01, false);
+  DiffusionThomasAlgorithm grid(0, "test", 1.0, 0.1, 10, 0.01, false, true);
   EXPECT_EQ(grid.GetBoxIndex(4, 3, 2), static_cast<size_t>(234));
   // z * res * res + y * res + x = 2*100 + 3*10 + 4 = 234
 }

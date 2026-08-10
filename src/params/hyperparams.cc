@@ -169,7 +169,9 @@ void SimParam::LoadParams(const std::string& filename) {
   } else {
     lateral_oxygen_production_max_z = -bounded_space_length/2;
   }
-  load_bool("diffuse_on_z_axis", diffuse_on_z_axis);
+  load_bool("diffuse_oxygen_on_z_axis", diffuse_oxygen_on_z_axis);
+  load_bool("diffuse_immunostimulatory_factor_on_z_axis", diffuse_immunostimulatory_factor_on_z_axis);
+  load_bool("diffuse_glucose_on_z_axis", diffuse_glucose_on_z_axis);
 
   load_double("diffusion_coefficient_oxygen", diffusion_coefficient_oxygen);
   load_double("decay_constant_oxygen", decay_constant_oxygen);
@@ -193,16 +195,16 @@ void SimParam::LoadParams(const std::string& filename) {
 
 
 
-  if (jfile.contains("diffuse_on_z_axis")) {
-    diffuse_on_z_axis = jfile["diffuse_on_z_axis"].get<bool>();
+  if (jfile.contains("diffuse_glucose_on_z_axis")) {
+    diffuse_glucose_on_z_axis = jfile["diffuse_glucose_on_z_axis"].get<bool>();
   } else {
     // if the tumor shape is cylindrical it should be set to false, otherwise it should be set to true
     if (tumor_shape == "cylinder") {
       // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-      diffuse_on_z_axis = false;
+      diffuse_glucose_on_z_axis = false;
     } else {
       // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-      diffuse_on_z_axis = true;
+      diffuse_glucose_on_z_axis = true;
     }
   }
 
@@ -503,8 +505,13 @@ void SimParam::PrintParams() const {
             << lateral_oxygen_production_min_z << "\n";
   std::cout << "Maximum z-coordinate for lateral oxygen production (micrometers): "
             << lateral_oxygen_production_max_z << "\n";
-  std::cout << "Whether to diffuse Chemicals on the z-axis: "
-            << (diffuse_on_z_axis ? "true" : "false") << "\n";
+  std::cout << "Whether to diffuse oxygen on the z-axis: "
+            << (diffuse_oxygen_on_z_axis ? "true" : "false") << "\n";
+  std::cout << "Whether to diffuse immunostimulatory factor on the z-axis: "
+            << (diffuse_immunostimulatory_factor_on_z_axis ? "true" : "false")
+            << "\n";
+  std::cout << "Whether to diffuse glucose on the z-axis: "
+            << (diffuse_glucose_on_z_axis ? "true" : "false") << "\n";
   std::cout << "Diffusion coefficient of oxygen (μm²/min): "
             << diffusion_coefficient_oxygen << "\n";
   std::cout << "Decay constant of oxygen (min⁻¹): " << decay_constant_oxygen

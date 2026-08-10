@@ -42,6 +42,7 @@ class DiffusionThomasAlgorithm : public DiffusionGrid {
       : resolution_(0),
         d_space_(0.0),
         dirichlet_border_(false),
+        diffuse_on_z_axis_(true),
         jump_i_(0),
         jump_j_(0),
         jump_(0),
@@ -53,7 +54,7 @@ class DiffusionThomasAlgorithm : public DiffusionGrid {
 
   DiffusionThomasAlgorithm(int substance_id, std::string substance_name,
                            real_t dc, real_t mu, int resolution, real_t dt,
-                           bool dirichlet_border);
+                           bool dirichlet_border, bool diffuse_on_z_axis);
 
   /// Concentration setters
   void SetConcentration(int x, int y, int z, real_t amount) {
@@ -139,6 +140,9 @@ class DiffusionThomasAlgorithm : public DiffusionGrid {
 
   /// Flag indicating Dirichlet boundary conditions
   bool dirichlet_border_;
+
+  /// Flag indicating whether to diffuse along the z-axis
+  bool diffuse_on_z_axis_;
 
   /// Index jump for i-direction (x-axis)
   int jump_i_;

@@ -112,7 +112,8 @@ int Simulate(int argc, const char** argv) {
           kOxygen, "oxygen", sparam->diffusion_coefficient_oxygen,
           sparam->decay_constant_oxygen, sparam->resolution_grid_substances,
           sparam->dt_substances,
-          /*dirichlet_border=*/true);
+          /*dirichlet_border=*/true,
+          sparam->diffuse_oxygen_on_z_axis);
   rm->AddContinuum(oxygen_grid.release());
 
   // Boundary Conditions Dirichlet: simulating absorption or total loss at the
@@ -161,7 +162,8 @@ int Simulate(int argc, const char** argv) {
             sparam->diffusion_coefficient_immunostimulatory_factor,
             sparam->decay_constant_immunostimulatory_factor,
             sparam->resolution_grid_substances, sparam->dt_substances,
-            /*dirichlet_border=*/false);
+            /*dirichlet_border=*/false,
+            sparam->diffuse_immunostimulatory_factor_on_z_axis);
     rm->AddContinuum(immunostimulatory_factor_grid.release());
 
     // This is useless now but should be added this way in a future version of BioDynaMo.
@@ -178,7 +180,8 @@ int Simulate(int argc, const char** argv) {
             kGlucose, "glucose", sparam->diffusion_coefficient_glucose,
             sparam->decay_constant_glucose, sparam->resolution_grid_substances,
             sparam->dt_substances,
-            /*dirichlet_border=*/false);
+            /*dirichlet_border=*/false,
+            sparam->diffuse_glucose_on_z_axis);
     rm->AddContinuum(glucose_grid.release());
 
     // This is useless now but should be added this way in a future version of BioDynaMo.
