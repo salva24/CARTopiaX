@@ -153,7 +153,7 @@ struct SimParam : public ParamGroup {
   /// Time in minutes until an apoptotic cell is removed from the simulation
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t time_apoptosis = 516;
-  /// Reduction of consumption rate of dead cells when they enter necrosis
+  /// Reduction of consumption rate of dead cells when they die
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t reduction_consumption_dead_cells = 0.1;
 
@@ -315,19 +315,19 @@ struct SimParam : public ParamGroup {
   /// with oxygen_limit_for_necrosis_maximum oxygen
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t maximum_necrosis_lack_of_oxygen_rate = 0.00277778;
-  /// Limit of glucose to start causing necrosis
+  /// Limit of glucose to start causing cell death
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t glucose_limit_for_necrosis = 0;
-  /// Limit of glucose to maximum necrosis probability
+  real_t glucose_limit_for_death = 0;
+  /// Limit of glucose to maximum cell death probability
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t glucose_limit_for_necrosis_maximum = 0;
-  /// Maximum rate per minute of necrosis for tumor cells in case of lack of nutrients
-  /// with glucose_limit_for_necrosis_maximum glucose
+  real_t glucose_limit_for_death_maximum = 0;
+  /// Maximum rate per minute of cell death for tumor cells in case of lack of nutrients
+  /// with glucose_limit_for_death_maximum glucose
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t maximum_necrosis_lack_of_glucose_rate = 0.0;
-  /// Basal necrosis probability for cancer cells per minute: death due to natural random causes
+  real_t maximum_death_lack_of_glucose_rate = 0.0;
+  /// Basal cell death probability for cancer cells per minute: death due to natural random causes
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t basal_necrosis_probability_cancer_cells = 0.0;
+  real_t basal_death_probability_cancer_cells = 0.0;
   /// Time in minutes until a lysed necrotic cell is removed from the simulation
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t time_lysis = 86400;
@@ -344,9 +344,15 @@ struct SimParam : public ParamGroup {
   /// Standard deviation of the total volume of a new tumor cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t std_volume_new_tumor_cell = 0;
-  /// Default volume of the nucleus of a new tumor cell in μm³
+  /// Maximum volume of a tumor cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t default_volume_nucleus_tumor_cell = 540;
+  real_t max_volume_new_tumor_cell = 2494;
+  /// Minimum volume of a tumor cell in μm³
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t min_volume_new_tumor_cell = 2494;
+  /// Default fraction of volume of the nucleus of a tumor cell. It is the target fraction and the fraction a new born tumor cell will have
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t default_fraction_of_volume_for_nucleus_tumor_cell = 0.21652;
   /// Default fraction of fluid volume in a new tumor cell
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_fraction_fluid_tumor_cell = 0.75;
@@ -430,6 +436,18 @@ struct SimParam : public ParamGroup {
   /// Standard deviation of the total volume of a new CAR-T cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t std_volume_new_cart_cell = 0;
+  /// Maximum volume of a new CAR-T cell in μm³
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t max_volume_new_cart_cell = 2494;
+  /// Minimum volume of a new CAR-T cell in μm³
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t min_volume_new_cart_cell = 2494;
+  /// Default fraction of volume not solid of a CAR-T cell.
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t default_fraction_fluid_cart_cell = 0.75;
+  /// Default fraction of volume of the nucleus of a CAR-T cell
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t default_fraction_of_volume_for_nucleus_cart_cell = 0.21652;
   /// How often a CAR-T cell tries to kill an attached cancer cell in 1/min
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t kill_rate_cart = 0.06667;

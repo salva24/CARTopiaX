@@ -353,7 +353,7 @@ class TumorCell : public Cell, public ISubstanceInteractor {
 /// This behavior handles the state control logic for tumor cells, managing
 /// transitions between different cell states, growth, proliferation, and death
 /// processes. It includes logic for determining when cells should enter
-/// necrosis based on oxygen levels and other environmental factors.
+/// death based on oxygen levels and other environmental factors.
 
 struct StateControlGrowProliferate : public Behavior {
   // NOLINTNEXTLINE(llvm-else-after-return, moderinize-type-traits,
@@ -376,15 +376,15 @@ struct StateControlGrowProliferate : public Behavior {
   void Run(Agent* agent) override;
 
  private:
-  /// Compute the probability of the cell entering necrosis
+  /// Compute the probability of the cell dying due to low oxygen or glucose levels or due to random natural causes
   ///
-  /// Determines whether a cell should enter necrosis based on oxygen and, if deffined, glucose levels
+  /// Determines whether a cell should enter necrosis based on oxygen levels or apoptosis because of random causes and, if deffined, glucose levels
   ///
   /// @param oxygen_level Current oxygen concentration at the cell's location
   /// @param glucose_level Current glucose concentration at the cell's location
   /// @param cell Pointer to the tumor cell being evaluated
-  /// @return True if the cell should enter necrosis, false otherwise
-  static bool ShouldEnterNecrosis(real_t oxygen_level, real_t glucose_level, TumorCell* cell);
+  /// @return True if the cell should die, false otherwise
+  static bool ShouldDie(real_t oxygen_level, real_t glucose_level, TumorCell* cell);
 
   /// Manage the behavior of a living tumor cell
   ///

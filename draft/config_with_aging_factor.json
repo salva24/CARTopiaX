@@ -33,6 +33,6 @@
   "oxygen_limit_for_necrosis": 45.0,
   "maximum_necrosis_lack_of_oxygen_rate": 0.00002276,
   "reduction_consumption_dead_cells": 0.0,
-  "basal_necrosis_probability_cancer_cells": 0.0000031,
+  "basal_death_probability_cancer_cells": 0.0000031,
   "nutrient_starvation_factor_cancer_cells": 1.000602
 }

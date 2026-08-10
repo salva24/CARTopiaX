@@ -41,7 +41,7 @@
   "oxygen_limit_for_necrosis": 0.0,
   "maximum_necrosis_lack_of_oxygen_rate": 2.16e-05,
   "reduction_consumption_dead_cells": 0.0,
-  "basal_necrosis_probability_cancer_cells": 4.7e-06,
+  "basal_death_probability_cancer_cells": 4.7e-06,
   "bounded_space_min_allowed_z": -50.0,
   "bounded_space_max_allowed_z": 50.0,
   "minimum_distance_from_tumor_to_spawn_cart": 20.0,
@@ -52,7 +52,7 @@
   "max_radius_glucose_initialization": 3100.0,
   "default_glucose_consumption_cart": 0.145,
   "glucose_limit_for_proliferation": 0,
-  "glucose_limit_for_necrosis": 5,
-  "glucose_limit_for_necrosis_maximum": 0,
-  "maximum_necrosis_lack_of_glucose_rate": 0.0001
+  "glucose_limit_for_death": 5,
+  "glucose_limit_for_death_maximum": 0,
+  "maximum_death_lack_of_glucose_rate": 0.0001
 }

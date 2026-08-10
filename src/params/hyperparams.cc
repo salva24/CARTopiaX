@@ -256,13 +256,13 @@ void SimParam::LoadParams(const std::string& filename) {
   load_double("oxygen_limit_for_necrosis_maximum",
               oxygen_limit_for_necrosis_maximum);
   load_double("maximum_necrosis_lack_of_oxygen_rate", maximum_necrosis_lack_of_oxygen_rate);
-  load_double("glucose_limit_for_necrosis", glucose_limit_for_necrosis);
-  load_double("glucose_limit_for_necrosis_maximum",
-              glucose_limit_for_necrosis_maximum);
-  load_double("maximum_necrosis_lack_of_glucose_rate",
-              maximum_necrosis_lack_of_glucose_rate);
-  load_double("basal_necrosis_probability_cancer_cells",
-              basal_necrosis_probability_cancer_cells);
+  load_double("glucose_limit_for_death", glucose_limit_for_death);
+  load_double("glucose_limit_for_death_maximum",
+              glucose_limit_for_death_maximum);
+  load_double("maximum_death_lack_of_glucose_rate",
+              maximum_death_lack_of_glucose_rate);
+  load_double("basal_death_probability_cancer_cells",
+              basal_death_probability_cancer_cells);
   load_double("time_lysis", time_lysis);
   
 
@@ -272,8 +272,10 @@ void SimParam::LoadParams(const std::string& filename) {
               default_glucose_consumption_tumor_cell);
   load_double("default_volume_new_tumor_cell", default_volume_new_tumor_cell);
   load_double("std_volume_new_tumor_cell", std_volume_new_tumor_cell);
-  load_double("default_volume_nucleus_tumor_cell",
-              default_volume_nucleus_tumor_cell);
+  load_double("max_volume_new_tumor_cell", max_volume_new_tumor_cell);
+  load_double("min_volume_new_tumor_cell", min_volume_new_tumor_cell);
+  load_double("default_fraction_of_volume_for_nucleus_tumor_cell",
+              default_fraction_of_volume_for_nucleus_tumor_cell);
   load_double("default_fraction_fluid_tumor_cell",
               default_fraction_fluid_tumor_cell);
   load_double("average_time_transformation_random_rate",
@@ -331,6 +333,12 @@ void SimParam::LoadParams(const std::string& filename) {
               default_glucose_consumption_cart);
   load_double("default_volume_new_cart_cell", default_volume_new_cart_cell);
   load_double("std_volume_new_cart_cell", std_volume_new_cart_cell);
+  load_double("max_volume_new_cart_cell", max_volume_new_cart_cell);
+  load_double("min_volume_new_cart_cell", min_volume_new_cart_cell);
+  load_double("default_fraction_fluid_cart_cell",
+              default_fraction_fluid_cart_cell);
+  load_double("default_fraction_of_volume_for_nucleus_cart_cell",
+              default_fraction_of_volume_for_nucleus_cart_cell);
   load_double("kill_rate_cart", kill_rate_cart);
   load_double("adhesion_rate_cart", adhesion_rate_cart);
   load_double("max_adhesion_distance_cart", max_adhesion_distance_cart);
@@ -478,8 +486,7 @@ void SimParam::PrintParams() const {
             << volume_relaxation_rate_fluid_apoptotic_cells << "\n";
   std::cout << "Time in minutes until an apoptotic cell is removed: "
             << time_apoptosis << "\n";
-  std::cout << "Reduction of consumption rate of dead cells when they enter "
-               "necrosis: "
+  std::cout << "Reduction of consumption rate of dead cells when they die: "
             << reduction_consumption_dead_cells << "\n\n";
 
   /// Chemicals
@@ -585,12 +592,19 @@ void SimParam::PrintParams() const {
             << oxygen_limit_for_necrosis << "\n";
   std::cout << "Limit of oxygen to maximum necrosis probability: "
             << oxygen_limit_for_necrosis_maximum << "\n";
-  std::cout << "Basal necrosis probability for tumor cells: "
-            << basal_necrosis_probability_cancer_cells << "\n";
+  std::cout << "Basal death probability for tumor cells: "
+            << basal_death_probability_cancer_cells << "\n";
   std::cout << "Time in minutes until a lysed necrotic cell is removed: "
             << time_lysis << "\n";
   std::cout << "Maximum rate per minute of necrosis for tumor cells: "
             << maximum_necrosis_lack_of_oxygen_rate << "\n";
+  std::cout << "Limit of glucose to start causing death: "
+            << glucose_limit_for_death << "\n";
+  std::cout << "Limit of glucose to maximum death probability: "
+            << glucose_limit_for_death_maximum << "\n";
+  std::cout << "Maximum rate per minute of death for tumor cells: "
+            << maximum_death_lack_of_glucose_rate << "\n";
+  
   std::cout << "Default oxygen consumption rate of tumor cell: "
             << default_oxygen_consumption_tumor_cell << "\n";
   std::cout << "Default glucose consumption rate of tumor cell: "
@@ -601,8 +615,12 @@ void SimParam::PrintParams() const {
             << default_volume_new_tumor_cell << "\n";
   std::cout << "Standard deviation of the total volume of a new tumor cell (μm³): "
             << std_volume_new_tumor_cell << "\n";
-  std::cout << "Default volume of the nucleus of a new tumor cell (μm³): "
-            << default_volume_nucleus_tumor_cell << "\n";
+  std::cout << "Maximum total volume of a new tumor cell (μm³): "
+            << max_volume_new_tumor_cell << "\n";
+  std::cout << "Minimum total volume of a new tumor cell (μm³): "
+            << min_volume_new_tumor_cell << "\n";
+  std::cout << "Default fraction of volume for nucleus tumor cell: "
+            << default_fraction_of_volume_for_nucleus_tumor_cell << "\n";
   std::cout << "Default fraction of fluid volume in a new tumor cell: "
             << default_fraction_fluid_tumor_cell << "\n";
 
@@ -680,6 +698,14 @@ void SimParam::PrintParams() const {
             << default_volume_new_cart_cell << "\n";
   std::cout << "Standard deviation of the total volume of a new CAR-T cell (μm³): "
             << std_volume_new_cart_cell << "\n";
+  std::cout << "Maximum total volume of a new CAR-T cell (μm³): "
+            << max_volume_new_cart_cell << "\n";
+  std::cout << "Minimum total volume of a new CAR-T cell (μm³): "
+            << min_volume_new_cart_cell << "\n";
+  std::cout << "Default fraction of fluid volume in a new CAR-T cell: "
+            << default_fraction_fluid_cart_cell << "\n";
+  std::cout << "Default fraction of volume for nucleus CAR-T cell: "
+            << default_fraction_of_volume_for_nucleus_cart_cell << "\n";
 
   std::cout << "\nKilling and adhesion rates:\n";
   std::cout << "How often a CAR-T cell tries to kill an attached cancer cell "

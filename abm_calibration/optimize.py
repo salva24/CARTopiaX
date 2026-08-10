@@ -55,18 +55,18 @@ EXPERIMENT_DIR.mkdir(parents=True, exist_ok=True)
 # Function to run the ABM with the given parameters
 def run_ABM(params, seed):
     # Change this: parameter to be optimized in the ABM simulation
-    # basal_necrosis_probability_cancer_cells = params[
-    #     "basal_necrosis_probability_cancer_cells"
+    # basal_death_probability_cancer_cells = params[
+    #     "basal_death_probability_cancer_cells"
     # ]
 
-    maximum_necrosis_lack_of_glucose_rate = params[
-        "maximum_necrosis_lack_of_glucose_rate"
+    maximum_death_lack_of_glucose_rate = params[
+        "maximum_death_lack_of_glucose_rate"
     ]
     # default_glucose_consumption_tumor_cell = params[
     #     "default_glucose_consumption_tumor_cell"
     # ]
-    # maximum_necrosis_lack_of_glucose_rate = params[
-    #     "maximum_necrosis_lack_of_glucose_rate"
+    # maximum_death_lack_of_glucose_rate = params[
+    #     "maximum_death_lack_of_glucose_rate"
     # ]
 
     # Change this configuration for the ABM run
@@ -113,7 +113,7 @@ def run_ABM(params, seed):
   "oxygen_limit_for_necrosis": 0.0,
   "maximum_necrosis_lack_of_oxygen_rate": 0.0000216,
   "reduction_consumption_dead_cells": 0.0,
-  "basal_necrosis_probability_cancer_cells": 0.000005,
+  "basal_death_probability_cancer_cells": 0.000005,
   "bounded_space_min_allowed_z": -50.0,
   "bounded_space_max_allowed_z": 50.0,
   "minimum_distance_from_tumor_to_spawn_cart": 20.0,
@@ -126,9 +126,9 @@ def run_ABM(params, seed):
   "default_glucose_consumption_cart": 0.045,
   "glucose_saturation_for_tumor_cell_growth": 24.98,
   "glucose_limit_for_tumor_cell_growth": 0,
-  "glucose_limit_for_necrosis": 5,
-  "glucose_limit_for_necrosis_maximum": 0,
-  "maximum_necrosis_lack_of_glucose_rate": maximum_necrosis_lack_of_glucose_rate,
+  "glucose_limit_for_death": 5,
+  "glucose_limit_for_death_maximum": 0,
+  "maximum_death_lack_of_glucose_rate": maximum_death_lack_of_glucose_rate,
   "minimum_tumor_cell_target_volume_fraction_for_division": 0.9
 }
     # Save the config parameters for the run to the params.json file
@@ -337,8 +337,8 @@ def objective(trial):
     params = {
         # "oxygen_limit_for_proliferation": trial.suggest_float("oxygen_limit_for_proliferation", 0.0, 40, step=0.1),
         # "maximum_necrosis_lack_of_oxygen_rate": trial.suggest_float("maximum_necrosis_lack_of_oxygen_rate", 0.00002, 0.000022, step=0.0000004),
-        "maximum_necrosis_lack_of_glucose_rate": trial.suggest_float("maximum_necrosis_lack_of_glucose_rate", 0.00015, 0.000186, step=0.000002),
-        # "maximum_necrosis_lack_of_glucose_rate": trial.suggest_float("maximum_necrosis_lack_of_glucose_rate", 0.000085, 0.000106, step=0.000001)
+        "maximum_death_lack_of_glucose_rate": trial.suggest_float("maximum_death_lack_of_glucose_rate", 0.00015, 0.000186, step=0.000002),
+        # "maximum_death_lack_of_glucose_rate": trial.suggest_float("maximum_death_lack_of_glucose_rate", 0.000085, 0.000106, step=0.000001)
     }
 
     logging.info(f"Trial {trial.number} | params={params}")

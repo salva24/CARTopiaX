@@ -32,7 +32,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 PARAMS_PATH = BASE_DIR / "params.json"
 
 BIODYNAMO_DIR = " /home/usuario/Desktop/biodynamo/build/bin/thisbdm.sh"
-NUMBER_EXECUTIONS = 70
+NUMBER_EXECUTIONS = 10
 
 SIM_DIR = BASE_DIR / "output"        # folder where the ABM writes its results
 DRAFT_DIR = BASE_DIR / "draft"       # base destination folder
@@ -59,7 +59,9 @@ def run_ABM(seed):
   "cylindrical_tumor_height": 100.0,
   "initial_number_of_cylindrical_tumor_cells": 28000,
   "default_volume_new_tumor_cell": 1468.0,
+  "std_volume_new_tumor_cell": 0,
   "default_volume_new_cart_cell": 269.0,
+  "std_volume_new_cart_cell": 67.25,
   "oncoprotein_mean": 1.0,
   "oncoprotein_standard_deviation": 0.0,
   "initial_oxygen_level": 0.0,
@@ -72,18 +74,16 @@ def run_ABM(seed):
   "treatment": {
     "0": 0
   },
-  "average_time_transformation_random_rate": 49,
-  "standard_deviation_transformation_random_rate": 4.0,
-  "glucose_saturation_for_proliferation": 25,
-  "default_glucose_consumption_tumor_cell": 0.045,
+  "average_time_transformation_random_rate": 72,
+  "standard_deviation_transformation_random_rate": 15.0,
   "decay_constant_glucose": 0.0005,
   "oxygen_saturation_for_proliferation": 0,
   "oxygen_limit_for_proliferation": 0,
   "oxygen_limit_for_necrosis_maximum": 0.0,
   "oxygen_limit_for_necrosis": 0.0,
-  "maximum_necrosis_lack_of_oxygen_rate": 0.0000216,
+  "maximum_necrosis_lack_of_oxygen_rate": 2.16e-05,
   "reduction_consumption_dead_cells": 0.0,
-  "basal_necrosis_probability_cancer_cells": 0.0000047,
+  "basal_death_probability_cancer_cells": 5e-06,
   "bounded_space_min_allowed_z": -50.0,
   "bounded_space_max_allowed_z": 50.0,
   "minimum_distance_from_tumor_to_spawn_cart": 20.0,
@@ -92,11 +92,14 @@ def run_ABM(seed):
   "diffusion_coefficient_glucose": 7800,
   "initial_glucose_level": 24.98,
   "max_radius_glucose_initialization": 3100.0,
-  "default_glucose_consumption_cart": 0.145,
-  "glucose_limit_for_proliferation": 0,
-  "glucose_limit_for_necrosis": 5,
-  "glucose_limit_for_necrosis_maximum": 0,
-  "maximum_necrosis_lack_of_glucose_rate": 0.0001
+  "default_glucose_consumption_tumor_cell": 0.045,
+  "default_glucose_consumption_cart": 0.045,
+  "glucose_saturation_for_tumor_cell_growth": 24.98,
+  "glucose_limit_for_tumor_cell_growth": 0,
+  "glucose_limit_for_death": 5,
+  "glucose_limit_for_death_maximum": 0,
+  "maximum_death_lack_of_glucose_rate": 0.000156,
+  "minimum_tumor_cell_target_volume_fraction_for_division": 0.9
 }
 
     # Save the config parameters for this run to the params.json file

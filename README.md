@@ -328,7 +328,7 @@ These are all the other hyperparameters that are not adviced to be modified unle
 | `maximum_necrosis_lack_of_oxygen_rate` | 0.00277778 | min⁻¹ | Maximum necrosis rate at 0 oxygen (1/360 min⁻¹) |
 | `default_oxygen_consumption_tumor_cell` | 10 | 1/min | Baseline oxygen consumption rate of tumor cells |
 | `default_volume_new_tumor_cell` | 2494 | μm³ | Total volume of newly created tumor cell |
-| `default_volume_nucleus_tumor_cell` | 540 | μm³ | Nuclear volume of newly created tumor cell |
+| `default_fraction_of_volume_for_nucleus_tumor_cell` |  0.21652 | - | Nuclear volume of newly created tumor cell |
 | `default_fraction_fluid_tumor_cell` | 0.75 | - | Fraction of cytoplasmic volume that is fluid |
 | `average_time_transformation_random_rate` | 38.6 | hours | Mean cell cycle duration |
 | `standard_deviation_transformation_random_rate` | 3.7 | hours | Standard deviation of cell cycle duration |

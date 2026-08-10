@@ -48,7 +48,20 @@ CarTCell::CarTCell(const Real3& position) {
   SetPosition(position);
   Simulation* sim = Simulation::GetActive();
   const auto* sparams = sim->GetParam()->Get<SimParam>();
-  SetVolume(SamplePositiveGaussian(sparams->default_volume_new_cart_cell,sparams->std_volume_new_cart_cell));
+  // Set default volume
+  real_t total_volume=SamplePositiveGaussian(sparams->default_volume_new_cart_cell,sparams->std_volume_new_cart_cell);
+  // Clip the value between the minimum and maximum allowed values
+  if (total_volume < sparams->min_volume_new_cart_cell) {
+    total_volume=sparams->min_volume_new_cart_cell;
+  } else if (total_volume > sparams->max_volume_new_cart_cell) {
+    total_volume=sparams->max_volume_new_cart_cell;
+  }
+  SetVolume(total_volume);
+  // Set default fluid fraction
+  SetFluidFraction(sparams->default_fraction_fluid_cart_cell);
+  // Set default nuclear volume
+  SetNuclearVolume(sparams->default_fraction_of_volume_for_nucleus_cart_cell*total_volume);
+
   const ResourceManager& rm = *sim->GetResourceManager();
   oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen");
   immunostimulatory_factor_dgrid_ = sparams->add_immunostimulatory_factor
@@ -490,11 +503,17 @@ void StateControlCart::Run(Agent* agent) {
           cell->SetState(CarTCellState::kApoptotic);
           // Reset timer_state, it should be 0 anyway
           cell->SetTimerState(0);
-          // Set target volume to 0 (the cell will shrink)
-          cell->SetTargetCytoplasmSolid(0.0);
-          cell->SetTargetNucleusSolid(0.0);
+          // Set target fuid volume to 0 (the cell shrinks loosing all its liquids)
+          const real_t current_total_volume = cell->GetVolume();
+          const real_t fluid_fraction = cell->GetFluidFraction();
+          const real_t nuclear_volume = cell->GetNuclearVolume();
+          const real_t current_cytoplasm_solid =
+              (current_total_volume - nuclear_volume) * (1 - fluid_fraction);
+          const real_t current_nuclear_solid = nuclear_volume * (1 - fluid_fraction);
+          cell->SetTargetCytoplasmSolid(current_cytoplasm_solid);
+          cell->SetTargetNucleusSolid( current_nuclear_solid);
           cell->SetTargetFractionFluid(0.0);
-          cell->SetTargetRelationCytoplasmNucleus(0.0);
+          cell->SetTargetRelationCytoplasmNucleus(current_cytoplasm_solid/current_nuclear_solid);
           // Reduce oxygen consumption
           cell->SetOxygenConsumptionRate(
               cell->GetOxygenConsumptionRate() *

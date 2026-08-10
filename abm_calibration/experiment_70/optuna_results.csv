@@ -1,4 +1,4 @@
-number,value,datetime_start,datetime_complete,duration,params_maximum_necrosis_lack_of_glucose_rate,state
+number,value,datetime_start,datetime_complete,duration,params_maximum_death_lack_of_glucose_rate,state
 0,20.0,2026-08-09 00:32:23.588370,2026-08-09 01:39:28.666546,0 days 01:07:05.078176,0.00016399999999999997,COMPLETE
 1,375.0,2026-08-09 01:39:28.694855,2026-08-09 02:46:32.136531,0 days 01:07:03.441676,0.000186,COMPLETE
 2,188.0,2026-08-09 02:46:32.161256,2026-08-09 03:53:39.132009,0 days 01:07:06.970753,0.000176,COMPLETE

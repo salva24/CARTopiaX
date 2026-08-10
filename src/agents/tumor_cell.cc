@@ -47,30 +47,33 @@ TumorCell::TumorCell(const Real3& position) {
   const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // volumes
   // Set default volume
-  SetVolume(SamplePositiveGaussian(sparams->default_volume_new_tumor_cell,sparams->std_volume_new_tumor_cell));
-  if(GetVolume() == 0.0){//Debug
-    std::cout << "TumorCell::TumorCell: Volume is zero, setting to default volume" << std::endl;
-    SetVolume(5);
+  real_t total_volume=SamplePositiveGaussian(sparams->default_volume_new_tumor_cell,sparams->std_volume_new_tumor_cell);
+  // Clip the value between the minimum and maximum allowed values
+  if (total_volume < sparams->min_volume_new_tumor_cell) {
+    total_volume=sparams->min_volume_new_tumor_cell;
+  } else if (total_volume > sparams->max_volume_new_tumor_cell) {
+    total_volume=sparams->max_volume_new_tumor_cell;
   }
+  SetVolume(total_volume);
   // Set default fluid fraction
   SetFluidFraction(sparams->default_fraction_fluid_tumor_cell);
   // Set default nuclear volume
-  // SetNuclearVolume(sparams->default_volume_nucleus_tumor_cell);//Debug
-  SetNuclearVolume(0.216*sparams->default_volume_new_tumor_cell);
+  SetNuclearVolume(sparams->default_fraction_of_volume_for_nucleus_tumor_cell*total_volume);
   // target volumes
   // Set target fraction of fluid
   SetTargetFractionFluid(sparams->default_fraction_fluid_tumor_cell);
   // Set target relation between cytoplasm and nucleus
+  real_t default_volume_nucleus_tumor_cell = sparams->default_fraction_of_volume_for_nucleus_tumor_cell * sparams->default_volume_new_tumor_cell;
   SetTargetRelationCytoplasmNucleus(
       (sparams->default_volume_new_tumor_cell -
-       sparams->default_volume_nucleus_tumor_cell) /
-      (kEpsilon + sparams->default_volume_nucleus_tumor_cell));
+       default_volume_nucleus_tumor_cell) /
+      (kEpsilon + default_volume_nucleus_tumor_cell));
   // Set target nucleus solid volume
-  SetTargetNucleusSolid(sparams->default_volume_nucleus_tumor_cell *
+  SetTargetNucleusSolid(default_volume_nucleus_tumor_cell *
                         (1 - sparams->default_fraction_fluid_tumor_cell));
   // Set target cytoplasm solid volume
   SetTargetCytoplasmSolid((sparams->default_volume_new_tumor_cell -
-                           sparams->default_volume_nucleus_tumor_cell) *
+                           default_volume_nucleus_tumor_cell) *
                           (1 - sparams->default_fraction_fluid_tumor_cell));
 
   // Set initial oncoprotein level with a truncated normal distribution
@@ -90,7 +93,7 @@ TumorCell::TumorCell(const Real3& position) {
   // Set state transition random rate
   SetTransformationRandomRate();
   // Set basal death probability
-  SetBasalDeathProbability(sparams->basal_necrosis_probability_cancer_cells);
+  SetBasalDeathProbability(sparams->basal_death_probability_cancer_cells);
 
   // Add Consumption and Secretion
   // Set default oxygen consumption rate
@@ -266,21 +269,6 @@ void TumorCell::ChangeVolumeExponentialRelaxationEquation(
 
   const real_t new_volume = new_total_solid + new_fluid;
 
-//Debug
-if (std::isnan(total_nuclear)) {
-    std::cout << "new_volume is NaN"
-              << " | new_total_solid: " << new_total_solid
-              << " | nuclear_solid: " << nuclear_solid
-              << " | cytoplasm_solid: " << cytoplasm_solid
-              << " | current_cytoplasm_solid: " << current_cytoplasm_solid
-              << " | target_cytoplasm_solid: " << target_cytoplasm_solid
-              << " | nuclear_volume: " << nuclear_volume
-              << " | new_fluid: " << new_fluid
-              << " | current_volume: " << GetVolume()
-              << " | target_volume: " << GetTargetTotalVolume()
-              << std::endl;
-}
-
   // Avoid division by zero
   const real_t new_fraction_fluid = new_fluid / (kEpsilon + new_volume);
 
@@ -445,11 +433,17 @@ void TumorCell::StartApoptosis() {
   SetTimerState(0);
   // Set type to 5 to indicate dead cell
   SetType(TumorCellType::kType5);
-  // Set target volume to 0 (the cell shrinks)
-  SetTargetCytoplasmSolid(0.0);
-  SetTargetNucleusSolid(0.0);
+  // Set target fluid volume to 0 (the cell shrinks loosing all its liquids)
+  const real_t current_total_volume = GetVolume();
+  const real_t fluid_fraction = GetFluidFraction();
+  const real_t nuclear_volume = GetNuclearVolume();
+  const real_t current_cytoplasm_solid =
+      (current_total_volume - nuclear_volume) * (1 - fluid_fraction);
+  const real_t current_nuclear_solid = nuclear_volume * (1 - fluid_fraction);
+  SetTargetCytoplasmSolid(current_cytoplasm_solid);
+  SetTargetNucleusSolid( current_nuclear_solid);
   SetTargetFractionFluid(0.0);
-  SetTargetRelationCytoplasmNucleus(0.0);
+  SetTargetRelationCytoplasmNucleus(current_cytoplasm_solid/current_nuclear_solid);
   // Reduce oxygen consumption
   SetOxygenConsumptionRate(GetOxygenConsumptionRate() *
                            sparams->reduction_consumption_dead_cells);
@@ -496,8 +490,8 @@ void StateControlGrowProliferate::Run(Agent* agent) {
             glucose_level = glucose_dgrid->GetValue(current_position);
           }
 
-        // Enter necrosis if oxygen or glucose levels are too low
-        if (ShouldEnterNecrosis(oxygen_level, glucose_level, cell)) {
+        // Die if oxygen or glucose levels are too low or because of random natural causes
+        if (ShouldDie(oxygen_level, glucose_level, cell)) {
           // Exit the function to prevent further processing
           return;
         }
@@ -524,11 +518,20 @@ void StateControlGrowProliferate::Run(Agent* agent) {
           cell->SetState(TumorCellState::kNecroticLysed);
           // Reset timer_state
           cell->SetTimerState(0);
-          // Set target volume to 0 (the cell will shrink)
-          cell->SetTargetCytoplasmSolid(0.0);
-          cell->SetTargetNucleusSolid(0.0);
+          // Set target fuid volume to 0 (the cell shrinks loosing all its liquids)
+          const real_t current_total_volume = cell->GetVolume();
+          const real_t fluid_fraction = cell->GetFluidFraction();
+          const real_t nuclear_volume = cell->GetNuclearVolume();
+          const real_t current_cytoplasm_solid =
+              (current_total_volume - nuclear_volume) * (1 - fluid_fraction);
+          const real_t current_nuclear_solid = nuclear_volume * (1 - fluid_fraction);
+          cell->SetTargetCytoplasmSolid(current_cytoplasm_solid);
+          cell->SetTargetNucleusSolid( current_nuclear_solid);
           cell->SetTargetFractionFluid(0.0);
-          cell->SetTargetRelationCytoplasmNucleus(0.0);
+          cell->SetTargetRelationCytoplasmNucleus(current_cytoplasm_solid/current_nuclear_solid);
+          // Reduce oxygen consumption
+          cell->SetOxygenConsumptionRate(cell->GetOxygenConsumptionRate() *
+                                  sparams->reduction_consumption_dead_cells);
           // Stop secretion and consumption rate
           // Stop consumption
           cell->SetOxygenConsumptionRate(0.0);
@@ -664,13 +667,13 @@ void StateControlGrowProliferate::ManageLivingCell(TumorCell* cell,
   }
 }
 
-// computes the probability of the cell entering necrosis
-bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level, real_t glucose_level,
+// computes the probability of the cell of dying due to low oxygen or glucose levels or due to random natural causes
+bool StateControlGrowProliferate::ShouldDie(real_t oxygen_level, real_t glucose_level,
                                                       TumorCell* cell) {
   Simulation* sim = Simulation::GetActive();
   const auto* sparams = sim->GetParam()->Get<SimParam>();
-  // necrosis probability
-  // Oxygen
+  Random* random = sim->GetRandom();
+  // necrosis probability because of lack of Oxygen
   // Default multiplier for necrosis probability because of low oxygen level
   real_t multiplier = 0.0;
   // oxygen threshold for considering necrosis
@@ -685,34 +688,9 @@ bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level, real_
   }
   // Calculate the probability of necrosis based on oxygen level
   const real_t maximum_necrosis_rate_oxygen_multiplier = sparams->maximum_necrosis_lack_of_oxygen_rate * multiplier;
-  // Glucose (only if glucose is defined in the simulation)
-  // Default multiplier for necrosis probability because of low glucose level
-  multiplier = 0.0;
-  if (cell->IsGlucoseDefined()) {
-    //there is a glucose diffusion grid defined in the simulation
-    // glucose threshold for considering necrosis
-    if (glucose_level < sparams->glucose_limit_for_necrosis) {
-      multiplier = (sparams->glucose_limit_for_necrosis - glucose_level) /
-                  (sparams->glucose_limit_for_necrosis -
-                    sparams->glucose_limit_for_necrosis_maximum);
-    }
-    // threshold for maximum necrosis probability
-    if (glucose_level < sparams->glucose_limit_for_necrosis_maximum) {
-      multiplier = 1.0;
-    }
-  }
-  // Calculate the probability of necrosis based on glucose level. If no glucose gradient is defined it will be zero
-  const real_t maximum_necrosis_rate_glucose_multiplier = sparams->maximum_necrosis_lack_of_glucose_rate * multiplier;
-  // Random natural causes
-  const real_t current_basal_death_probability = cell->GetBasalDeathProbability();
-  // Final probability: multiply by sparams->dt_cycle since each timestep is sparams->dt_cycle minutes
-  // The probability of necrosis is calculated as the complement of the product of the complements of the individual probabilities, scaled by the time step.
-  const real_t probability_necrosis =
-      sparams->dt_cycle * (1.0 - (1.0 - maximum_necrosis_rate_oxygen_multiplier) *
-                                  (1.0 - maximum_necrosis_rate_glucose_multiplier) *
-                                  (1.0 - current_basal_death_probability));
 
-  Random* random = sim->GetRandom();
+  // Final probability: multiply by sparams->dt_cycle since each timestep is sparams->dt_cycle minutes
+  const real_t probability_necrosis = sparams->dt_cycle * maximum_necrosis_rate_oxygen_multiplier;
   const bool enter_necrosis = random->Uniform(0, 1) < probability_necrosis;
   // If the random number is less than the probability, enter necrosis
   if (enter_necrosis) {
@@ -734,15 +712,56 @@ bool StateControlGrowProliferate::ShouldEnterNecrosis(real_t oxygen_level, real_
     cell->ComputeConstantsConsumptionSecretion();
 
     // The cell will swell getting filled with fluid
-    cell->SetTargetCytoplasmSolid(0);
-    cell->SetTargetNucleusSolid(0);
-    // Set target fraction of fluid to 1.0
+    const real_t current_total_volume = cell->GetVolume();
+    const real_t fluid_fraction = cell->GetFluidFraction();
+    const real_t nuclear_volume = cell->GetNuclearVolume();
+    const real_t current_cytoplasm_solid =
+        (current_total_volume - nuclear_volume) * (1 - fluid_fraction);
+    const real_t current_nuclear_solid = nuclear_volume * (1 - fluid_fraction);
+    cell->SetTargetCytoplasmSolid(current_cytoplasm_solid);
+    cell->SetTargetNucleusSolid( current_nuclear_solid);
     cell->SetTargetFractionFluid(1.0);
-    cell->SetTargetRelationCytoplasmNucleus(0.0);
+    cell->SetTargetRelationCytoplasmNucleus(current_cytoplasm_solid/current_nuclear_solid);
     // Set type to 5 to indicate dead cell
     cell->SetType(TumorCellType::kType5);
+    return true;
   }
-  return enter_necrosis;  // Return whether the cell entered necrosis
+
+  // If the cell does not eneter necrosis (due to low oxygen), check if it should die due to low glucose or random natural causes (apoptosis)
+  // Glucose (only if glucose is defined in the simulation)
+  // Default multiplier for apoptosis probability because of low glucose level
+  multiplier = 0.0;
+  if (cell->IsGlucoseDefined()) {
+    //there is a glucose diffusion grid defined in the simulation
+    // glucose threshold for considering necrosis
+    if (glucose_level < sparams->glucose_limit_for_death) {
+      multiplier = (sparams->glucose_limit_for_death - glucose_level) /
+                  (sparams->glucose_limit_for_death -
+                    sparams->glucose_limit_for_death_maximum);
+    }
+    // threshold for maximum apoptosis probability
+    if (glucose_level < sparams->glucose_limit_for_death_maximum) {
+      multiplier = 1.0;
+    }
+  }
+  // Calculate the probability of apoptosis based on glucose level. If no glucose gradient is defined it will be zero
+  const real_t maximum_death_rate_glucose_multiplier = sparams->maximum_death_lack_of_glucose_rate * multiplier;
+
+  // Random natural causes
+  const real_t current_basal_death_probability = cell->GetBasalDeathProbability();
+  // Final probability: multiply by sparams->dt_cycle since each timestep is sparams->dt_cycle minutes
+  // The probability of natural aopotosis is calculated as the complement of the product of the complements of the individual probabilities, scaled by the time step.
+  const real_t probability_apoptosis =
+      sparams->dt_cycle * (1.0 - (1.0 - maximum_death_rate_glucose_multiplier) *
+                                  (1.0 - current_basal_death_probability));
+
+  const bool enter_apoptosis = random->Uniform(0, 1) < probability_apoptosis;
+  // If the random number is less than the probability, enter necrosis
+  if (enter_apoptosis) {
+    cell->StartApoptosis();
+    return true;
+  }
+  return false;  // Return whether the cell died
 }
 
 }  // namespace bdm
