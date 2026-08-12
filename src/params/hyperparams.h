@@ -52,6 +52,9 @@ constexpr real_t kMinutesInAnHour = 60.0;
 /// Hours in a day
 constexpr real_t kHoursInADay = 24.0;
 
+/// Enum for tumor shapes
+enum class TumorShape { kSphere, kCylinder };
+
 /// Contains the default values of the hyperparameters used in the simulation.
 struct SimParam : public ParamGroup {
   // NOLINTNEXTLINE(modernize-type-traits,llvm-else-after-return,readability-else-after-return,cppcoreguidelines-owning-memory)
@@ -81,8 +84,9 @@ struct SimParam : public ParamGroup {
   int bounded_space_length = 1000;
 
   /// Tumor topology
-  /// Tumor shape: "sphere" or "cylinder"
-  std::string tumor_shape = "sphere";
+  /// Tumor shape read as "cylinder" or "sphere" from the JSON file
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  TumorShape tumor_shape = TumorShape::kSphere;
   /// Initial radius of the spherical tumor (group of cancer cells) in
   /// micrometers
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -93,12 +97,15 @@ struct SimParam : public ParamGroup {
   /// Initial height of the cylindrical tumor in micrometers
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t cylindrical_tumor_height = 100;
-  /// Min allowed Z coordinate for cells. Used for cylindrical tumors with phisical barriers. By default it is automatically set to -bounded_space_length/2 to avoid any restrictions.
+  /// Min allowed Z coordinate for cells in cylindrical tumors with phisical barriers. By default it is automatically set to -bounded_space_length/2 to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t bounded_space_min_allowed_z = -500;
-  /// Max allowed Z coordinate for cells. Used for cylindrical tumors with phisical barriers. By default it is automatically set to bounded_space_length/2 to avoid any restrictions.
+  /// Max allowed Z coordinate for cells in cylindrical tumors with phisical barriers. By default it is automatically set to bounded_space_length/2 to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t bounded_space_max_allowed_z = 500;
+  /// Max allowed radius for cells meassured from the center of the tumor and considering the z-coordinate depending wether it has a cylindrical or spherical shape.  By default it is automatically set to bounded_space_length to avoid any restrictions.
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t bounded_space_max_allowed_radius = 1000;
   /// Initial number of cylindrical tumor cells
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   int initial_number_of_cylindrical_tumor_cells = 2800;
@@ -504,6 +511,10 @@ struct SimParam : public ParamGroup {
   /// Volume of a single voxel in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t voxel_volume = 8000;
+
+  /// Squared max allowed radius for bounded space in μm²
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t bounded_space_max_allowed_radius_squared = 1000000;
 
   /// 1-migration_bias_cart
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

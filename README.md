@@ -308,7 +308,6 @@ These are all the other hyperparameters that are not adviced to be modified unle
 | `length_box_mechanics` | 22 | μm | Box length for spatial partitioning in force calculations |
 | `dnew` | 0.15 | - | Adams-Bashforth coefficient for current velocity (dt × 1.5) |
 | `dold` | -0.05 | - | Adams-Bashforth coefficient for previous velocity (dt × -0.5) |
-| `max_squared_distance_cart_moving_towards_tumor_cell` | 317.746 | μm² | Maximum squared distance for CAR-T adhesion-only movement |
 
 #### Tumor Cell Parameters
 

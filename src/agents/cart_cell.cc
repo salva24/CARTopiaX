@@ -273,8 +273,7 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
             // is the adhesion force to avoid CAR-T non-stop pushing tumor
             // cells. In case of being closer than
             // sparams->max_squared_distance_cart_moving_towards_tumor_cell
-            // there is a probability kProbabilityPushing for the CAR-T to keep
-            // pushing the tumor cell
+            // CAR-T to keep stop pushing the tumor cell
             if (sq_norm_displac >
                 sparams->max_squared_distance_cart_moving_towards_tumor_cell) {
               translation_velocity_on_point_mass[0] +=
@@ -306,17 +305,51 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
 
   older_velocity_ = translation_velocity_on_point_mass;
 
-  // Clamp the movement if it surpasses the z boundaries.
-  const double current_z = current_position[2];
-  double& movement_z = movement_at_next_step[2];
+   // Clamp the movement if it surpasses the more restricted specified boundaries.
   const double min_z = sparams->bounded_space_min_allowed_z;
   const double max_z = sparams->bounded_space_max_allowed_z;
-  const double next_z = current_z + movement_z;
-  if (next_z < min_z) {
-      movement_z = min_z - current_z;
-  } else if (next_z > max_z) {
-      movement_z = max_z - current_z;
+  const double max_r_sq = sparams->bounded_space_max_allowed_radius_squared;
+
+  const Real3 next_position = current_position + movement_at_next_step;
+  real_t radi_sq = 0.0;
+  switch (sparams->tumor_shape) {
+  case TumorShape::kCylinder: {
+    // Check the z coordinate
+    if (next_position[2] < min_z) {
+      movement_at_next_step[2] = min_z - current_position[2];
+    } else if (next_position[2] > max_z) {
+      movement_at_next_step[2] = max_z - current_position[2];
+    }
+    // Only consider x and y for cylindrical rumor, distance to the axis of the cylinder
+    radi_sq = next_position[0] * next_position[0] + next_position[1] * next_position[1];
+    if (radi_sq>max_r_sq) {
+      // Scale down the movement to stay within the allowed radius
+      const double scale_factor = std::sqrt(max_r_sq / radi_sq);
+      movement_at_next_step[0] *= scale_factor;
+      movement_at_next_step[1] *= scale_factor;
+    }
+    break;
   }
+
+  case TumorShape::kSphere: {
+    // Consider all three dimensions for spherical radius
+    radi_sq = next_position[0] * next_position[0] + next_position[1] * next_position[1] + next_position[2] * next_position[2];
+    if (radi_sq>max_r_sq) {
+      // Scale down the movement to stay within the allowed radius
+      const double scale_factor = std::sqrt(max_r_sq / radi_sq);
+      movement_at_next_step[0] *= scale_factor;
+      movement_at_next_step[1] *= scale_factor;
+      movement_at_next_step[2] *= scale_factor;
+    }
+    break;
+  }
+
+  default:
+    Log::Error(
+        "TumorCell::CalculateDisplacement",
+        "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
+    break;
+}
 
   // Displacement
   return movement_at_next_step;

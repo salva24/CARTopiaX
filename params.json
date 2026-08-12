@@ -1,5 +1,5 @@
 {
-  "seed": 54,
+  "seed": 42,
   "num_radius_intervals": 20,
   "lateral_oxygen_production_min_z": -300.0,
   "lateral_oxygen_production_max_z": 300.0,
@@ -36,7 +36,7 @@
   "time_apoptosis": 6000.0,
   "time_lysis": 6000.0,
   "treatment": {
-    "0": 0
+    "0": 5600
   },
   "average_time_transformation_random_rate": 72,
   "standard_deviation_transformation_random_rate": 15.0,
@@ -45,13 +45,15 @@
   "oxygen_limit_for_proliferation": 5.9,
   "oxygen_limit_for_necrosis_maximum": 0.0,
   "oxygen_limit_for_necrosis": 45.0,
-  "maximum_necrosis_lack_of_oxygen_rate": 0.0000216,
+  "maximum_necrosis_lack_of_oxygen_rate": 0.0000129,
   "reduction_consumption_dead_cells": 0.0,
   "basal_death_probability_cancer_cells": 0.000005,
   "bounded_space_min_allowed_z": -50.0,
   "bounded_space_max_allowed_z": 50.0,
-  "minimum_distance_from_tumor_to_spawn_cart": 20.0,
+  "bounded_space_max_allowed_radius": 3250.0,
+  "minimum_distance_from_tumor_to_spawn_cart": 0.0,
   "add_immunostimulatory_factor": false,
+  "migration_bias_cart": 0.0,
   "add_glucose": true,
   "diffusion_coefficient_glucose": 7800,
   "initial_glucose_level": 24.98,
@@ -63,5 +65,9 @@
   "glucose_limit_for_death": 5,
   "glucose_limit_for_death_maximum": 0,
   "maximum_death_lack_of_glucose_rate": 0.000175,
-  "minimum_tumor_cell_target_volume_fraction_for_division": 0.9
+  "minimum_tumor_cell_target_volume_fraction_for_division": 0.9,
+  "dt_substances": 4320,
+  "migration_speed_cart": 25.0,
+  "elastic_constant_cart": 0.0,
+  "adhesion_rate_cart": 0
 }

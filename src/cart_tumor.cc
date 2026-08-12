@@ -91,18 +91,7 @@ int Simulate(int argc, const char** argv) {
   ResourceManager* rm = Simulation::GetActive()->GetResourceManager();
 
   // Obtain the tumor shape from the parameters
-  const std::string tumor_shape = sparam->tumor_shape;
-  bool is_tumor_shape_spherical = false;
-  bool is_tumor_shape_cylindrical = false;
-  if (tumor_shape == "sphere") {
-    is_tumor_shape_spherical = true;
-  } else if (tumor_shape == "cylinder") {
-    is_tumor_shape_cylindrical = true;
-  } else {
-    Log::Error("Simulate", "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
-    // Exit with an error code
-    return 1;
-  }   
+  const TumorShape tumor_shape = sparam->tumor_shape;
 
   // Oxygen
   // substance_id, name, diffusion_coefficient, decay_constant, resolution,
@@ -192,13 +181,13 @@ int Simulate(int argc, const char** argv) {
     const real_t squared_radius_glucose_initialization = sparam->max_radius_glucose_initialization*sparam->max_radius_glucose_initialization;
     // Initialize oxygen voxels
      ModelInitializer::InitializeSubstance(
-        kGlucose, [initial_glucose_level, min_initial_z_substances, max_initial_z_substances, is_tumor_shape_spherical, is_tumor_shape_cylindrical, squared_radius_glucose_initialization](real_t x, real_t y, real_t z) {
+        kGlucose, [initial_glucose_level, min_initial_z_substances, max_initial_z_substances, tumor_shape, squared_radius_glucose_initialization](real_t x, real_t y, real_t z) {
         if (z <= max_initial_z_substances &&
             z >= min_initial_z_substances) { 
-            if(is_tumor_shape_spherical && (x*x + y*y + z*z <= squared_radius_glucose_initialization)){
+            if(tumor_shape==TumorShape::kSphere && (x*x + y*y + z*z <= squared_radius_glucose_initialization)){
                 // Its spherical and the voxel is within the maximun spherical radius
                 return initial_glucose_level;
-            } else if(is_tumor_shape_cylindrical && (x*x + y*y <= squared_radius_glucose_initialization)){
+            } else if(tumor_shape==TumorShape::kCylinder && (x*x + y*y <= squared_radius_glucose_initialization)){
                 // Its cylindrical and the voxel is within the maximun cylindrical radius
                 return initial_glucose_level;
             }
@@ -210,17 +199,24 @@ int Simulate(int argc, const char** argv) {
   
   // Tumor cells initialization
   std::vector<Real3> positions;
-  if (is_tumor_shape_spherical) {
+  switch (tumor_shape) {
+  case TumorShape::kSphere: {
     // One spherical tumor of radius initial_spherical_tumor_radius in the center of the
     // simulation space
     positions = CreateSphereOfTumorCells(sparam->initial_spherical_tumor_radius);
-  } else if (is_tumor_shape_cylindrical) {
+    break;
+  }
+
+  case TumorShape::kCylinder: {
     // One cylindrical tumor of radius initial_spherical_tumor_radius and height
     // cylindrical_tumor_height in the center of the simulation space
     positions = CreateCylinderOfTumorCells(
         sparam->cylindrical_tumor_radius, sparam->cylindrical_tumor_height,
         sparam->initial_number_of_cylindrical_tumor_cells);
-  } else {
+break;
+  }
+
+  default:
     Log::Error("Simulate", "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
     // Exit with an error code
     return 1;

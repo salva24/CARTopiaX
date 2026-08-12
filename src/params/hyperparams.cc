@@ -79,7 +79,15 @@ void SimParam::LoadParams(const std::string& filename) {
   load_int("seed", seed);
   load_bool("output_performance_statistics", output_performance_statistics);
   load_int("total_minutes_to_simulate", total_minutes_to_simulate);
-  load_string("tumor_shape", tumor_shape);
+
+  std::string tumor_shape_string;
+  load_string("tumor_shape", tumor_shape_string);
+  if (jfile.contains("tumor_shape")) {
+    tumor_shape_string = jfile["tumor_shape"].get<std::string>();
+if (tumor_shape_string == "sphere") { tumor_shape = TumorShape::kSphere; } else if (tumor_shape_string == "cylinder") { tumor_shape = TumorShape::kCylinder; } else { tumor_shape = TumorShape::kSphere; Log::Error( "SimParam::LoadParams", "Unknown tumor shape '" + tumor_shape_string + "'. It should be either 'sphere' or 'cylinder'. Loading default value ('sphere') instead"); }
+
+  }
+  
   load_int("initial_number_of_cylindrical_tumor_cells",
            initial_number_of_cylindrical_tumor_cells);
   load_int("bounded_space_length", bounded_space_length);
@@ -97,6 +105,13 @@ void SimParam::LoadParams(const std::string& filename) {
     bounded_space_max_allowed_z = jfile["bounded_space_max_allowed_z"].get<double>();
   } else {
     bounded_space_max_allowed_z = bounded_space_length/2;
+  }
+
+  if (jfile.contains("bounded_space_max_allowed_radius")) {
+    bounded_space_max_allowed_radius = jfile["bounded_space_max_allowed_radius"].get<double>();
+  } else {
+    // if it is not defined we assign the whole length of the bounded space to avoid any restrictions
+    bounded_space_max_allowed_radius = bounded_space_length;
   }
   
   if (jfile.contains("treatment")) {
@@ -199,7 +214,7 @@ void SimParam::LoadParams(const std::string& filename) {
     diffuse_glucose_on_z_axis = jfile["diffuse_glucose_on_z_axis"].get<bool>();
   } else {
     // if the tumor shape is cylindrical it should be set to false, otherwise it should be set to true
-    if (tumor_shape == "cylinder") {
+    if (tumor_shape == TumorShape::kCylinder) {
       // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       diffuse_glucose_on_z_axis = false;
     } else {
@@ -366,6 +381,9 @@ void SimParam::LoadParams(const std::string& filename) {
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances) *
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances);
 
+  // Squared max allowed radius
+  bounded_space_max_allowed_radius_squared = bounded_space_max_allowed_radius * bounded_space_max_allowed_radius;
+
   // 1-migration_bias_cart
   migration_one_minus_bias_cart = 1.0 - migration_bias_cart;
   // Probability of a CAR-T cell to migrate in a given
@@ -424,22 +442,7 @@ void SimParam::PrintParams() const {
             << (output_performance_statistics ? "true" : "false") << "\n";
   std::cout << "Total simulation time in minutes (30 days): "
             << total_minutes_to_simulate << "\n";
-  std::cout << "Tumor shape: " << tumor_shape << "\n";
-  if (tumor_shape == "spherical") {
-    std::cout << "Initial radius of the spherical tumor (micrometers): "
-              << initial_spherical_tumor_radius << "\n";
-  } else if (tumor_shape == "cylindrical") {
-    std::cout << "Initial radius of the cylindrical tumor (micrometers): "
-              << cylindrical_tumor_radius << "\n";
-    std::cout << "Initial height of the cylindrical tumor (micrometers): "
-              << cylindrical_tumor_height << "\n";
-    std::cout << "Min allowed Z coordinate for cells (micrometers): "
-              << bounded_space_min_allowed_z << "\n";
-    std::cout << "Max allowed Z coordinate for cells (micrometers): "
-              << bounded_space_max_allowed_z << "\n";
-    std::cout << "Initial number of cylindrical tumor cells: "
-              << initial_number_of_cylindrical_tumor_cells << "\n";
-  }
+switch (tumor_shape) { case TumorShape::kSphere: std::cout << "Tumor shape: 'sphere' \n"; std::cout << "Initial radius of the spherical tumor (micrometers): " << initial_spherical_tumor_radius << "\n"; break; case TumorShape::kCylinder: std::cout << "Tumor shape: 'cylinder' \n"; std::cout << "Initial radius of the cylindrical tumor (micrometers): " << cylindrical_tumor_radius << "\n"; std::cout << "Initial height of the cylindrical tumor (micrometers): " << cylindrical_tumor_height << "\n"; std::cout << "Min allowed Z coordinate for cells (micrometers): " << bounded_space_min_allowed_z << "\n"; std::cout << "Max allowed Z coordinate for cells (micrometers): " << bounded_space_max_allowed_z << "\n"; std::cout << "Max allowed radius for cells (micrometers): " << bounded_space_max_allowed_radius << "\n"; std::cout << "Initial number of cylindrical tumor cells: " << initial_number_of_cylindrical_tumor_cells << "\n"; break; }
   std::cout << "Length of the bounded space (micrometers): "
             << bounded_space_length << "\n\n";
 

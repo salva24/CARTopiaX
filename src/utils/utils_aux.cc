@@ -121,9 +121,9 @@ std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius, real_t cyl
 
 // Function to compute the number of tumor cells of each type, the radius of the
 // tumor, the number of alive and dead cart cells, the average oncoprotein level, the average oxygen level of the
-// cancer cells, the average oxygen level of all cells, the average glucose level of the cancer cells and the average glucose level of all cells. Only considering cells within the specified inner and outer radius.
+// cancer cells, the average oxygen level of all cells, the average glucose level of the cancer cells, the average glucose level of all cells and the average radius distance from the center of the tumor of the living cart cells. Only considering cells within the specified inner and outer radius.
 std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t,
-           real_t, real_t, real_t, real_t, real_t>
+           real_t, real_t, real_t, real_t, real_t, real_t>
 AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
   real_t inner_radius_squared = inner_radius_considered * inner_radius_considered;
   real_t outer_radius_squared = outer_radius_considered * outer_radius_considered;
@@ -154,22 +154,29 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
   real_t acumulator_oxygen_all_cells = 0.0;
   real_t acumulator_glucose_cancer_cells = 0.0;
   real_t acumulator_glucose_all_cells = 0.0;
+  real_t acumulator_squared_radius_distance_living_cart_cells = 0.0;
 
-  bool tumor_shape_is_cylindrical = sparams->tumor_shape == "cylinder";
-  bool tumor_shape_is_spherical = sparams->tumor_shape == "sphere";
+  TumorShape tumor_shape= sparams->tumor_shape;
 
   rm->ForEachAgent([&](const Agent* agent) {
     // Compute the distance to the center depending on the tumor shape
     const Real3& pos = agent->GetPosition();
     real_t dist_sq = 0.0;
-    if (tumor_shape_is_cylindrical) {
-      // Only consider x and y for cylindrical rumor, distance to the axis of the cylinder
-      dist_sq = pos[0] * pos[0] + pos[1] * pos[1];  
-    } else if (tumor_shape_is_spherical) {
-      // Consider all three dimensions for spherical radius
-      dist_sq = pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2];  
-    } else{
+switch (tumor_shape)
+        {
+       case TumorShape::kCylinder:{ 
+          // Only consider x and y for cylindrical rumor, distance to the axis of the cylinder
+          dist_sq = pos[0] * pos[0] + pos[1] * pos[1];  
+          break;
+        }
+        case TumorShape::kSphere:{
+          // Consider all three dimensions for spherical radius
+          dist_sq = pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2];   
+          break;
+        }
+        default:
       Log::Error("AnalyzeTumor", "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
+      break;
     } 
 
     //If the cell is outside the considered radius range, skip it
@@ -233,6 +240,7 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
       }
       if (cart_cell->GetState() == CarTCellState::kAlive) {
         num_alive_cart++;
+        acumulator_squared_radius_distance_living_cart_cells += dist_sq;
       } else if (cart_cell->GetState() == CarTCellState::kApoptotic) {
         //Dead CART cell
         num_dead_cart++;
@@ -261,12 +269,16 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
       (total_num_tumor_cells + num_alive_cart + num_dead_cart > 0 && glucose_dgrid != nullptr)
           ? (acumulator_glucose_all_cells / (total_num_tumor_cells + num_alive_cart + num_dead_cart))
           : 0.0;
+
+  const real_t average_radius_distance_living_cart_cells =
+      (num_alive_cart > 0) ? std::sqrt(acumulator_squared_radius_distance_living_cart_cells / num_alive_cart) : 0.0;
+  
   return {total_num_tumor_cells, num_tumor_cells_type1,
           num_tumor_cells_type2, num_tumor_cells_type3,
           num_tumor_cells_type4, num_tumor_cells_type5_dead,
           num_alive_cart, num_dead_cart, std::sqrt(max_dist_sq),
           average_oncoprotein,   average_oxygen_cancer_cells, average_oxygen_all_cells,
-          average_glucose_cancer_cells, average_glucose_all_cells};
+          average_glucose_cancer_cells, average_glucose_all_cells,average_radius_distance_living_cart_cells};
 }
 
 // Function to output summary CSV
@@ -291,7 +303,7 @@ void OutputSummary::operator()() {
             << "total_days,total_hours,total_minutes,tumor_radius,num_cells,"
                "num_tumor_cells,tumor_cells_type1,tumor_cells_type2,tumor_"
                "cells_type3,tumor_cells_type4,tumor_cells_type5_dead,num_alive_"
-               "cart,num_dead_cart,average_oncoprotein,average_oxygen_cancer_cells,average_oxygen_all_cells,average_glucose_cancer_cells,average_glucose_all_cells\n";  // Header
+               "cart,num_dead_cart,average_oncoprotein,average_oxygen_cancer_cells,average_oxygen_all_cells,average_glucose_cancer_cells,average_glucose_all_cells,average_radius_distance_living_cart_cells\n";  // Header
                                                                           // for
                                                                           // CSV
                                                                           // file
@@ -312,12 +324,13 @@ void OutputSummary::operator()() {
       real_t average_oxygen_all_cells = 0.0;
       real_t average_glucose_cancer_cells = 0.0;
       real_t average_glucose_all_cells = 0.0;
+      real_t average_radius_distance_living_cart_cells = 0.0;
       // Analyze tumor with no limits on inner and outer radius
       std::tie(total_num_tumor_cells, num_tumor_cells_type1,
                num_tumor_cells_type2, num_tumor_cells_type3,
                num_tumor_cells_type4, num_tumor_cells_type5_dead,
                num_alive_cart, num_dead_cart, tumor_radius, average_oncoprotein,
-               average_oxygen_cancer_cells, average_oxygen_all_cells, average_glucose_cancer_cells, average_glucose_all_cells) = AnalyzeTumor(0, sparams->bounded_space_length);
+               average_oxygen_cancer_cells, average_oxygen_all_cells, average_glucose_cancer_cells, average_glucose_all_cells,average_radius_distance_living_cart_cells) = AnalyzeTumor(0, sparams->bounded_space_length);
       size_t total_num_cells = simulation->GetResourceManager()->GetNumAgents();
 
       // If a dosage is administred this exact time the numbers are not seen in
@@ -342,7 +355,7 @@ void OutputSummary::operator()() {
            << num_tumor_cells_type4 << "," << num_tumor_cells_type5_dead << ","
            << num_alive_cart << ","<< num_dead_cart << "," << average_oncoprotein << ","
            << average_oxygen_cancer_cells << "," << average_oxygen_all_cells << "," 
-           << average_glucose_cancer_cells << "," << average_glucose_all_cells << "\n";
+           << average_glucose_cancer_cells << "," << average_glucose_all_cells << ","<<average_radius_distance_living_cart_cells<< "\n";
     }
 
     if (sparams->output_information_dependent_on_radius) {
@@ -382,6 +395,7 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step, const real_t
         file << ",average_oxygen_all_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size; 
         file << ",average_glucose_cancer_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size;
         file << ",average_glucose_all_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size; 
+        file << ",average_radius_distance_living_cart_cells_radius_" << i * interval_size << "_to_" << (i + 1) * interval_size;
       }
       // End of header line
       file << "\n";
@@ -410,12 +424,13 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step, const real_t
       real_t average_oxygen_all_cells = 0.0;
       real_t average_glucose_cancer_cells = 0.0;
       real_t average_glucose_all_cells = 0.0;
+      real_t average_radius_distance_living_cart_cells = 0.0;
       // Analyze tumor with no limits on inner and outer radius
       std::tie(total_num_tumor_cells, num_tumor_cells_type1,
               num_tumor_cells_type2, num_tumor_cells_type3,
               num_tumor_cells_type4, num_tumor_cells_type5_dead,
               num_alive_cart, num_dead_cart, tumor_radius, average_oncoprotein,
-              average_oxygen_cancer_cells, average_oxygen_all_cells, average_glucose_cancer_cells, average_glucose_all_cells) = AnalyzeTumor(inner_radius_considered, outer_radius_considered);
+              average_oxygen_cancer_cells, average_oxygen_all_cells, average_glucose_cancer_cells, average_glucose_all_cells,average_radius_distance_living_cart_cells) = AnalyzeTumor(inner_radius_considered, outer_radius_considered);
 
       const int num_alive_tumor_cells = num_tumor_cells_type1 + num_tumor_cells_type2 + num_tumor_cells_type3 + num_tumor_cells_type4;
       const int num_alive_cells = num_alive_cart + num_alive_tumor_cells;
@@ -439,7 +454,8 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step, const real_t
             << "," << average_oxygen_cancer_cells
             << "," << average_oxygen_all_cells
             << "," << average_glucose_cancer_cells
-            << "," << average_glucose_all_cells;
+            << "," << average_glucose_all_cells
+            << "," << average_radius_distance_living_cart_cells;
     }  
     // End of line for the current step
     file << "\n";
@@ -472,22 +488,28 @@ void SpawnCart::operator()() {
     // compute tumor radius
     ResourceManager* rm = simulation->GetResourceManager();
     real_t max_dist_sq = 0.0;
-    bool tumor_shape_is_cylindrical = sparams->tumor_shape == "cylinder";
-    bool tumor_shape_is_spherical = sparams->tumor_shape == "sphere";
+    TumorShape tumor_shape = sparams->tumor_shape;
 
     rm->ForEachAgent([&](const Agent* agent) {
       if (const auto* cancer_cell = dynamic_cast<const TumorCell*>(agent)) {
         // Compute the distance to the center depending on the tumor shape
         real_t dist_sq = 0.0;
         const Real3& pos = cancer_cell->GetPosition();
-        if (tumor_shape_is_cylindrical) {
+        switch (tumor_shape)
+        {
+       case TumorShape::kCylinder:{ 
           // Only consider x and y for cylindrical rumor, distance to the axis of the cylinder
           dist_sq = pos[0] * pos[0] + pos[1] * pos[1];  
-        } else if (tumor_shape_is_spherical) {
+          break;
+        }
+        case TumorShape::kSphere:{
           // Consider all three dimensions for spherical radius
-          dist_sq = pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2];  
-        } else{
+          dist_sq = pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2];   
+          break;
+        }
+        default:
           Log::Error("SpawnCart", "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
+          break;
         }
         if (dist_sq > max_dist_sq) {
           max_dist_sq = dist_sq;
@@ -511,6 +533,7 @@ void SpawnCart::operator()() {
     const real_t max_b = param->max_bound;
     const real_t min_bz = sparams->bounded_space_min_allowed_z;
     const real_t max_bz = sparams->bounded_space_max_allowed_z;
+    const real_t max_r_sq = sparams->bounded_space_max_allowed_radius_squared;
     real_t px = 0.0;
     real_t py = 0.0;
     real_t pz = 0.0;
@@ -524,16 +547,23 @@ void SpawnCart::operator()() {
         px = rng->Uniform(min_b, max_b);
         py = rng->Uniform(min_b, max_b);
         pz = rng->Uniform(min_bz, max_bz);
-        if (tumor_shape_is_cylindrical) {
+        switch (tumor_shape)
+        {
+       case TumorShape::kCylinder:{ 
           // Only consider x and y for cylindrical rumor, distance to the axis of the cylinder
           radi_sq = px * px + py * py; 
-        } else if (tumor_shape_is_spherical) {
+          break;
+        }
+        case TumorShape::kSphere:{
           // Consider all three dimensions for spherical radius
           radi_sq = px * px + py * py + pz * pz; 
-        } else{
+          break;
+        }
+        default:
           Log::Error("SpawnCart", "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
-        } 
-        if (radi_sq >= minimum_squared_radius) {
+          break;
+        }
+        if (radi_sq >= minimum_squared_radius && radi_sq<=max_r_sq) {
           break;
         }
       }

@@ -90,8 +90,9 @@ std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius, real_t cyl
 ///   - Average oxygen level across all cells
 ///   - Average glucose level across all tumor cells
 ///   - Average glucose level across all cells
+///   - Average radial position of the living cart cells from the tumor center
 std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t,
-           real_t, real_t, real_t, real_t, real_t>
+           real_t, real_t, real_t, real_t, real_t, real_t>
 AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered);
 
 /// Generates a random direction unitary vector
