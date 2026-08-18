@@ -23,6 +23,7 @@
 #define TUMOR_HYPERPARAMS_H_
 
 #include "core/param/param_group.h"
+#include "core/param/param.h"
 #include "core/real_t.h"
 #include "core/util/math.h"
 #include <cmath>
@@ -79,6 +80,9 @@ struct SimParam : public ParamGroup {
   /// Total simulation time in minutes (30 days by default)
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   int total_minutes_to_simulate = 43200;
+  /// Bounded space topology for the boundaries it can be "open", "torus" or "closed" (see BioDynaMo documentation for more information)
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  Param::BoundSpaceMode bound_space_toplogy = Param::BoundSpaceMode::kTorus;
   /// Length of the bounded space in micrometers
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   int bounded_space_length = 1000;
@@ -437,7 +441,7 @@ struct SimParam : public ParamGroup {
 
   /// Average time in minutes until a CAR-T cell dies
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t average_maximum_time_untill_apoptosis_cart = 12342.86;
+  real_t average_maximum_time_until_apoptosis_cart = 12342.86;
   /// Default oxygen consumption rate of CAR-T cell
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_oxygen_consumption_cart = 1;
@@ -484,11 +488,16 @@ struct SimParam : public ParamGroup {
   /// Average persistence time before CAR-T cell moves
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t persistence_time_cart = 10;  // 10 minutes
-  /// Higher bias (\in [0,1]) makes CAR-T movement more directed toward
+  /// Average migration bias of CAR-T cells. Higher bias (\in [0,1]) makes CAR-T movement more directed toward
   /// immunostimulatory factor source; while a bias of 0 makes the movement
   /// random
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t migration_bias_cart = 0.5;
+  real_t avg_migration_bias_cart = 0.5;
+  ///Standard deviation of the migration bias for CAR-T cells. Higher values make the migration bias more variable among CAR-T cells
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  real_t std_migration_bias_cart = 0.0;
+
+
   /// Migration speed
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t migration_speed_cart = 5;
@@ -516,9 +525,6 @@ struct SimParam : public ParamGroup {
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t bounded_space_max_allowed_radius_squared = 1000000;
 
-  /// 1-migration_bias_cart
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-  real_t migration_one_minus_bias_cart = 0.5;
   /// Probability of a CAR-T cell to migrate in a given
   /// mechanical time step
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

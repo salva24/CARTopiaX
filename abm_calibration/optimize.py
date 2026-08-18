@@ -29,7 +29,7 @@ import optuna
 import pandas as pd
 
 # Change this: File Parameters for the desired experiment
-EXPERIMENT_ID = 80
+EXPERIMENT_ID = 101
 SEED = 42
 # You can set the number of trials to 0 to skip the optimization and just load the best result from the database
 NUMBER_OF_TRIALS = 10000
@@ -59,8 +59,11 @@ def run_ABM(params, seed):
     #     "basal_death_probability_cancer_cells"
     # ]
 
-    maximum_necrosis_lack_of_oxygen_rate = params[
-        "maximum_necrosis_lack_of_oxygen_rate"
+    avg_migration_bias_cart = params[
+        "avg_migration_bias_cart"
+    ]
+    std_migration_bias_cart = params[
+        "std_migration_bias_cart"
     ]
     # default_glucose_consumption_tumor_cell = params[
     #     "default_glucose_consumption_tumor_cell"
@@ -70,8 +73,9 @@ def run_ABM(params, seed):
     # ]
 
     # Change this configuration for the ABM run
-    config ={
-  "seed": seed,
+    config = {
+  "seed": 42,
+  "bound_space_toplogy": "closed",
   "num_radius_intervals": 20,
   "lateral_oxygen_production_min_z": -300.0,
   "lateral_oxygen_production_max_z": 300.0,
@@ -88,7 +92,7 @@ def run_ABM(params, seed):
   "cylindrical_tumor_radius": 3000.0,
   "max_radius_analysis_csv_dependent_on_radius": 3000.0,
   "cylindrical_tumor_height": 100.0,
-  "initial_number_of_cylindrical_tumor_cells": 28000,
+  "initial_number_of_cylindrical_tumor_cells": 2800,
   "default_volume_new_tumor_cell": 1468.0,
   "std_volume_new_tumor_cell": 166,
   "min_volume_new_tumor_cell": 1136.0,
@@ -102,40 +106,46 @@ def run_ABM(params, seed):
   "initial_oxygen_level": 0.0,
   "oxygen_reference_level": 165.0,
   "default_oxygen_consumption_tumor_cell": 77.47,
-  "default_oxygen_consumption_cart": 0,
+  "default_glucose_consumption_tumor_cell": 0.45,
   "diffusion_coefficient_oxygen": 180000.0,
   "decay_constant_oxygen": 0.01,
   "time_apoptosis": 6000.0,
   "time_lysis": 6000.0,
   "treatment": {
-    "0": 0
+    "0": 5600
   },
   "average_time_transformation_random_rate": 72,
   "standard_deviation_transformation_random_rate": 15.0,
   "decay_constant_glucose": 0.0005,
-  "oxygen_saturation_for_proliferation": 13.74,
-  "oxygen_limit_for_proliferation": 5.9,
+  "oxygen_saturation_for_proliferation": 0,
+  "oxygen_limit_for_proliferation": 0,
   "oxygen_limit_for_necrosis_maximum": 0.0,
-  "oxygen_limit_for_necrosis": 45.0,
-  "maximum_necrosis_lack_of_oxygen_rate": maximum_necrosis_lack_of_oxygen_rate,
+  "oxygen_limit_for_necrosis": 0.0,
+  "maximum_necrosis_lack_of_oxygen_rate": 0.0,
   "reduction_consumption_dead_cells": 0.0,
   "basal_death_probability_cancer_cells": 0.000005,
   "bounded_space_min_allowed_z": -50.0,
   "bounded_space_max_allowed_z": 50.0,
-  "minimum_distance_from_tumor_to_spawn_cart": 20.0,
-  "add_immunostimulatory_factor": False,
+  "bounded_space_max_allowed_radius": 3250.0,
+  "minimum_distance_from_tumor_to_spawn_cart": 0.0,
+  "add_immunostimulatory_factor": True,
   "add_glucose": True,
   "diffusion_coefficient_glucose": 7800,
   "initial_glucose_level": 24.98,
   "max_radius_glucose_initialization": 3100.0,  
-  "default_glucose_consumption_tumor_cell": 0.045,
-  "default_glucose_consumption_cart": 0.045,
+  "default_oxygen_consumption_cart": 0,
+  "default_glucose_consumption_cart": 0.7,
   "glucose_saturation_for_tumor_cell_growth": 24.98,
   "glucose_limit_for_tumor_cell_growth": 0,
   "glucose_limit_for_death": 5,
   "glucose_limit_for_death_maximum": 0,
   "maximum_death_lack_of_glucose_rate": 0.000175,
-  "minimum_tumor_cell_target_volume_fraction_for_division": 0.9
+  "minimum_tumor_cell_target_volume_fraction_for_division": 0.9,
+  "avg_migration_bias_cart": avg_migration_bias_cart,
+  "std_migration_bias_cart": std_migration_bias_cart,
+  "persistence_time_cart": 0,
+  "kill_rate_cart": 0.521,
+  "adhesion_rate_cart": 0.0013
 }
     # Save the config parameters for the run to the params.json file
     with open(PARAMS_PATH, "w") as f:
@@ -189,7 +199,7 @@ def compute_error():
         return float("inf")
 
     df_s = pd.read_csv(
-        sim_dir, usecols=["total_minutes", "num_tumor_cells", "tumor_cells_type5_dead","average_glucose_all_cells"]
+        sim_dir, usecols=["total_minutes", "num_tumor_cells", "tumor_cells_type5_dead","average_glucose_all_cells","average_radius_distance_living_cart_cells"]
     )
    #take at the minute 1440 
     # row = df_s[df_s["total_minutes"] == 1440].iloc[0]
@@ -204,7 +214,7 @@ def compute_error():
    # take the value at the minute 4320 for the number of dead tumor cells in the simulation data
     row = df_s[df_s["total_minutes"] == 4320].iloc[0]
     dead_cells_4320 = row["tumor_cells_type5_dead"]
-    dead_cells_4320_target = 2870
+    dead_cells_4320_target = 680
     # total_tumor_cells_4320 = row["num_tumor_cells"]
     # target_total_tumor_cells_4320 = 4143.0
 
@@ -341,9 +351,10 @@ def compute_error():
 def objective(trial):
     # Change this: Define the parameters to be optimized and their ranges
     params = {
-        # "oxygen_limit_for_proliferation": trial.suggest_float("oxygen_limit_for_proliferation", 0.0, 40, step=0.1),
+        "avg_migration_bias_cart": trial.suggest_float("avg_migration_bias_cart", 0.0, 0.3, step=0.1),
+        "std_migration_bias_cart": trial.suggest_float("std_migration_bias_cart", 1, 50, step=1),
         # "maximum_necrosis_lack_of_oxygen_rate": trial.suggest_float("maximum_necrosis_lack_of_oxygen_rate", 0.00002, 0.000022, step=0.0000004),
-        "maximum_necrosis_lack_of_oxygen_rate": trial.suggest_float("maximum_necrosis_lack_of_oxygen_rate", 0.00001, 0.00003, step=0.0000029),
+        # "kill_rate_cart": trial.suggest_float("kill_rate_cart", 0.001, 0.999, step=0.001),
         # "maximum_death_lack_of_glucose_rate": trial.suggest_float("maximum_death_lack_of_glucose_rate", 0.000085, 0.000106, step=0.000001)
     }
 

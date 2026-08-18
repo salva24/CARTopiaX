@@ -62,6 +62,14 @@ CarTCell::CarTCell(const Real3& position) {
   // Set default nuclear volume
   SetNuclearVolume(sparams->default_fraction_of_volume_for_nucleus_cart_cell*total_volume);
 
+  // Set Random Migration Bias
+  migration_bias_ = SamplePositiveGaussian(
+      sparams->avg_migration_bias_cart, sparams->std_migration_bias_cart);
+  //Clip the value <= 1
+  if (migration_bias_ > 1.0) {
+    migration_bias_ = 1.0;
+  }
+
   const ResourceManager& rm = *sim->GetResourceManager();
   oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen");
   immunostimulatory_factor_dgrid_ = sparams->add_immunostimulatory_factor
@@ -72,7 +80,7 @@ CarTCell::CarTCell(const Real3& position) {
         : nullptr;
 
   SetCurrentLiveTime((sparams->dt_cycle + 1) *
-                     sparams->average_maximum_time_untill_apoptosis_cart);
+                     sparams->average_maximum_time_until_apoptosis_cart);
   // Add Consumption and Secretion
   //  Set default oxygen consumption rate
   SetOxygenConsumptionRate(sparams->default_oxygen_consumption_cart);
@@ -206,9 +214,10 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
             current_position, &direction_to_immunostimulatory_factor, true);
         // motility = bias * direction_to_immunostimulatory_factor +
         // (1-bias)*random_direction
+        const real_t bias = GetMigrationBias();
         motility =
-            sparams->migration_bias_cart * direction_to_immunostimulatory_factor +
-            sparams->migration_one_minus_bias_cart * random_direction;
+            bias * direction_to_immunostimulatory_factor +
+            (1-bias) * random_direction;
       }
       
       const real_t motility_norm_squared = motility[0] * motility[0] +
@@ -221,9 +230,9 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
       // Scale by migration speed and add to the velocity
       translation_velocity_on_point_mass +=
           motility * sparams->migration_speed_cart;
+
     }
   }
-
   //--------------------------------------------
   // If cell is not apoptotic
   if (state_ == CarTCellState::kAlive) {
@@ -350,7 +359,6 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
         "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
     break;
 }
-
   // Displacement
   return movement_at_next_step;
 }

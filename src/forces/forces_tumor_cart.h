@@ -34,7 +34,7 @@ namespace bdm {
 /// cells and CAR-T cells). It extends the base InteractionForce class to
 /// provide custom force calculations specific to the tumor-CAR-T cell
 /// interaction simulation.
-class InteractionVelocity : public InteractionForce {
+class InteractionVelocity final : public InteractionForce {
  public:
   InteractionVelocity() = default;
   InteractionVelocity(const InteractionVelocity&) = default;

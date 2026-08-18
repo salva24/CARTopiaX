@@ -21,6 +21,7 @@
 
 #include "params/hyperparams.h"
 #include "core/param/param_group.h"
+#include "core/param/param.h"
 #include "core/real_t.h"
 #include "core/util/math.h"
 #include <cmath>
@@ -91,6 +92,16 @@ if (tumor_shape_string == "sphere") { tumor_shape = TumorShape::kSphere; } else 
   load_int("initial_number_of_cylindrical_tumor_cells",
            initial_number_of_cylindrical_tumor_cells);
   load_int("bounded_space_length", bounded_space_length);
+  std::string bound_space_toplogy_string;
+  if (jfile.contains("bound_space_toplogy")) {
+    bound_space_toplogy_string = jfile["bound_space_toplogy"].get<std::string>();
+if (bound_space_toplogy_string == "torus") { bound_space_toplogy = Param::BoundSpaceMode::kTorus; } 
+else if (bound_space_toplogy_string == "open") { bound_space_toplogy = Param::BoundSpaceMode::kOpen; } 
+else if (bound_space_toplogy_string == "closed") { bound_space_toplogy =  Param::BoundSpaceMode::kClosed; } 
+else { bound_space_toplogy = Param::BoundSpaceMode::kTorus; Log::Error( "SimParam::LoadParams", "Unknown bound space topology '" + bound_space_toplogy_string + "'. It should be either 'torus', 'open' or 'closed'. Loading default value ('torus') instead"); }
+
+  }
+
 
   load_double("initial_spherical_tumor_radius", initial_spherical_tumor_radius);
   load_double("cylindrical_tumor_radius", cylindrical_tumor_radius);
@@ -335,11 +346,11 @@ if (tumor_shape_string == "sphere") { tumor_shape = TumorShape::kSphere; } else 
   load_double("threshold_cancer_cell_type3", threshold_cancer_cell_type3);
   load_double("threshold_cancer_cell_type4", threshold_cancer_cell_type4);
 
-  if (jfile.contains("average_maximum_time_untill_apoptosis_cart")) {
-    average_maximum_time_untill_apoptosis_cart =
-        jfile["average_maximum_time_untill_apoptosis_cart"].get<double>();
+  if (jfile.contains("average_maximum_time_until_apoptosis_cart")) {
+    average_maximum_time_until_apoptosis_cart =
+        jfile["average_maximum_time_until_apoptosis_cart"].get<double>();
   } else {
-    average_maximum_time_untill_apoptosis_cart =
+    average_maximum_time_until_apoptosis_cart =
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
         dt_cycle * 10.0 * 24.0 * 60.0 / (dt_cycle + 1.0);
   }
@@ -363,7 +374,8 @@ if (tumor_shape_string == "sphere") { tumor_shape = TumorShape::kSphere; } else 
   load_double("minimum_distance_from_tumor_to_spawn_cart",
               minimum_distance_from_tumor_to_spawn_cart);
   load_double("persistence_time_cart", persistence_time_cart);
-  load_double("migration_bias_cart", migration_bias_cart);
+  load_double("avg_migration_bias_cart", avg_migration_bias_cart);
+  load_double("std_migration_bias_cart", std_migration_bias_cart);
   load_double("migration_speed_cart", migration_speed_cart);
   load_double("elastic_constant_cart", elastic_constant_cart);
 
@@ -384,11 +396,12 @@ if (tumor_shape_string == "sphere") { tumor_shape = TumorShape::kSphere; } else 
   // Squared max allowed radius
   bounded_space_max_allowed_radius_squared = bounded_space_max_allowed_radius * bounded_space_max_allowed_radius;
 
-  // 1-migration_bias_cart
-  migration_one_minus_bias_cart = 1.0 - migration_bias_cart;
   // Probability of a CAR-T cell to migrate in a given
   // mechanical time step
-  motility_probability_cart = dt_mechanics / persistence_time_cart;
+  motility_probability_cart =
+    (persistence_time_cart == 0)
+        ? 1.0
+        : dt_mechanics / persistence_time_cart;
   // Probability of a Tumor cell to escape in a given
   // mechanical time step
   probability_escape_from_cart =
@@ -445,6 +458,10 @@ void SimParam::PrintParams() const {
 switch (tumor_shape) { case TumorShape::kSphere: std::cout << "Tumor shape: 'sphere' \n"; std::cout << "Initial radius of the spherical tumor (micrometers): " << initial_spherical_tumor_radius << "\n"; break; case TumorShape::kCylinder: std::cout << "Tumor shape: 'cylinder' \n"; std::cout << "Initial radius of the cylindrical tumor (micrometers): " << cylindrical_tumor_radius << "\n"; std::cout << "Initial height of the cylindrical tumor (micrometers): " << cylindrical_tumor_height << "\n"; std::cout << "Min allowed Z coordinate for cells (micrometers): " << bounded_space_min_allowed_z << "\n"; std::cout << "Max allowed Z coordinate for cells (micrometers): " << bounded_space_max_allowed_z << "\n"; std::cout << "Max allowed radius for cells (micrometers): " << bounded_space_max_allowed_radius << "\n"; std::cout << "Initial number of cylindrical tumor cells: " << initial_number_of_cylindrical_tumor_cells << "\n"; break; }
   std::cout << "Length of the bounded space (micrometers): "
             << bounded_space_length << "\n\n";
+switch (bound_space_toplogy) { case Param::BoundSpaceMode::kTorus: std::cout << "Bound space topology: 'torus' \n"; break; 
+case Param::BoundSpaceMode::kOpen: std::cout << "Bounded space topology: 'open' \n"; break; 
+case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'closed' \n"; break; }
+
 
   /// Treatment Dosages
   std::cout << "/// Treatment Dosages\n";
@@ -697,7 +714,7 @@ switch (tumor_shape) { case TumorShape::kSphere: std::cout << "Tumor shape: 'sph
   std::cout << "///\n\n";
 
   std::cout << "Average time in minutes until a CAR-T cell dies: "
-            << average_maximum_time_untill_apoptosis_cart << "\n";
+            << average_maximum_time_until_apoptosis_cart << "\n";
   std::cout << "Default oxygen consumption rate of CAR-T cell: "
             << default_oxygen_consumption_cart << "\n";
   std::cout << "Default glucose consumption rate of CAR-T cell: " 
@@ -739,8 +756,10 @@ switch (tumor_shape) { case TumorShape::kSphere: std::cout << "Tumor shape: 'sph
   std::cout << "\nMotility parameters:\n";
   std::cout << "Average persistence time before CAR-T cell moves: "
             << persistence_time_cart << "\n";
-  std::cout << "Migration bias (higher values = more directed movement): "
-            << migration_bias_cart << "\n";
+  std::cout << "Average Migration bias (higher values = more directed movement): "
+            << avg_migration_bias_cart << "\n";
+  std::cout << "Standard deviation migration bias: "
+            << std_migration_bias_cart << "\n";
   std::cout << "Migration speed: " << migration_speed_cart << "\n";
   std::cout << "Elastic constant: " << elastic_constant_cart << "\n\n";
 

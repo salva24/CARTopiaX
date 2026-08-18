@@ -44,7 +44,7 @@ namespace bdm {
 /// will also secrete value_ at that layer. Callers who need to guarantee
 /// that floor/roof never secrete, regardless of the configured range,
 /// should choose min_z_/max_z_ strictly inside the domain bounds.
-class CylinderWallBoundaryCondition : public BoundaryCondition {
+class CylinderWallBoundaryCondition final : public BoundaryCondition {
   using BoundaryCondition::BoundaryCondition;
 
  public:

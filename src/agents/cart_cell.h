@@ -56,7 +56,7 @@ enum class CarTCellState : int {
 /// simulation. It inherits from the base Cell class and includes specific
 /// behaviors and properties related to CAR-T cell biology, including states,
 /// volume dynamics, and interactions with tumor cells.
-class CarTCell : public Cell, public ISubstanceInteractor {
+class CarTCell final : public Cell, public ISubstanceInteractor {
   // NOLINTNEXTLINE(modernize-type-traits)
   BDM_AGENT_HEADER(CarTCell, Cell, 1);
 
@@ -115,6 +115,9 @@ class CarTCell : public Cell, public ISubstanceInteractor {
     attached_to_tumor_cell_ = attached;
   }
   bool IsAttachedToTumorCell() const { return attached_to_tumor_cell_; }
+
+  real_t GetMigrationBias() const { return migration_bias_; }
+  void SetMigrationBias(real_t bias) { migration_bias_ = bias; }
 
   Real3 GetOlderVelocity() const { return older_velocity_; }
   void SetOlderVelocity(const Real3& velocity) { older_velocity_ = velocity; }
@@ -271,6 +274,9 @@ class CarTCell : public Cell, public ISubstanceInteractor {
 
   /// Target relation between cytoplasm and nucleus volumes
   real_t target_relation_cytoplasm_nucleus_ = 0.0;
+
+  /// Migration bias towards the immunostimulatory factor source (range [0,1])
+  real_t migration_bias_ = 0.0;
 
   /// Velocity of the cell in the previous time step
   Real3 older_velocity_ = {0, 0, 0};

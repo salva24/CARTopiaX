@@ -59,7 +59,7 @@ int Simulate(int argc, const char** argv) {
   auto set_param = [sparam_ref](Param* param) {
     // Set simulation bounds using the parameters
     param->random_seed = sparam_ref->seed;
-    param->bound_space = Param::BoundSpaceMode::kTorus;
+    param->bound_space = sparam_ref->bound_space_toplogy;
     param->min_bound = -sparam_ref->bounded_space_length / kHalf;
     param->max_bound = sparam_ref->bounded_space_length / kHalf;
     param->simulation_time_step = sparam_ref->dt_step;
