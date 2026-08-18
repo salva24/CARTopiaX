@@ -28,13 +28,14 @@
 3. [Model Replication](#model-replication)
 4. [Dependencies](#dependencies)
 5. [Installation](#installation)
-6. [Building the Simulation](#building-the-simulation)
-7. [Input Parameters](#input-parameters)
-8. [Running the Simulation](#running-the-simulation)
-9. [Visualizing Results](#visualizing-results)
-10. [Acknowledgments](#acknowledgments)
-11. [License](#license)
-12. [Author Contact Information](#author-contact-information)
+6. [Development Environment (Container)](#development-environment-container)
+7. [Building the Simulation](#building-the-simulation)
+8. [Input Parameters](#input-parameters)
+9. [Running the Simulation](#running-the-simulation)
+10. [Visualizing Results](#visualizing-results)
+11. [Acknowledgments](#acknowledgments)
+12. [License](#license)
+13. [Author Contact Information](#author-contact-information)
 
 
 ---
@@ -217,6 +218,98 @@ git clone https://github.com/compiler-research/CARTopiaX.git
 cd CARTopiaX
 
 ```
+
+---
+
+## Development Environment (Container)
+
+A prebuilt BioDynaMo — with its bundled ROOT — is published as a
+[ci-workflows](https://github.com/compiler-research/ci-workflows) recipe cell,
+so you do not have to build it yourself. `bin/start` drops you into a persistent
+container with that BioDynaMo in place, your checkout mounted read-write, and
+[Claude Code](https://claude.com/claude-code) installed.
+
+This is the fastest way for a new contributor to get a working environment.
+
+### Prerequisites
+
+- **Docker**, running.
+- **git** and **Python 3** on the host.
+- **~3 GB free** in the Docker VM (~250 MB download, ~800 MB unpacked, plus build space).
+
+`nektos/act` is *not* needed. It is only required to run a whole CI job locally
+with `bin/repro <row-name>`, which asks `act` to expand the matrix.
+
+> On Apple Silicon the container is x86_64 and runs translated. That is fine for
+> developing, but do not trust it for timing measurements or for diagnosing
+> toolchain-level failures.
+
+### Getting in
+
+```bash
+git clone https://github.com/compiler-research/ci-workflows ~/sources/ci-workflows
+cd ~/sources/ci-workflows && ./bin/start
+```
+
+Pick CARTopiaX from the list. It clones the project, downloads the BioDynaMo
+build CI uses, installs its host dependencies and opens a shell. Already have a
+checkout? Run `~/sources/ci-workflows/bin/start` from inside it and the menu is
+skipped.
+
+The first entry downloads and unpacks BioDynaMo; later entries take seconds.
+`claude` is installed for you — log in once per container. A host that has never
+run Claude Code needs nothing extra; if you *do* already run it, anything you
+put in `~/.cache/ci-workflows/devshell-cache/ai/skills` is what it sees inside.
+
+### Building, inside the container
+
+```bash
+source "$DEVSHELL_INSTALL/bin/thisbdm.sh"
+
+cd /patches
+cmake . -B build -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+cmake --build build -j"$(nproc)"
+ctest --test-dir build --output-on-failure
+```
+
+The compiler pin is a workaround rather than a preference, so do not drop it:
+the devshell exports `CC=clang`, while BioDynaMo replaces the compiler with
+MPI's wrapper (which wraps gcc) *after* CMake has detected clang. The OpenMP
+flags then disagree and g++ rejects `-fopenmp=libomp`.
+
+### Modifying BioDynaMo itself
+
+The recipe ships BioDynaMo's source next to the install, at `$DEVSHELL_SRC` —
+a shallow checkout at the tag CI pins, already configured at `$DEVSHELL_BUILD`,
+so `make -C $DEVSHELL_BUILD` iterates directly.
+
+To build CARTopiaX against your modified BioDynaMo, install it to a prefix of
+your own and source *that* instead of `$DEVSHELL_INSTALL`:
+
+```bash
+cmake --install "$DEVSHELL_BUILD" --prefix ~/bdm-dev
+source ~/bdm-dev/biodynamo-v1.05/bin/thisbdm.sh
+```
+
+The install is self-contained — it carries its own ROOT — and `thisbdm.sh`
+derives `BDMSYS` from its own location, so it works from anywhere. Note the
+extra `biodynamo-v<version>` level: BioDynaMo installs one directory deeper than
+the prefix you give it, whereas `$DEVSHELL_INSTALL` is that inner directory
+already, flattened by the recipe. Leaving `$DEVSHELL_INSTALL` untouched keeps
+the pristine CI environment one `source` away.
+
+### What persists
+
+| layer | holds | survives |
+|---|---|---|
+| container `devshell-<cell>` | apt packages, Claude login, your `$HOME` | exiting the shell |
+| host cache `~/.cache/ci-workflows/devshell-cache` | BioDynaMo install and source, ccache, Claude skills/settings/memory | removing the container |
+| your checkout | **your work** | everything — it is your working copy |
+
+Your work is never inside the container: `/patches` *is* your checkout, so
+commit, push and open pull requests from the host as usual. No GitHub
+credentials are copied into the container.
 
 ---
 
