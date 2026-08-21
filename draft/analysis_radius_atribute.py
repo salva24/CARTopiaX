@@ -27,12 +27,12 @@ import matplotlib.pyplot as plt
 
 # ---- settings ----
 CSV_PATH = "./output/data_dependent_on_radius_tumor.csv"
-MINUTE = 1440 # change this to the minute you want to plot
-# MINUTE = 4320 # change this to the minute you want to plot
+# MINUTE = 1440 # change this to the minute you want to plot
+MINUTE = 4320 # change this to the minute you want to plot
 # ATTRIBUTE= "num_alive_tumor_cells_radius"
-# ATTRIBUTE= "tumor_cells_type5_dead_radius"
+ATTRIBUTE= "tumor_cells_type5_dead_radius"
 # ATTRIBUTE = "average_oxygen_all_cells_radius"  # change this to the attribute you want to plot #average_glucose_all_cells
-ATTRIBUTE = "num_alive_cart_cells_radius"  # change this to the attribute you want to plot #tumor_cells_type5_dead_radius
+# ATTRIBUTE = "num_alive_cart_cells_radius"  # change this to the attribute you want to plot #tumor_cells_type5_dead_radius
 # ATTRIBUTE ="average_glucose_all_cells_radius"
 # other examples: "average_glucose_all_cells_radius", "average_oxygen_cancer_cells_radius", "num_alive_cart_cells_radius"
 # "num_alive_cells_radius", "num_alive_tumor_cells_radius", etc.
