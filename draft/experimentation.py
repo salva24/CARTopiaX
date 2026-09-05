@@ -43,12 +43,12 @@ def run_ABM(seed):
     config={
   "seed": seed,
   "bound_space_toplogy": "closed",
-  "num_radius_intervals": 20,
-  "lateral_oxygen_production_min_z": -300.0,
-  "lateral_oxygen_production_max_z": 300.0,
+  "num_radius_intervals": 100,
+  "lateral_oxygen_production_min_z": -6500.0,
+  "lateral_oxygen_production_max_z": 6500.0,
   "min_initial_z_substances": -300.0,
   "max_initial_z_substances": 300.0,
-  "diffuse_oxygen_on_z_axis": False,
+  "diffuse_oxygen_on_z_axis": True,
   "diffuse_glucose_on_z_axis": False,
   "output_performance_statistics": False,
   "total_minutes_to_simulate": 4320,
@@ -78,9 +78,6 @@ def run_ABM(seed):
   "decay_constant_oxygen": 0.01,
   "time_apoptosis": 6000.0,
   "time_lysis": 6000.0,
-  "treatment": {
-    "0": 0
-  },
   "average_time_transformation_random_rate": 72,
   "standard_deviation_transformation_random_rate": 15.0,
   "decay_constant_glucose": 0.0005,
@@ -100,8 +97,12 @@ def run_ABM(seed):
   "diffusion_coefficient_glucose": 7800,
   "initial_glucose_level": 24.98,
   "max_radius_glucose_initialization": 3100.0,  
-  "default_oxygen_consumption_cart": 7,
-  "default_glucose_consumption_cart": 0.07,
+  "treatment": {
+    "0": 560000
+  },
+  "default_oxygen_consumption_cart": 0,
+  "default_glucose_consumption_cart": 0.007,
+  "adhesion_rate_cart": 0.0000085,
   "glucose_saturation_for_tumor_cell_growth": 24.98,
   "glucose_limit_for_tumor_cell_growth": 0,
   "glucose_limit_for_death": 5,
@@ -111,8 +112,6 @@ def run_ABM(seed):
   "avg_migration_bias_cart": 0,
   "std_migration_bias_cart": 0.135,
   "persistence_time_cart": 0,
-  "kill_rate_cart": 0.521,
-  "adhesion_rate_cart": 0.00032,
   "diffusion_coefficient_immunostimulatory_factor": 100000,
   "decay_constant_immunostimulatory_factor": 0.00001
 }
