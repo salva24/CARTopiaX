@@ -56,7 +56,7 @@ enum class CarTCellState : int {
 /// simulation. It inherits from the base Cell class and includes specific
 /// behaviors and properties related to CAR-T cell biology, including states,
 /// volume dynamics, and interactions with tumor cells.
-class CarTCell : public Cell, public ISubstanceInteractor {
+class CarTCell final : public Cell, public ISubstanceInteractor {
   // NOLINTNEXTLINE(modernize-type-traits)
   BDM_AGENT_HEADER(CarTCell, Cell, 1);
 
@@ -116,12 +116,20 @@ class CarTCell : public Cell, public ISubstanceInteractor {
   }
   bool IsAttachedToTumorCell() const { return attached_to_tumor_cell_; }
 
+  real_t GetMigrationBias() const { return migration_bias_; }
+  void SetMigrationBias(real_t bias) { migration_bias_ = bias; }
+
   Real3 GetOlderVelocity() const { return older_velocity_; }
   void SetOlderVelocity(const Real3& velocity) { older_velocity_ = velocity; }
 
   real_t GetOxygenConsumptionRate() const { return oxygen_consumption_rate_; }
   void SetOxygenConsumptionRate(real_t rate) {
     oxygen_consumption_rate_ = rate;
+  }
+
+  real_t GetGlucoseConsumptionRate() const { return glucose_consumption_rate_; }
+  void SetGlucoseConsumptionRate(real_t rate) {
+    glucose_consumption_rate_ = rate;
   }
 
   real_t GetCurrentLiveTime() const { return current_live_time_; }
@@ -144,6 +152,18 @@ class CarTCell : public Cell, public ISubstanceInteractor {
   /// Returns the diffusion grid for immunostimulatory factors
   DiffusionGrid* GetImmunostimulatoryFactorDiffusionGrid() const {
     return immunostimulatory_factor_dgrid_;
+  }
+  /// Returns wether the Immunostimulatory factor is defined
+  bool IsImmunostimulatoryFactorDefined() const {
+    return immunostimulatory_factor_dgrid_ != nullptr;
+  }
+  /// Returns the diffusion grid for glucose
+  DiffusionGrid* GetGlucoseDiffusionGrid() const {
+    return glucose_dgrid_;
+  }
+  /// Returns wether the Immunostimulatory factor is defined
+  bool IsGlucoseDefined() const {
+    return glucose_dgrid_ != nullptr;
   }
 
   /// Change volume using exponential relaxation equation
@@ -227,6 +247,9 @@ class CarTCell : public Cell, public ISubstanceInteractor {
   /// Pointer to the immunostimulatory factor diffusion grid
   DiffusionGrid* immunostimulatory_factor_dgrid_ = nullptr;
 
+  /// Pointer to the glucose diffusion grid
+  DiffusionGrid* glucose_dgrid_ = nullptr;
+
   /// Flag indicating if the cell is attached to a tumor cell
   bool attached_to_tumor_cell_ = false;
 
@@ -252,20 +275,29 @@ class CarTCell : public Cell, public ISubstanceInteractor {
   /// Target relation between cytoplasm and nucleus volumes
   real_t target_relation_cytoplasm_nucleus_ = 0.0;
 
+  /// Migration bias towards the immunostimulatory factor source (range [0,1])
+  real_t migration_bias_ = 0.0;
+
   /// Velocity of the cell in the previous time step
   Real3 older_velocity_ = {0, 0, 0};
 
   /// Rate of oxygen consumption by the cell
   real_t oxygen_consumption_rate_ = 0.0;
 
-  /// Rate of immunostimulatory factor secretion by the cell
-  real_t immunostimulatory_factor_secretion_rate_ = 0.0;
+  /// Rate of glucose consumption by the cell
+  real_t glucose_consumption_rate_ = 0.0;
 
   /// Constant 1 for oxygen consumption/secretion differential equation solution
   real_t constant1_oxygen_ = 0.0;
 
   /// Constant 2 for oxygen consumption/secretion differential equation solution
   real_t constant2_oxygen_ = 0.0;
+
+  /// Constant 1 for glucose consumption/secretion differential equation solution
+  real_t constant1_glucose_ = 0.0;
+
+  /// Constant 2 for glucose consumption/secretion differential equation solution
+  real_t constant2_glucose_ = 0.0;
 
   /// Pointer to the attached tumor cell
   bdm::AgentPointer<TumorCell> attached_cell_ptr_;

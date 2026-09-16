@@ -42,7 +42,8 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
                                                    std::string substance_name,
                                                    real_t dc, real_t mu,
                                                    int resolution, real_t dt,
-                                                   bool dirichlet_border)
+                                                   bool dirichlet_border,
+                                                   bool diffuse_on_z_axis)
     : DiffusionGrid(substance_id, std::move(substance_name), dc, mu,
                     resolution),
       resolution_(static_cast<int>(GetResolution())),
@@ -52,6 +53,7 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
                                        ->bounded_space_length) /
                static_cast<real_t>(resolution_)),
       dirichlet_border_(dirichlet_border),
+      diffuse_on_z_axis_(diffuse_on_z_axis),
       jump_i_(1),
       jump_j_(resolution_),
       jump_(resolution_ * resolution_),
@@ -209,7 +211,7 @@ void DiffusionThomasAlgorithm::DiffuseChemical() {
   ApplyBoundaryConditionsIfNeeded();
 
   // Solve for Z-direction (direction = 2) if diffuse_on_z_axis is true
-  if (Simulation::GetActive()->GetParam()->Get<SimParam>()->diffuse_on_z_axis) {
+  if (diffuse_on_z_axis_) {
     SolveDirectionThomas(2);
     ApplyBoundaryConditionsIfNeeded();
   }

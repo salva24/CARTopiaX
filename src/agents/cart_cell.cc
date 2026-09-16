@@ -48,18 +48,45 @@ CarTCell::CarTCell(const Real3& position) {
   SetPosition(position);
   Simulation* sim = Simulation::GetActive();
   const auto* sparams = sim->GetParam()->Get<SimParam>();
-  SetVolume(sparams->default_volume_new_cart_cell);
+  // Set default volume
+  real_t total_volume=SamplePositiveGaussian(sparams->default_volume_new_cart_cell,sparams->std_volume_new_cart_cell);
+  // Clip the value between the minimum and maximum allowed values
+  if (total_volume < sparams->min_volume_new_cart_cell) {
+    total_volume=sparams->min_volume_new_cart_cell;
+  } else if (total_volume > sparams->max_volume_new_cart_cell) {
+    total_volume=sparams->max_volume_new_cart_cell;
+  }
+  SetVolume(total_volume);
+  // Set default fluid fraction
+  SetFluidFraction(sparams->default_fraction_fluid_cart_cell);
+  // Set default nuclear volume
+  SetNuclearVolume(sparams->default_fraction_of_volume_for_nucleus_cart_cell*total_volume);
+
+  // Set Random Migration Bias
+  migration_bias_ = SamplePositiveGaussian(
+      sparams->avg_migration_bias_cart, sparams->std_migration_bias_cart);
+  //Clip the value <= 1
+  if (migration_bias_ > 1.0) {
+    migration_bias_ = 1.0;
+  }
+
   const ResourceManager& rm = *sim->GetResourceManager();
   oxygen_dgrid_ = rm.GetDiffusionGrid("oxygen");
-  immunostimulatory_factor_dgrid_ =
-      rm.GetDiffusionGrid("immunostimulatory_factor");
+  immunostimulatory_factor_dgrid_ = sparams->add_immunostimulatory_factor
+        ? rm.GetDiffusionGrid("immunostimulatory_factor")
+        : nullptr;
+  glucose_dgrid_ = sparams->add_glucose
+        ? rm.GetDiffusionGrid("glucose")
+        : nullptr;
 
   SetCurrentLiveTime((sparams->dt_cycle + 1) *
-                     sparams->average_maximum_time_untill_apoptosis_cart);
+                     sparams->average_maximum_time_until_apoptosis_cart);
   // Add Consumption and Secretion
   //  Set default oxygen consumption rate
   SetOxygenConsumptionRate(sparams->default_oxygen_consumption_cart);
-  // Compute constants for all ConsumptionSecretion of Oxygen
+  // Set default glucose consumption rate
+  SetGlucoseConsumptionRate(sparams->default_glucose_consumption_cart);
+  // Compute constants for all ConsumptionSecretion of Oxygen and glucose
   ComputeConstantsConsumptionSecretion();
 }
 
@@ -141,7 +168,7 @@ void CarTCell::ChangeVolumeExponentialRelaxationEquation(
   // if the volume has changed
   if (new_volume != current_total_volume) {
     SetVolume(new_volume);
-    // Update constants for all ConsumptionSecretion of Oxygen and
+    // Update constants for all ConsumptionSecretion of Oxygen, glucose and
     // Immunostimulatory Factors
     ComputeConstantsConsumptionSecretion();
   }
@@ -176,15 +203,23 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
     if (rng->Uniform(0.0, 1.0) < sparams->motility_probability_cart) {
       // random direction as unitary vector
       const Real3 random_direction = GenerateRandomDirection();
-      Real3 direction_to_immunostimulatory_factor;
-      // returns normalized gradient towards the immunostimulatory factor source
-      immunostimulatory_factor_dgrid_->GetGradient(
-          current_position, &direction_to_immunostimulatory_factor, true);
-      // motility = bias * direction_to_immunostimulatory_factor +
-      // (1-bias)*random_direction
-      motility =
-          sparams->migration_bias_cart * direction_to_immunostimulatory_factor +
-          sparams->migration_one_minus_bias_cart * random_direction;
+      //initialize motility with random direction
+      motility = random_direction;
+
+      if (IsImmunostimulatoryFactorDefined()) {
+        // if there is an immunostimulatory factor gradient set, the CAR-T cell will moves partially towards it, otherwise it will move randomly
+        Real3 direction_to_immunostimulatory_factor;
+        // returns normalized gradient towards the immunostimulatory factor source
+        immunostimulatory_factor_dgrid_->GetGradient(
+            current_position, &direction_to_immunostimulatory_factor, true);
+        // motility = bias * direction_to_immunostimulatory_factor +
+        // (1-bias)*random_direction
+        const real_t bias = GetMigrationBias();
+        motility =
+            bias * direction_to_immunostimulatory_factor +
+            (1-bias) * random_direction;
+      }
+      
       const real_t motility_norm_squared = motility[0] * motility[0] +
                                            motility[1] * motility[1] +
                                            motility[2] * motility[2];
@@ -195,9 +230,9 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
       // Scale by migration speed and add to the velocity
       translation_velocity_on_point_mass +=
           motility * sparams->migration_speed_cart;
+
     }
   }
-
   //--------------------------------------------
   // If cell is not apoptotic
   if (state_ == CarTCellState::kAlive) {
@@ -247,8 +282,7 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
             // is the adhesion force to avoid CAR-T non-stop pushing tumor
             // cells. In case of being closer than
             // sparams->max_squared_distance_cart_moving_towards_tumor_cell
-            // there is a probability kProbabilityPushing for the CAR-T to keep
-            // pushing the tumor cell
+            // CAR-T to keep stop pushing the tumor cell
             if (sq_norm_displac >
                 sparams->max_squared_distance_cart_moving_towards_tumor_cell) {
               translation_velocity_on_point_mass[0] +=
@@ -280,18 +314,51 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
 
   older_velocity_ = translation_velocity_on_point_mass;
 
-  // Clamp the movement if it surpasses the z boundaries.
-  const double current_z = current_position[2];
-  double& movement_z = movement_at_next_step[2];
+   // Clamp the movement if it surpasses the more restricted specified boundaries.
   const double min_z = sparams->bounded_space_min_allowed_z;
   const double max_z = sparams->bounded_space_max_allowed_z;
-  const double next_z = current_z + movement_z;
-  if (next_z < min_z) {
-      movement_z = min_z - current_z;
-  } else if (next_z > max_z) {
-      movement_z = max_z - current_z;
+  const double max_r_sq = sparams->bounded_space_max_allowed_radius_squared;
+
+  const Real3 next_position = current_position + movement_at_next_step;
+  real_t radi_sq = 0.0;
+  switch (sparams->tumor_shape) {
+  case TumorShape::kCylinder: {
+    // Check the z coordinate
+    if (next_position[2] < min_z) {
+      movement_at_next_step[2] = min_z - current_position[2];
+    } else if (next_position[2] > max_z) {
+      movement_at_next_step[2] = max_z - current_position[2];
+    }
+    // Only consider x and y for cylindrical rumor, distance to the axis of the cylinder
+    radi_sq = next_position[0] * next_position[0] + next_position[1] * next_position[1];
+    if (radi_sq>max_r_sq) {
+      // Scale down the movement to stay within the allowed radius
+      const double scale_factor = std::sqrt(max_r_sq / radi_sq);
+      movement_at_next_step[0] *= scale_factor;
+      movement_at_next_step[1] *= scale_factor;
+    }
+    break;
   }
 
+  case TumorShape::kSphere: {
+    // Consider all three dimensions for spherical radius
+    radi_sq = next_position[0] * next_position[0] + next_position[1] * next_position[1] + next_position[2] * next_position[2];
+    if (radi_sq>max_r_sq) {
+      // Scale down the movement to stay within the allowed radius
+      const double scale_factor = std::sqrt(max_r_sq / radi_sq);
+      movement_at_next_step[0] *= scale_factor;
+      movement_at_next_step[1] *= scale_factor;
+      movement_at_next_step[2] *= scale_factor;
+    }
+    break;
+  }
+
+  default:
+    Log::Error(
+        "TumorCell::CalculateDisplacement",
+        "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
+    break;
+}
   // Displacement
   return movement_at_next_step;
 }
@@ -399,10 +466,14 @@ real_t CarTCell::ConsumeSecreteSubstance(int substance_id,
   if (substance_id == oxygen_dgrid_->GetContinuumId()) {
     // consuming oxygen
     res = (old_concentration + constant1_oxygen_) / constant2_oxygen_;
-  } else if (substance_id ==
-             immunostimulatory_factor_dgrid_->GetContinuumId()) {
+  } else if (IsImmunostimulatoryFactorDefined() && substance_id == immunostimulatory_factor_dgrid_->GetContinuumId()) {
+    // There is a definde immunostimulatory factor grid and this is the one being updated
     // CAR-T do not change immunostimulatory factor levels
     res = old_concentration;
+  } else if (IsGlucoseDefined() && substance_id == glucose_dgrid_->GetContinuumId()) {
+    // There is a definde glucose grid and this is the one being updated
+    // CAR-T do not change glucose levels
+    res = (old_concentration + constant1_glucose_) / constant2_glucose_;
   } else {
     throw std::invalid_argument("Unknown substance id: " +
                                 std::to_string(substance_id));
@@ -425,7 +496,7 @@ void CarTCell::ComputeConstantsConsumptionSecretion() {
   const real_t volume = GetVolume();
   const auto* sparams = Simulation::GetActive()->GetParam()->Get<SimParam>();
   // compute the constants for the differential equation explicit solution: for
-  // oxygen and immunostimulatory factor
+  // oxygen and glucose
   // dt*(cell_volume/voxel_volume)*quantity_secretion*substance_saturation =  dt
   // · (V_k / V_voxel) · S_k · ρ*_k)
   constant1_oxygen_ = 0.;
@@ -435,6 +506,17 @@ void CarTCell::ComputeConstantsConsumptionSecretion() {
   constant2_oxygen_ = 1 + sparams->dt_substances *
                               (volume / sparams->voxel_volume) *
                               (oxygen_consumption_rate_);
+  // Compute constants for glucose consumption if glucose is defined
+  if (IsGlucoseDefined()) {
+    // dt*(cell_volume/voxel_volume)*quantity_secretion*substance_saturation =  dt
+    // · (V_k / V_voxel) · S_k · ρ*_k)
+    constant1_glucose_ = 0.;
+    // 1 + dt*(cell_volume/voxel_volume)*(quantity_secretion +
+    // quantity_consumption ) = [1 + dt · (V_k / V_voxel) · (S_k + U_k)]
+    constant2_glucose_ = 1 + sparams->dt_substances *
+                                (volume / sparams->voxel_volume) *
+                                (glucose_consumption_rate_);
+  }
 }
 
 /// Main behavior executed at each simulation step
@@ -462,14 +544,24 @@ void StateControlCart::Run(Agent* agent) {
           cell->SetState(CarTCellState::kApoptotic);
           // Reset timer_state, it should be 0 anyway
           cell->SetTimerState(0);
-          // Set target volume to 0 (the cell will shrink)
-          cell->SetTargetCytoplasmSolid(0.0);
-          cell->SetTargetNucleusSolid(0.0);
+          // Set target fuid volume to 0 (the cell shrinks loosing all its liquids)
+          const real_t current_total_volume = cell->GetVolume();
+          const real_t fluid_fraction = cell->GetFluidFraction();
+          const real_t nuclear_volume = cell->GetNuclearVolume();
+          const real_t current_cytoplasm_solid =
+              (current_total_volume - nuclear_volume) * (1 - fluid_fraction);
+          const real_t current_nuclear_solid = nuclear_volume * (1 - fluid_fraction);
+          cell->SetTargetCytoplasmSolid(current_cytoplasm_solid);
+          cell->SetTargetNucleusSolid( current_nuclear_solid);
           cell->SetTargetFractionFluid(0.0);
-          cell->SetTargetRelationCytoplasmNucleus(0.0);
+          cell->SetTargetRelationCytoplasmNucleus(current_cytoplasm_solid/current_nuclear_solid);
           // Reduce oxygen consumption
           cell->SetOxygenConsumptionRate(
               cell->GetOxygenConsumptionRate() *
+              sparams->reduction_consumption_dead_cells);
+          // Reduce glucose consumption
+          cell->SetGlucoseConsumptionRate(
+              cell->GetGlucoseConsumptionRate() *
               sparams->reduction_consumption_dead_cells);
           // Update constants for all Consumption of oxygen
           cell->ComputeConstantsConsumptionSecretion();

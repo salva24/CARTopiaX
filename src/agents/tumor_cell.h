@@ -169,6 +169,11 @@ class TumorCell : public Cell, public ISubstanceInteractor {
     oxygen_consumption_rate_ = rate;
   }
 
+  real_t GetGlucoseConsumptionRate() const { return glucose_consumption_rate_; }
+  void SetGlucoseConsumptionRate(real_t rate) {
+    glucose_consumption_rate_ = rate;
+  }
+
   real_t GetImmunostimulatoryFactorSecretionRate() const {
     return immunostimulatory_factor_secretion_rate_;
   }
@@ -185,6 +190,18 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Returns the diffusion grid for immunostimulatory factors
   DiffusionGrid* GetImmunostimulatoryFactorDiffusionGrid() const {
     return immunostimulatory_factor_dgrid_;
+  }
+    /// Returns wether the Immunostimulatory factor is defined
+  bool IsImmunostimulatoryFactorDefined() const {
+    return immunostimulatory_factor_dgrid_ != nullptr;
+  }
+  /// Returns the diffusion grid for glucose
+  DiffusionGrid* GetGlucoseDiffusionGrid() const {
+    return glucose_dgrid_;
+  }
+  /// Returns wether the Immunostimulatory factor is defined
+  bool IsGlucoseDefined() const {
+    return glucose_dgrid_ != nullptr;
   }
 
   /// Change volume using exponential relaxation equation
@@ -252,6 +269,9 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Pointer to the immunostimulatory factor diffusion grid
   DiffusionGrid* immunostimulatory_factor_dgrid_ = nullptr;
 
+  /// Pointer to the glucose diffusion grid
+  DiffusionGrid* glucose_dgrid_ = nullptr;
+
   /// Level of oncoprotein expression
   real_t oncoprotein_level_ = 0.0;
 
@@ -304,11 +324,20 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Rate of immunostimulatory factor secretion by the cell
   real_t immunostimulatory_factor_secretion_rate_ = 0.0;
 
+  /// Rate of glucose consumption by the cell
+  real_t glucose_consumption_rate_ = 0.0;
+
   /// Constant 1 for oxygen consumption/secretion differential equation solution
   real_t constant1_oxygen_ = 0.0;
 
   /// Constant 2 for oxygen consumption/secretion differential equation solution
   real_t constant2_oxygen_ = 0.0;
+
+  /// Constant 1 for glucose consumption/secretion differential equation solution
+  real_t constant1_glucose_ = 0.0;
+
+  /// Constant 2 for glucose consumption/secretion differential equation solution
+  real_t constant2_glucose_ = 0.0;
 
   /// Constant 1 for immunostimulatory factor consumption/secretion differential
   /// equation solution
@@ -324,7 +353,7 @@ class TumorCell : public Cell, public ISubstanceInteractor {
 /// This behavior handles the state control logic for tumor cells, managing
 /// transitions between different cell states, growth, proliferation, and death
 /// processes. It includes logic for determining when cells should enter
-/// necrosis based on oxygen levels and other environmental factors.
+/// death based on oxygen levels and other environmental factors.
 
 struct StateControlGrowProliferate : public Behavior {
   // NOLINTNEXTLINE(llvm-else-after-return, moderinize-type-traits,
@@ -347,20 +376,22 @@ struct StateControlGrowProliferate : public Behavior {
   void Run(Agent* agent) override;
 
  private:
-  /// Compute the probability of the cell entering necrosis
+  /// Compute the probability of the cell dying due to low oxygen or glucose levels or due to random natural causes
   ///
-  /// Determines whether a cell should enter necrosis based on oxygen levels
+  /// Determines whether a cell should enter necrosis based on oxygen levels or apoptosis because of random causes and, if deffined, glucose levels
   ///
   /// @param oxygen_level Current oxygen concentration at the cell's location
+  /// @param glucose_level Current glucose concentration at the cell's location
   /// @param cell Pointer to the tumor cell being evaluated
-  /// @return True if the cell should enter necrosis, false otherwise
-  static bool ShouldEnterNecrosis(real_t oxygen_level, TumorCell* cell);
+  /// @return True if the cell should die, false otherwise
+  static bool ShouldDie(real_t oxygen_level, real_t glucose_level, TumorCell* cell);
 
   /// Manage the behavior of a living tumor cell
   ///
   /// @param cell Pointer to the tumor cell being managed
   /// @param oxygen_level Current oxygen concentration at the cell's location
-  static void ManageLivingCell(TumorCell* cell, real_t oxygen_level);
+  /// @param glucose_level Current glucose concentration at the cell's location
+  static void ManageLivingCell(TumorCell* cell, real_t oxygen_level, real_t glucose_level);
 };
 
 }  // namespace bdm

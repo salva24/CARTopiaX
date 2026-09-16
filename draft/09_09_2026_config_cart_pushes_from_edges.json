@@ -1,5 +1,5 @@
 {
-  "seed": 0,
+  "seed": 3,
   "bound_space_toplogy": "closed",
   "num_radius_intervals": 100,
   "lateral_oxygen_production_min_z": -6500.0,
