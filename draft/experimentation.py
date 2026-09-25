@@ -40,15 +40,15 @@ DRAFT_DIR = BASE_DIR / "draft"       # base destination folder
 
 def run_ABM(seed):
 
-    config={
+    config = {
   "seed": seed,
   "bound_space_toplogy": "closed",
   "num_radius_intervals": 100,
-  "lateral_oxygen_production_min_z": -6500.0,
-  "lateral_oxygen_production_max_z": 6500.0,
+  "lateral_oxygen_production_min_z": -300.0,
+  "lateral_oxygen_production_max_z": 300.0,
   "min_initial_z_substances": -300.0,
   "max_initial_z_substances": 300.0,
-  "diffuse_oxygen_on_z_axis": True,
+  "diffuse_oxygen_on_z_axis": False,
   "diffuse_glucose_on_z_axis": False,
   "output_performance_statistics": False,
   "total_minutes_to_simulate": 4320,
@@ -84,10 +84,10 @@ def run_ABM(seed):
   "oxygen_saturation_for_proliferation": 13.74,
   "oxygen_limit_for_proliferation": 5.9,
   "oxygen_limit_for_necrosis_maximum": 0.0,
-  "oxygen_limit_for_necrosis": 45.0,
-  "maximum_necrosis_lack_of_oxygen_rate": 0.0000216,
+  "oxygen_limit_for_necrosis": 7.1,
+  "maximum_necrosis_lack_of_oxygen_rate": 7.2214e-05,
   "reduction_consumption_dead_cells": 0.0,
-  "basal_death_probability_cancer_cells": 0.000005,
+  "basal_death_probability_cancer_cells": 5e-06,
   "bounded_space_min_allowed_z": -50.0,
   "bounded_space_max_allowed_z": 50.0,
   "bounded_space_max_allowed_radius": 3250.0,
@@ -96,13 +96,13 @@ def run_ABM(seed):
   "add_glucose": True,
   "diffusion_coefficient_glucose": 7800,
   "initial_glucose_level": 24.98,
-  "max_radius_glucose_initialization": 3100.0,  
+  "max_radius_glucose_initialization": 3100.0,
   "treatment": {
-    "0": 560000
+    "0": 2800     #2800 #560000 changed
   },
-  "default_oxygen_consumption_cart": 0,
-  "default_glucose_consumption_cart": 0.007,
-  "adhesion_rate_cart": 0.0000085,
+  "default_oxygen_consumption_cart": 3200,
+  "default_glucose_consumption_cart": 1.4,#0.007 changed
+  "adhesion_rate_cart": 0.0017,#8.5e-06 changed
   "glucose_saturation_for_tumor_cell_growth": 24.98,
   "glucose_limit_for_tumor_cell_growth": 0,
   "glucose_limit_for_death": 5,
@@ -113,7 +113,7 @@ def run_ABM(seed):
   "std_migration_bias_cart": 0.135,
   "persistence_time_cart": 0,
   "diffusion_coefficient_immunostimulatory_factor": 100000,
-  "decay_constant_immunostimulatory_factor": 0.00001
+  "decay_constant_immunostimulatory_factor": 1e-05
 }
 
     # Save the config parameters for this run to the params.json file

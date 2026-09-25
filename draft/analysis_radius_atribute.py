@@ -70,7 +70,7 @@ if APPLY_RADIAL_NORMALIZATION:
     ring_area = np.pi * (r_out**2 - r_in**2)
     # print(raw_values)
     # print("a")
-    # print(ring_area)
+    print(ring_area)
     raw_values = raw_values / ring_area
 
 

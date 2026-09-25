@@ -39,6 +39,10 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+// //Debug
+// #include "core/scheduler.h"
+// #include <fstream>
+// //End Debug
 
 namespace bdm {
 
@@ -726,6 +730,29 @@ bool StateControlGrowProliferate::ShouldDie(real_t oxygen_level, real_t glucose_
   // Final probability: multiply by sparams->dt_cycle since each timestep is sparams->dt_cycle minutes
   const real_t probability_necrosis = sparams->dt_cycle * maximum_necrosis_rate_oxygen_multiplier;
   const bool enter_necrosis = random->Uniform(0, 1) < probability_necrosis;
+
+//   //Debug
+//   {
+//     const Real3& debug_pos = cell->GetPosition();
+//     if (debug_pos[0] * debug_pos[0] + debug_pos[1] * debug_pos[1] < 150.0 * 150.0) {
+// #pragma omp critical(debug_probability_necrosis_csv)
+//       {
+//         static std::ofstream debug_csv = [] {
+//           std::ofstream file("probability_necrosis_debug.csv");
+//           file << "step,x,y,z,oxygen_level,glucose_level,multiplier,"
+//                   "probability_necrosis,enter_necrosis\n";
+//           return file;
+//         }();
+//         debug_csv << sim->GetScheduler()->GetSimulatedSteps() << ','
+//                   << debug_pos[0] << ',' << debug_pos[1] << ',' << debug_pos[2]
+//                   << ',' << oxygen_level << ',' << glucose_level << ','
+//                   << multiplier << ',' << probability_necrosis << ','
+//                   << static_cast<int>(enter_necrosis) << '\n';
+//       }
+//     }
+//   }
+//   //End Debug
+
   // If the random number is less than the probability, enter necrosis
   if (enter_necrosis) {
     // If oxygen is too low, enter necrosis
