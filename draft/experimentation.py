@@ -98,11 +98,11 @@ def run_ABM(seed):
   "initial_glucose_level": 24.98,
   "max_radius_glucose_initialization": 3100.0,
   "treatment": {
-    "0": 0     #2800 #560000 changed
+    "0": 560000     #2800 #560000 changed
   },
-  "default_oxygen_consumption_cart": 3200,
-  "default_glucose_consumption_cart": 1.4,#0.007 changed
-  "adhesion_rate_cart": 0.0017,#8.5e-06 changed
+  "default_oxygen_consumption_cart": 16, #3200 for 2800 cells#16
+  "default_glucose_consumption_cart": 0.007,#1.4 for 2800 cells#0.007 changed
+  "adhesion_rate_cart": 8.5e-06,#0.0017 for 2800 cells,#8.5e-06 changed
   "glucose_saturation_for_tumor_cell_growth": 24.98,
   "glucose_limit_for_tumor_cell_growth": 0,
   "glucose_limit_for_death": 5,
