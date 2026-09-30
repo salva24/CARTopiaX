@@ -59,21 +59,24 @@ std::vector<Real3> CreateSphereOfTumorCells(real_t sphere_radius);
 /// Create a cylindrical arrangement of tumor cells
 ///
 /// Generates a vector of 3D positions for tumor cells arranged in a cylindrical
-/// pattern with the specified radius and height. The cells are positioned randomly 
-/// uniformly distributed within the cylinder's volume.
+/// pattern with the specified radius and height. The cells are positioned
+/// randomly uniformly distributed within the cylinder's volume.
 ///
 /// @param cylinder_radius Radius of the cylindrical tumor in micrometers
 /// @param cylinder_height Height of the cylindrical tumor in micrometers
 /// @param number_of_cells Number of tumor cells to place
 /// @return Vector of 3D positions where tumor cells should be placed
-std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius, real_t cylinder_height, size_t number_of_cells);
+std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius,
+                                              real_t cylinder_height,
+                                              size_t number_of_cells);
 
 /// Compute tumor statistics and characteristics
 ///
 /// Analyzes the current tumor population to compute the number of cells
 /// of each type and the overall radius of the tumor mass. In addition, it
-/// computes the average oncoprotein level and oxygen across all tumor cells and all cells.
-/// Only cells within the specified inner and outer radius are considered for the analysis.
+/// computes the average oncoprotein level and oxygen across all tumor cells and
+/// all cells. Only cells within the specified inner and outer radius are
+/// considered for the analysis.
 ///
 /// @return Tuple containing:
 ///   - Total number of tumor cells
@@ -91,8 +94,8 @@ std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius, real_t cyl
 ///   - Average glucose level across all tumor cells
 ///   - Average glucose level across all cells
 ///   - Average radial position of the living cart cells from the tumor center
-std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, size_t, real_t,
-           real_t, real_t, real_t, real_t, real_t, real_t>
+std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, size_t,
+           real_t, real_t, real_t, real_t, real_t, real_t, real_t>
 AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered);
 
 /// Generates a random direction unitary vector
@@ -151,12 +154,15 @@ struct OutputSummary : public StandaloneOperationImpl {
 // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
 inline BDM_REGISTER_OP(OutputSummary, "OutputSummary", kCpu);
 
-/// Function to output information based on radius to CSV, agregate values for each radius from the center of the cylindrical tumor
+/// Function to output information based on radius to CSV, agregate values for
+/// each radius from the center of the cylindrical tumor
 /// @param current_step Current simulation step
 /// @param total_minutes Total simulation time in minutes
 /// @param total_hours Total simulation time in hours
 /// @param total_days Total simulation time in days
-void OutputInformationBasedOnRadiusCSV(const uint64_t current_step, const real_t total_minutes, const real_t total_hours, const real_t total_days);
+void OutputInformationBasedOnRadiusCSV(uint64_t current_step,
+                                       real_t total_minutes, real_t total_hours,
+                                       real_t total_days);
 
 }  // namespace bdm
 

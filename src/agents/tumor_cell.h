@@ -157,7 +157,10 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   void SetAttachedToCart(bool attached) { attached_to_cart_ = attached; }
   bool IsAttachedToCart() const { return attached_to_cart_; }
 
-  void SetType(TumorCellType type) { type_ = type; cell_type_ = static_cast<int>(type_); }
+  void SetType(TumorCellType type) {
+    type_ = type;
+    cell_type_ = static_cast<int>(type_);
+  }
   TumorCellType GetType() const { return type_; }
   int GetTypeAsInt() const { return cell_type_; }
 
@@ -191,18 +194,14 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   DiffusionGrid* GetImmunostimulatoryFactorDiffusionGrid() const {
     return immunostimulatory_factor_dgrid_;
   }
-    /// Returns wether the Immunostimulatory factor is defined
+  /// Returns wether the Immunostimulatory factor is defined
   bool IsImmunostimulatoryFactorDefined() const {
     return immunostimulatory_factor_dgrid_ != nullptr;
   }
   /// Returns the diffusion grid for glucose
-  DiffusionGrid* GetGlucoseDiffusionGrid() const {
-    return glucose_dgrid_;
-  }
+  DiffusionGrid* GetGlucoseDiffusionGrid() const { return glucose_dgrid_; }
   /// Returns wether the Immunostimulatory factor is defined
-  bool IsGlucoseDefined() const {
-    return glucose_dgrid_ != nullptr;
-  }
+  bool IsGlucoseDefined() const { return glucose_dgrid_ != nullptr; }
 
   /// Change volume using exponential relaxation equation
   ///
@@ -333,10 +332,12 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Constant 2 for oxygen consumption/secretion differential equation solution
   real_t constant2_oxygen_ = 0.0;
 
-  /// Constant 1 for glucose consumption/secretion differential equation solution
+  /// Constant 1 for glucose consumption/secretion differential equation
+  /// solution
   real_t constant1_glucose_ = 0.0;
 
-  /// Constant 2 for glucose consumption/secretion differential equation solution
+  /// Constant 2 for glucose consumption/secretion differential equation
+  /// solution
   real_t constant2_glucose_ = 0.0;
 
   /// Constant 1 for immunostimulatory factor consumption/secretion differential
@@ -376,22 +377,26 @@ struct StateControlGrowProliferate : public Behavior {
   void Run(Agent* agent) override;
 
  private:
-  /// Compute the probability of the cell dying due to low oxygen or glucose levels or due to random natural causes
+  /// Compute the probability of the cell dying due to low oxygen or glucose
+  /// levels or due to random natural causes
   ///
-  /// Determines whether a cell should enter necrosis based on oxygen levels or apoptosis because of random causes and, if deffined, glucose levels
+  /// Determines whether a cell should enter necrosis based on oxygen levels or
+  /// apoptosis because of random causes and, if deffined, glucose levels
   ///
   /// @param oxygen_level Current oxygen concentration at the cell's location
   /// @param glucose_level Current glucose concentration at the cell's location
   /// @param cell Pointer to the tumor cell being evaluated
   /// @return True if the cell should die, false otherwise
-  static bool ShouldDie(real_t oxygen_level, real_t glucose_level, TumorCell* cell);
+  static bool ShouldDie(real_t oxygen_level, real_t glucose_level,
+                        TumorCell* cell);
 
   /// Manage the behavior of a living tumor cell
   ///
   /// @param cell Pointer to the tumor cell being managed
   /// @param oxygen_level Current oxygen concentration at the cell's location
   /// @param glucose_level Current glucose concentration at the cell's location
-  static void ManageLivingCell(TumorCell* cell, real_t oxygen_level, real_t glucose_level);
+  static void ManageLivingCell(TumorCell* cell, real_t oxygen_level,
+                               real_t glucose_level);
 };
 
 }  // namespace bdm

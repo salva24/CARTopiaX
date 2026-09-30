@@ -19,12 +19,13 @@
  */
 
 #include "diffusion/cylinder_wall_boundary_condition.h"
+#include "core/real_t.h"
 
 namespace bdm {
 
 CylinderWallBoundaryCondition::CylinderWallBoundaryCondition(real_t value,
-                                                              real_t min_z,
-                                                              real_t max_z)
+                                                             real_t min_z,
+                                                             real_t max_z)
     : value_(value), min_z_(min_z), max_z_(max_z) {}
 
 real_t CylinderWallBoundaryCondition::Evaluate(real_t /*x*/, real_t /*y*/,

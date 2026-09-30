@@ -38,12 +38,9 @@
 
 namespace bdm {
 
-DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
-                                                   std::string substance_name,
-                                                   real_t dc, real_t mu,
-                                                   int resolution, real_t dt,
-                                                   bool dirichlet_border,
-                                                   bool diffuse_on_z_axis)
+DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(
+    int substance_id, std::string substance_name, real_t dc, real_t mu,
+    int resolution, real_t dt, bool dirichlet_border, bool diffuse_on_z_axis)
     : DiffusionGrid(substance_id, std::move(substance_name), dc, mu,
                     resolution),
       resolution_(static_cast<int>(GetResolution())),

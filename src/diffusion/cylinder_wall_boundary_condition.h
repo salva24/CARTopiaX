@@ -18,7 +18,7 @@
  * for the compiler-research.org organization.
  */
 
-#ifndef CYLINDER_WALL_BOUNDARY_CONDITION_H_
+#ifndef CYLINDER_WALL_BOUNDARY_CONDITION_H_  // NOLINT(llvm-header-guard)
 #define CYLINDER_WALL_BOUNDARY_CONDITION_H_
 
 #include "core/diffusion/diffusion_grid.h"
@@ -56,7 +56,8 @@ class CylinderWallBoundaryCondition final : public BoundaryCondition {
   CylinderWallBoundaryCondition(real_t value, real_t min_z, real_t max_z);
 
   /// @brief see BoundaryCondition::Evaluate()
-  real_t Evaluate(real_t x, real_t y, real_t z, real_t time) const final;
+  [[nodiscard]] real_t Evaluate(real_t x, real_t y, real_t z,
+                                real_t time) const final;
 
  private:
   /// Constant value of the boundary condition within [min_z_, max_z_]
@@ -66,9 +67,10 @@ class CylinderWallBoundaryCondition final : public BoundaryCondition {
   /// Upper z-bound (inclusive) where the boundary condition is active
   real_t max_z_ = 0.0;
 
+  // NOLINTNEXTLINE(modernize-type-traits,llvm-else-after-return,readability-else-after-return)
   BDM_CLASS_DEF_OVERRIDE(CylinderWallBoundaryCondition, 1);
 };
 
 }  // namespace bdm
 
-#endif  // CORE_DIFFUSION_CYLINDER_WALL_BOUNDARY_CONDITION_H_
+#endif  // CYLINDER_WALL_BOUNDARY_CONDITION_H_

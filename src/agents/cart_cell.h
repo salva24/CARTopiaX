@@ -158,13 +158,9 @@ class CarTCell final : public Cell, public ISubstanceInteractor {
     return immunostimulatory_factor_dgrid_ != nullptr;
   }
   /// Returns the diffusion grid for glucose
-  DiffusionGrid* GetGlucoseDiffusionGrid() const {
-    return glucose_dgrid_;
-  }
+  DiffusionGrid* GetGlucoseDiffusionGrid() const { return glucose_dgrid_; }
   /// Returns wether the Immunostimulatory factor is defined
-  bool IsGlucoseDefined() const {
-    return glucose_dgrid_ != nullptr;
-  }
+  bool IsGlucoseDefined() const { return glucose_dgrid_ != nullptr; }
 
   /// Change volume using exponential relaxation equation
   ///
@@ -293,10 +289,12 @@ class CarTCell final : public Cell, public ISubstanceInteractor {
   /// Constant 2 for oxygen consumption/secretion differential equation solution
   real_t constant2_oxygen_ = 0.0;
 
-  /// Constant 1 for glucose consumption/secretion differential equation solution
+  /// Constant 1 for glucose consumption/secretion differential equation
+  /// solution
   real_t constant1_glucose_ = 0.0;
 
-  /// Constant 2 for glucose consumption/secretion differential equation solution
+  /// Constant 2 for glucose consumption/secretion differential equation
+  /// solution
   real_t constant2_glucose_ = 0.0;
 
   /// Pointer to the attached tumor cell

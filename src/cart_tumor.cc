@@ -21,7 +21,7 @@
 
 #include "cart_tumor.h"
 #include "agents/tumor_cell.h"
-#include "diffusion/cylinder_wall_boundary_condition.h"
+#include "diffusion/cylinder_wall_boundary_condition.h"  // NOLINT(llvm-include-order)
 #include "diffusion/diffusion_thomas_algorithm.h"
 #include "forces/forces_tumor_cart.h"
 #include "params/hyperparams.h"
@@ -37,6 +37,7 @@
 #include "core/resource_manager.h"
 #include "core/scheduler.h"
 #include "core/simulation.h"
+#include "core/util/log.h"
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -101,8 +102,7 @@ int Simulate(int argc, const char** argv) {
           kOxygen, "oxygen", sparam->diffusion_coefficient_oxygen,
           sparam->decay_constant_oxygen, sparam->resolution_grid_substances,
           sparam->dt_substances,
-          /*dirichlet_border=*/true,
-          sparam->diffuse_oxygen_on_z_axis);
+          /*dirichlet_border=*/true, sparam->diffuse_oxygen_on_z_axis);
   rm->AddContinuum(oxygen_grid.release());
 
   // Boundary Conditions Dirichlet: simulating absorption or total loss at the
@@ -135,9 +135,11 @@ int Simulate(int argc, const char** argv) {
   const real_t initial_oxygen_level = sparam->initial_oxygen_level;
   // Initialize oxygen voxels
   ModelInitializer::InitializeSubstance(
-      kOxygen, [initial_oxygen_level, min_initial_z_substances, max_initial_z_substances](real_t x, real_t y, real_t z) {
+      kOxygen,
+      [initial_oxygen_level, min_initial_z_substances,
+       max_initial_z_substances](real_t /*x*/, real_t /*y*/, real_t z) {
         if (z <= max_initial_z_substances && z >= min_initial_z_substances) {
-            return initial_oxygen_level;
+          return initial_oxygen_level;
         }
         return 0.0;
       });
@@ -155,8 +157,9 @@ int Simulate(int argc, const char** argv) {
             sparam->diffuse_immunostimulatory_factor_on_z_axis);
     rm->AddContinuum(immunostimulatory_factor_grid.release());
 
-    // This is useless now but should be added this way in a future version of BioDynaMo.
-    // Neumann boundary condition: the is not consumed nor produced at the boundaries
+    // This is useless now but should be added this way in a future version of
+    // BioDynaMo. Neumann boundary condition: the is not consumed nor produced
+    // at the boundaries
     ModelInitializer::AddBoundaryConditions(
         kImmunostimulatoryFactor, BoundaryConditionType::kNeumann, nullptr);
   }
@@ -169,57 +172,68 @@ int Simulate(int argc, const char** argv) {
             kGlucose, "glucose", sparam->diffusion_coefficient_glucose,
             sparam->decay_constant_glucose, sparam->resolution_grid_substances,
             sparam->dt_substances,
-            /*dirichlet_border=*/false,
-            sparam->diffuse_glucose_on_z_axis);
+            /*dirichlet_border=*/false, sparam->diffuse_glucose_on_z_axis);
     rm->AddContinuum(glucose_grid.release());
 
-    // This is useless now but should be added this way in a future version of BioDynaMo.
-    // Neumann boundary condition: the is not consumed nor produced at the boundaries
+    // This is useless now but should be added this way in a future version of
+    // BioDynaMo. Neumann boundary condition: the is not consumed nor produced
+    // at the boundaries
     ModelInitializer::AddBoundaryConditions(
         kGlucose, BoundaryConditionType::kNeumann, nullptr);
     const real_t initial_glucose_level = sparam->initial_glucose_level;
-    const real_t squared_radius_glucose_initialization = sparam->max_radius_glucose_initialization*sparam->max_radius_glucose_initialization;
+    const real_t squared_radius_glucose_initialization =
+        sparam->max_radius_glucose_initialization *
+        sparam->max_radius_glucose_initialization;
     // Initialize oxygen voxels
-     ModelInitializer::InitializeSubstance(
-        kGlucose, [initial_glucose_level, min_initial_z_substances, max_initial_z_substances, tumor_shape, squared_radius_glucose_initialization](real_t x, real_t y, real_t z) {
-        if (z <= max_initial_z_substances &&
-            z >= min_initial_z_substances) { 
-            if(tumor_shape==TumorShape::kSphere && (x*x + y*y + z*z <= squared_radius_glucose_initialization)){
-                // Its spherical and the voxel is within the maximun spherical radius
-                return initial_glucose_level;
-            } else if(tumor_shape==TumorShape::kCylinder && (x*x + y*y <= squared_radius_glucose_initialization)){
-                // Its cylindrical and the voxel is within the maximun cylindrical radius
-                return initial_glucose_level;
+    ModelInitializer::InitializeSubstance(
+        kGlucose,
+        [initial_glucose_level, min_initial_z_substances,
+         max_initial_z_substances, tumor_shape,
+         squared_radius_glucose_initialization](real_t x, real_t y, real_t z) {
+          if (z <= max_initial_z_substances && z >= min_initial_z_substances) {
+            if (tumor_shape == TumorShape::kSphere &&
+                (x * x + y * y + z * z <=
+                 squared_radius_glucose_initialization)) {
+              // Its spherical and the voxel is within the maximun spherical
+              // radius
+              return initial_glucose_level;
             }
-            return initial_glucose_level;
-        }
-        return 0.0;
+            if (tumor_shape == TumorShape::kCylinder &&
+                (x * x + y * y <= squared_radius_glucose_initialization)) {
+              // Its cylindrical and the voxel is within the maximun cylindrical
+              // radius
+              return initial_glucose_level;
+            }
+          }
+          return 0.0;
         });
   }
-  
+
   // Tumor cells initialization
   std::vector<Real3> positions;
   switch (tumor_shape) {
-  case TumorShape::kSphere: {
-    // One spherical tumor of radius initial_spherical_tumor_radius in the center of the
-    // simulation space
-    positions = CreateSphereOfTumorCells(sparam->initial_spherical_tumor_radius);
-    break;
-  }
+    case TumorShape::kSphere: {
+      // One spherical tumor of radius initial_spherical_tumor_radius in the
+      // center of the simulation space
+      positions =
+          CreateSphereOfTumorCells(sparam->initial_spherical_tumor_radius);
+      break;
+    }
 
-  case TumorShape::kCylinder: {
-    // One cylindrical tumor of radius initial_spherical_tumor_radius and height
-    // cylindrical_tumor_height in the center of the simulation space
-    positions = CreateCylinderOfTumorCells(
-        sparam->cylindrical_tumor_radius, sparam->cylindrical_tumor_height,
-        sparam->initial_number_of_cylindrical_tumor_cells);
-break;
-  }
+    case TumorShape::kCylinder: {
+      // One cylindrical tumor of radius initial_spherical_tumor_radius and
+      // height cylindrical_tumor_height in the center of the simulation space
+      positions = CreateCylinderOfTumorCells(
+          sparam->cylindrical_tumor_radius, sparam->cylindrical_tumor_height,
+          sparam->initial_number_of_cylindrical_tumor_cells);
+      break;
+    }
 
-  default:
-    Log::Error("Simulate", "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
-    // Exit with an error code
-    return 1;
+    default:
+      Log::Error("Simulate",
+                 "Unknown tumor shape, please use 'sphere' or 'cylinder'.");
+      // Exit with an error code
+      return 1;
   }
 
   for (const auto& pos : positions) {

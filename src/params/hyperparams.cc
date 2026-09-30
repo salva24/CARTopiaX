@@ -20,9 +20,10 @@
  */
 
 #include "params/hyperparams.h"
-#include "core/param/param_group.h"
 #include "core/param/param.h"
+#include "core/param/param_group.h"
 #include "core/real_t.h"
+#include "core/util/log.h"
 #include "core/util/math.h"
 #include <cmath>
 #include <cstddef>
@@ -85,46 +86,71 @@ void SimParam::LoadParams(const std::string& filename) {
   load_string("tumor_shape", tumor_shape_string);
   if (jfile.contains("tumor_shape")) {
     tumor_shape_string = jfile["tumor_shape"].get<std::string>();
-if (tumor_shape_string == "sphere") { tumor_shape = TumorShape::kSphere; } else if (tumor_shape_string == "cylinder") { tumor_shape = TumorShape::kCylinder; } else { tumor_shape = TumorShape::kSphere; Log::Error( "SimParam::LoadParams", "Unknown tumor shape '" + tumor_shape_string + "'. It should be either 'sphere' or 'cylinder'. Loading default value ('sphere') instead"); }
-
+    if (tumor_shape_string == "sphere") {
+      tumor_shape = TumorShape::kSphere;
+    } else if (tumor_shape_string == "cylinder") {
+      tumor_shape = TumorShape::kCylinder;
+    } else {
+      tumor_shape = TumorShape::kSphere;
+      Log::Error("SimParam::LoadParams",
+                 "Unknown tumor shape '" + tumor_shape_string +
+                     "'. It should be either 'sphere' or 'cylinder'. Loading "
+                     "default value ('sphere') instead");
+    }
   }
-  
+
   load_int("initial_number_of_cylindrical_tumor_cells",
            initial_number_of_cylindrical_tumor_cells);
   load_int("bounded_space_length", bounded_space_length);
   std::string bound_space_toplogy_string;
   if (jfile.contains("bound_space_toplogy")) {
-    bound_space_toplogy_string = jfile["bound_space_toplogy"].get<std::string>();
-if (bound_space_toplogy_string == "torus") { bound_space_toplogy = Param::BoundSpaceMode::kTorus; } 
-else if (bound_space_toplogy_string == "open") { bound_space_toplogy = Param::BoundSpaceMode::kOpen; } 
-else if (bound_space_toplogy_string == "closed") { bound_space_toplogy =  Param::BoundSpaceMode::kClosed; } 
-else { bound_space_toplogy = Param::BoundSpaceMode::kTorus; Log::Error( "SimParam::LoadParams", "Unknown bound space topology '" + bound_space_toplogy_string + "'. It should be either 'torus', 'open' or 'closed'. Loading default value ('torus') instead"); }
-
+    bound_space_toplogy_string =
+        jfile["bound_space_toplogy"].get<std::string>();
+    if (bound_space_toplogy_string == "torus") {
+      bound_space_toplogy = Param::BoundSpaceMode::kTorus;
+    } else if (bound_space_toplogy_string == "open") {
+      bound_space_toplogy = Param::BoundSpaceMode::kOpen;
+    } else if (bound_space_toplogy_string == "closed") {
+      bound_space_toplogy = Param::BoundSpaceMode::kClosed;
+    } else {
+      bound_space_toplogy = Param::BoundSpaceMode::kTorus;
+      Log::Error("SimParam::LoadParams",
+                 "Unknown bound space topology '" + bound_space_toplogy_string +
+                     "'. It should be either 'torus', 'open' or 'closed'. "
+                     "Loading default value ('torus') instead");
+    }
   }
-
 
   load_double("initial_spherical_tumor_radius", initial_spherical_tumor_radius);
   load_double("cylindrical_tumor_radius", cylindrical_tumor_radius);
   load_double("cylindrical_tumor_height", cylindrical_tumor_height);
-  
+
+  // Half of the bounded space length (integer division, as in the original
+  // defaults)
+  const int half_bounded_space_length = bounded_space_length / 2;
+
   if (jfile.contains("bounded_space_min_allowed_z")) {
-    bounded_space_min_allowed_z = jfile["bounded_space_min_allowed_z"].get<double>();
+    bounded_space_min_allowed_z =
+        jfile["bounded_space_min_allowed_z"].get<double>();
   } else {
-    bounded_space_min_allowed_z = -bounded_space_length/2;
+    bounded_space_min_allowed_z = -half_bounded_space_length;
   }
   if (jfile.contains("bounded_space_max_allowed_z")) {
-    bounded_space_max_allowed_z = jfile["bounded_space_max_allowed_z"].get<double>();
+    bounded_space_max_allowed_z =
+        jfile["bounded_space_max_allowed_z"].get<double>();
   } else {
-    bounded_space_max_allowed_z = bounded_space_length/2;
+    bounded_space_max_allowed_z = half_bounded_space_length;
   }
 
   if (jfile.contains("bounded_space_max_allowed_radius")) {
-    bounded_space_max_allowed_radius = jfile["bounded_space_max_allowed_radius"].get<double>();
+    bounded_space_max_allowed_radius =
+        jfile["bounded_space_max_allowed_radius"].get<double>();
   } else {
-    // if it is not defined we assign the whole length of the bounded space to avoid any restrictions
+    // if it is not defined we assign the whole length of the bounded space to
+    // avoid any restrictions
     bounded_space_max_allowed_radius = bounded_space_length;
   }
-  
+
   if (jfile.contains("treatment")) {
     treatment.clear();
     // Parse the JSON object to handle string keys
@@ -175,28 +201,31 @@ else { bound_space_toplogy = Param::BoundSpaceMode::kTorus; Log::Error( "SimPara
   if (jfile.contains("min_initial_z_substances")) {
     min_initial_z_substances = jfile["min_initial_z_substances"].get<double>();
   } else {
-    min_initial_z_substances = -bounded_space_length/2;
+    min_initial_z_substances = -half_bounded_space_length;
   }
 
   if (jfile.contains("max_initial_z_substances")) {
     max_initial_z_substances = jfile["max_initial_z_substances"].get<double>();
   } else {
-    max_initial_z_substances = -bounded_space_length/2;
+    max_initial_z_substances = half_bounded_space_length;
   }
 
   if (jfile.contains("lateral_oxygen_production_min_z")) {
-    lateral_oxygen_production_min_z = jfile["lateral_oxygen_production_min_z"].get<double>();
+    lateral_oxygen_production_min_z =
+        jfile["lateral_oxygen_production_min_z"].get<double>();
   } else {
-    lateral_oxygen_production_min_z = -bounded_space_length/2;
+    lateral_oxygen_production_min_z = -half_bounded_space_length;
   }
 
   if (jfile.contains("lateral_oxygen_production_max_z")) {
-    lateral_oxygen_production_max_z = jfile["lateral_oxygen_production_max_z"].get<double>();
+    lateral_oxygen_production_max_z =
+        jfile["lateral_oxygen_production_max_z"].get<double>();
   } else {
-    lateral_oxygen_production_max_z = -bounded_space_length/2;
+    lateral_oxygen_production_max_z = half_bounded_space_length;
   }
   load_bool("diffuse_oxygen_on_z_axis", diffuse_oxygen_on_z_axis);
-  load_bool("diffuse_immunostimulatory_factor_on_z_axis", diffuse_immunostimulatory_factor_on_z_axis);
+  load_bool("diffuse_immunostimulatory_factor_on_z_axis",
+            diffuse_immunostimulatory_factor_on_z_axis);
   load_bool("diffuse_glucose_on_z_axis", diffuse_glucose_on_z_axis);
 
   load_double("diffusion_coefficient_oxygen", diffusion_coefficient_oxygen);
@@ -214,24 +243,18 @@ else { bound_space_toplogy = Param::BoundSpaceMode::kTorus; Log::Error( "SimPara
   load_double("initial_glucose_level", initial_glucose_level);
 
   if (jfile.contains("max_radius_glucose_initialization")) {
-    max_radius_glucose_initialization = jfile["max_radius_glucose_initialization"].get<double>();
+    max_radius_glucose_initialization =
+        jfile["max_radius_glucose_initialization"].get<double>();
   } else {
     max_radius_glucose_initialization = bounded_space_length;
   }
 
-
-
   if (jfile.contains("diffuse_glucose_on_z_axis")) {
     diffuse_glucose_on_z_axis = jfile["diffuse_glucose_on_z_axis"].get<bool>();
   } else {
-    // if the tumor shape is cylindrical it should be set to false, otherwise it should be set to true
-    if (tumor_shape == TumorShape::kCylinder) {
-      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-      diffuse_glucose_on_z_axis = false;
-    } else {
-      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-      diffuse_glucose_on_z_axis = true;
-    }
+    // if the tumor shape is cylindrical it should be set to false, otherwise it
+    // should be set to true
+    diffuse_glucose_on_z_axis = (tumor_shape != TumorShape::kCylinder);
   }
 
   load_double("cell_repulsion_between_tumor_tumor",
@@ -279,11 +302,13 @@ else { bound_space_toplogy = Param::BoundSpaceMode::kTorus; Log::Error( "SimPara
   load_double("oxygen_limit_for_proliferation", oxygen_limit_for_proliferation);
   load_double("glucose_saturation_for_tumor_cell_growth",
               glucose_saturation_for_tumor_cell_growth);
-  load_double("glucose_limit_for_tumor_cell_growth", glucose_limit_for_tumor_cell_growth);
+  load_double("glucose_limit_for_tumor_cell_growth",
+              glucose_limit_for_tumor_cell_growth);
   load_double("oxygen_limit_for_necrosis", oxygen_limit_for_necrosis);
   load_double("oxygen_limit_for_necrosis_maximum",
               oxygen_limit_for_necrosis_maximum);
-  load_double("maximum_necrosis_lack_of_oxygen_rate", maximum_necrosis_lack_of_oxygen_rate);
+  load_double("maximum_necrosis_lack_of_oxygen_rate",
+              maximum_necrosis_lack_of_oxygen_rate);
   load_double("glucose_limit_for_death", glucose_limit_for_death);
   load_double("glucose_limit_for_death_maximum",
               glucose_limit_for_death_maximum);
@@ -292,7 +317,6 @@ else { bound_space_toplogy = Param::BoundSpaceMode::kTorus; Log::Error( "SimPara
   load_double("basal_death_probability_cancer_cells",
               basal_death_probability_cancer_cells);
   load_double("time_lysis", time_lysis);
-  
 
   load_double("default_oxygen_consumption_tumor_cell",
               default_oxygen_consumption_tumor_cell);
@@ -312,7 +336,7 @@ else { bound_space_toplogy = Param::BoundSpaceMode::kTorus; Log::Error( "SimPara
               standard_deviation_transformation_random_rate);
   load_double("minimum_tumor_cell_target_volume_fraction_for_division",
               minimum_tumor_cell_target_volume_fraction_for_division);
-  
+
   load_double("adhesion_time", adhesion_time);
   load_double("oncoprotein_limit", oncoprotein_limit);
   load_double("oncoprotein_saturation", oncoprotein_saturation);
@@ -394,14 +418,13 @@ else { bound_space_toplogy = Param::BoundSpaceMode::kTorus; Log::Error( "SimPara
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances);
 
   // Squared max allowed radius
-  bounded_space_max_allowed_radius_squared = bounded_space_max_allowed_radius * bounded_space_max_allowed_radius;
+  bounded_space_max_allowed_radius_squared =
+      bounded_space_max_allowed_radius * bounded_space_max_allowed_radius;
 
   // Probability of a CAR-T cell to migrate in a given
   // mechanical time step
   motility_probability_cart =
-    (persistence_time_cart == 0)
-        ? 1.0
-        : dt_mechanics / persistence_time_cart;
+      (persistence_time_cart == 0) ? 1.0 : dt_mechanics / persistence_time_cart;
   // Probability of a Tumor cell to escape in a given
   // mechanical time step
   probability_escape_from_cart =
@@ -455,13 +478,41 @@ void SimParam::PrintParams() const {
             << (output_performance_statistics ? "true" : "false") << "\n";
   std::cout << "Total simulation time in minutes (30 days): "
             << total_minutes_to_simulate << "\n";
-switch (tumor_shape) { case TumorShape::kSphere: std::cout << "Tumor shape: 'sphere' \n"; std::cout << "Initial radius of the spherical tumor (micrometers): " << initial_spherical_tumor_radius << "\n"; break; case TumorShape::kCylinder: std::cout << "Tumor shape: 'cylinder' \n"; std::cout << "Initial radius of the cylindrical tumor (micrometers): " << cylindrical_tumor_radius << "\n"; std::cout << "Initial height of the cylindrical tumor (micrometers): " << cylindrical_tumor_height << "\n"; std::cout << "Min allowed Z coordinate for cells (micrometers): " << bounded_space_min_allowed_z << "\n"; std::cout << "Max allowed Z coordinate for cells (micrometers): " << bounded_space_max_allowed_z << "\n"; std::cout << "Max allowed radius for cells (micrometers): " << bounded_space_max_allowed_radius << "\n"; std::cout << "Initial number of cylindrical tumor cells: " << initial_number_of_cylindrical_tumor_cells << "\n"; break; }
+  switch (tumor_shape) {
+    case TumorShape::kSphere:
+      std::cout << "Tumor shape: 'sphere' \n";
+      std::cout << "Initial radius of the spherical tumor (micrometers): "
+                << initial_spherical_tumor_radius << "\n";
+      break;
+    case TumorShape::kCylinder:
+      std::cout << "Tumor shape: 'cylinder' \n";
+      std::cout << "Initial radius of the cylindrical tumor (micrometers): "
+                << cylindrical_tumor_radius << "\n";
+      std::cout << "Initial height of the cylindrical tumor (micrometers): "
+                << cylindrical_tumor_height << "\n";
+      std::cout << "Min allowed Z coordinate for cells (micrometers): "
+                << bounded_space_min_allowed_z << "\n";
+      std::cout << "Max allowed Z coordinate for cells (micrometers): "
+                << bounded_space_max_allowed_z << "\n";
+      std::cout << "Max allowed radius for cells (micrometers): "
+                << bounded_space_max_allowed_radius << "\n";
+      std::cout << "Initial number of cylindrical tumor cells: "
+                << initial_number_of_cylindrical_tumor_cells << "\n";
+      break;
+  }
   std::cout << "Length of the bounded space (micrometers): "
             << bounded_space_length << "\n\n";
-switch (bound_space_toplogy) { case Param::BoundSpaceMode::kTorus: std::cout << "Bound space topology: 'torus' \n"; break; 
-case Param::BoundSpaceMode::kOpen: std::cout << "Bounded space topology: 'open' \n"; break; 
-case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'closed' \n"; break; }
-
+  switch (bound_space_toplogy) {
+    case Param::BoundSpaceMode::kTorus:
+      std::cout << "Bound space topology: 'torus' \n";
+      break;
+    case Param::BoundSpaceMode::kOpen:
+      std::cout << "Bounded space topology: 'open' \n";
+      break;
+    case Param::BoundSpaceMode::kClosed:
+      std::cout << "Bounded space topology: 'closed' \n";
+      break;
+  }
 
   /// Treatment Dosages
   std::cout << "/// Treatment Dosages\n";
@@ -487,13 +538,14 @@ case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'clos
   std::cout << "General time step for the simulation: " << dt_step << "\n";
   std::cout << "Output CSV interval: " << output_csv_interval << "\n\n";
   std::cout << "Output information dependent on radius: "
-            << (output_information_dependent_on_radius ? "true"
-                                                                   : "false")
+            << (output_information_dependent_on_radius ? "true" : "false")
             << "\n\n";
   if (output_information_dependent_on_radius) {
-    std::cout << "Number of radius intervals to output the agregated information CSV: "
+    std::cout << "Number of radius intervals to output the agregated "
+                 "information CSV: "
               << num_radius_intervals << "\n\n";
-    std::cout << "Maximum radius for the analysis of information dependent on radius: "
+    std::cout << "Maximum radius for the analysis of information dependent on "
+                 "radius: "
               << max_radius_analysis_csv_dependent_on_radius << "\n\n";
   }
 
@@ -517,14 +569,18 @@ case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'clos
   std::cout << "///\n\n";
   std::cout << "Number of voxels per axis for the substances grid: "
             << resolution_grid_substances << "\n";
-  std::cout << "Minimum initial z-coordinate for substances values different than 0 (micrometers): "
+  std::cout << "Minimum initial z-coordinate for substances values different "
+               "than 0 (micrometers): "
             << min_initial_z_substances << "\n";
-  std::cout << "Maximum initial z-coordinate for substances values different than 0 (micrometers): "
+  std::cout << "Maximum initial z-coordinate for substances values different "
+               "than 0 (micrometers): "
             << max_initial_z_substances << "\n";
-  std::cout << "Minimum z-coordinate for lateral oxygen production (micrometers): "
-            << lateral_oxygen_production_min_z << "\n";
-  std::cout << "Maximum z-coordinate for lateral oxygen production (micrometers): "
-            << lateral_oxygen_production_max_z << "\n";
+  std::cout
+      << "Minimum z-coordinate for lateral oxygen production (micrometers): "
+      << lateral_oxygen_production_min_z << "\n";
+  std::cout
+      << "Maximum z-coordinate for lateral oxygen production (micrometers): "
+      << lateral_oxygen_production_max_z << "\n";
   std::cout << "Whether to diffuse oxygen on the z-axis: "
             << (diffuse_oxygen_on_z_axis ? "true" : "false") << "\n";
   std::cout << "Whether to diffuse immunostimulatory factor on the z-axis: "
@@ -540,19 +596,19 @@ case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'clos
             << oxygen_reference_level << "\n";
   std::cout << "Initial oxygen concentration in each voxel (mmHg): "
             << initial_oxygen_level << "\n";
-  std::cout << "Whether to add immunostimulatory factor: " <<
-            (add_immunostimulatory_factor ? "true" : "false") << "\n";
+  std::cout << "Whether to add immunostimulatory factor: "
+            << (add_immunostimulatory_factor ? "true" : "false") << "\n";
   std::cout << "Diffusion coefficient of immunostimulatory factor (μm²/min): "
             << diffusion_coefficient_immunostimulatory_factor << "\n";
   std::cout << "Decay constant of immunostimulatory factor (min⁻¹): "
             << decay_constant_immunostimulatory_factor << "\n";
-  std::cout << "Whether to add glucose: " <<
-            (add_glucose ? "true" : "false") << "\n";
+  std::cout << "Whether to add glucose: " << (add_glucose ? "true" : "false")
+            << "\n";
   std::cout << "Diffusion coefficient of glucose (μm²/min): "
             << diffusion_coefficient_glucose << "\n";
-  std::cout << "Decay constant of glucose (min⁻¹): " 
-            << decay_constant_glucose << "\n";
-  std::cout << "Initial glucose concentration in each voxel (mM): " 
+  std::cout << "Decay constant of glucose (min⁻¹): " << decay_constant_glucose
+            << "\n";
+  std::cout << "Initial glucose concentration in each voxel (mM): "
             << initial_glucose_level << "\n\n";
   std::cout << "Maximum radius for glucose initialization (micrometers): "
             << max_radius_glucose_initialization << "\n\n";
@@ -631,7 +687,7 @@ case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'clos
             << glucose_limit_for_death_maximum << "\n";
   std::cout << "Maximum rate per minute of death for tumor cells: "
             << maximum_death_lack_of_glucose_rate << "\n";
-  
+
   std::cout << "Default oxygen consumption rate of tumor cell: "
             << default_oxygen_consumption_tumor_cell << "\n";
   std::cout << "Default glucose consumption rate of tumor cell: "
@@ -640,8 +696,9 @@ case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'clos
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new tumor cell (μm³): "
             << default_volume_new_tumor_cell << "\n";
-  std::cout << "Standard deviation of the total volume of a new tumor cell (μm³): "
-            << std_volume_new_tumor_cell << "\n";
+  std::cout
+      << "Standard deviation of the total volume of a new tumor cell (μm³): "
+      << std_volume_new_tumor_cell << "\n";
   std::cout << "Maximum total volume of a new tumor cell (μm³): "
             << max_volume_new_tumor_cell << "\n";
   std::cout << "Minimum total volume of a new tumor cell (μm³): "
@@ -717,14 +774,15 @@ case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'clos
             << average_maximum_time_until_apoptosis_cart << "\n";
   std::cout << "Default oxygen consumption rate of CAR-T cell: "
             << default_oxygen_consumption_cart << "\n";
-  std::cout << "Default glucose consumption rate of CAR-T cell: " 
+  std::cout << "Default glucose consumption rate of CAR-T cell: "
             << default_glucose_consumption_cart << "\n";
 
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new CAR-T cell (μm³): "
             << default_volume_new_cart_cell << "\n";
-  std::cout << "Standard deviation of the total volume of a new CAR-T cell (μm³): "
-            << std_volume_new_cart_cell << "\n";
+  std::cout
+      << "Standard deviation of the total volume of a new CAR-T cell (μm³): "
+      << std_volume_new_cart_cell << "\n";
   std::cout << "Maximum total volume of a new CAR-T cell (μm³): "
             << max_volume_new_cart_cell << "\n";
   std::cout << "Minimum total volume of a new CAR-T cell (μm³): "
@@ -756,10 +814,11 @@ case Param::BoundSpaceMode::kClosed: std::cout << "Bounded space topology: 'clos
   std::cout << "\nMotility parameters:\n";
   std::cout << "Average persistence time before CAR-T cell moves: "
             << persistence_time_cart << "\n";
-  std::cout << "Average Migration bias (higher values = more directed movement): "
-            << avg_migration_bias_cart << "\n";
-  std::cout << "Standard deviation migration bias: "
-            << std_migration_bias_cart << "\n";
+  std::cout
+      << "Average Migration bias (higher values = more directed movement): "
+      << avg_migration_bias_cart << "\n";
+  std::cout << "Standard deviation migration bias: " << std_migration_bias_cart
+            << "\n";
   std::cout << "Migration speed: " << migration_speed_cart << "\n";
   std::cout << "Elastic constant: " << elastic_constant_cart << "\n\n";
 

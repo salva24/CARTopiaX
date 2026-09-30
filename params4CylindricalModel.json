@@ -54,7 +54,6 @@
   "add_glucose": true,
   "diffusion_coefficient_glucose": 7800,
   "initial_glucose_level": 24.98,
-  "max_radius_glucose_initialization": 3100.0,
   "treatment": {
     "0": 560000
   },

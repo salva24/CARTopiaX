@@ -22,8 +22,8 @@
 #ifndef TUMOR_HYPERPARAMS_H_
 #define TUMOR_HYPERPARAMS_H_
 
-#include "core/param/param_group.h"
 #include "core/param/param.h"
+#include "core/param/param_group.h"
 #include "core/real_t.h"
 #include "core/util/math.h"
 #include <cmath>
@@ -80,7 +80,8 @@ struct SimParam : public ParamGroup {
   /// Total simulation time in minutes (30 days by default)
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   int total_minutes_to_simulate = 43200;
-  /// Bounded space topology for the boundaries it can be "open", "torus" or "closed" (see BioDynaMo documentation for more information)
+  /// Bounded space topology for the boundaries it can be "open", "torus" or
+  /// "closed" (see BioDynaMo documentation for more information)
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   Param::BoundSpaceMode bound_space_toplogy = Param::BoundSpaceMode::kTorus;
   /// Length of the bounded space in micrometers
@@ -101,13 +102,20 @@ struct SimParam : public ParamGroup {
   /// Initial height of the cylindrical tumor in micrometers
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t cylindrical_tumor_height = 100;
-  /// Min allowed Z coordinate for cells in cylindrical tumors with phisical barriers. By default it is automatically set to -bounded_space_length/2 to avoid any restrictions.
+  /// Min allowed Z coordinate for cells in cylindrical tumors with phisical
+  /// barriers. By default it is automatically set to -bounded_space_length/2 to
+  /// avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t bounded_space_min_allowed_z = -500;
-  /// Max allowed Z coordinate for cells in cylindrical tumors with phisical barriers. By default it is automatically set to bounded_space_length/2 to avoid any restrictions.
+  /// Max allowed Z coordinate for cells in cylindrical tumors with phisical
+  /// barriers. By default it is automatically set to bounded_space_length/2 to
+  /// avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t bounded_space_max_allowed_z = 500;
-  /// Max allowed radius for cells meassured from the center of the tumor and considering the z-coordinate depending wether it has a cylindrical or spherical shape.  By default it is automatically set to bounded_space_length to avoid any restrictions.
+  /// Max allowed radius for cells meassured from the center of the tumor and
+  /// considering the z-coordinate depending wether it has a cylindrical or
+  /// spherical shape.  By default it is automatically set to
+  /// bounded_space_length to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t bounded_space_max_allowed_radius = 1000;
   /// Initial number of cylindrical tumor cells
@@ -144,13 +152,19 @@ struct SimParam : public ParamGroup {
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   int output_csv_interval = 7200;
 
-  /// Outputs an additional CSV with information dependent on the radius of the tumor if the tumor is spherical its from its center point and if it is cylindrical its from the axis of the cylinder
+  /// Outputs an additional CSV with information dependent on the radius of the
+  /// tumor if the tumor is spherical its from its center point and if it is
+  /// cylindrical its from the axis of the cylinder
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   bool output_information_dependent_on_radius = false;
   /// Maximum radius for the analysis of information dependent on radius
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t max_radius_analysis_csv_dependent_on_radius = 3000;
-  /// Number of radius intervals to output the agregated information CSV. The concatenation of the intervals goes from 0 (the center of the tumor) to max_radius_analysis_csv_dependent_on_radius. The number of intervals is used to divide the radius into equal parts and output the agregated information for each interval.
+  /// Number of radius intervals to output the agregated information CSV. The
+  /// concatenation of the intervals goes from 0 (the center of the tumor) to
+  /// max_radius_analysis_csv_dependent_on_radius. The number of intervals is
+  /// used to divide the radius into equal parts and output the agregated
+  /// information for each interval.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   int num_radius_intervals = 10;
 
@@ -173,43 +187,59 @@ struct SimParam : public ParamGroup {
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   int resolution_grid_substances = 50;
 
-  /// Minimum height (μm) at which the substances grid is initialized to a value different from 0. Heights are expressed in the simulation coordinate system,
-  /// where the domain extends from -bounded_space_length / 2 to +bounded_space_length / 2  By default it is automatically set to -bounded_space_length/2 to avoid any restrictions.
+  /// Minimum height (μm) at which the substances grid is initialized to a value
+  /// different from 0. Heights are expressed in the simulation coordinate
+  /// system, where the domain extends from -bounded_space_length / 2 to
+  /// +bounded_space_length / 2  By default it is automatically set to
+  /// -bounded_space_length/2 to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t min_initial_z_substances = -500;
-  /// Maximum height (μm) at which the substances grid is initialized to a value different from 0. Heights are expressed in the simulation coordinate system,
-  /// where the domain extends from -bounded_space_length / 2 to +bounded_space_length / 2  By default it is automatically set to +bounded_space_length/2 to avoid any restrictions.
+  /// Maximum height (μm) at which the substances grid is initialized to a value
+  /// different from 0. Heights are expressed in the simulation coordinate
+  /// system, where the domain extends from -bounded_space_length / 2 to
+  /// +bounded_space_length / 2  By default it is automatically set to
+  /// +bounded_space_length/2 to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t max_initial_z_substances = 500;
 
   /// Minimum height (μm) at which lateral Dirichlet oxygen boundary conditions
   /// are applied. Heights are expressed in the simulation coordinate system,
-  /// where the domain extends from -bounded_space_length / 2 to +bounded_space_length / 2
-  /// along the z-axis. Setting this value equal to the minimum domain height
-  /// (-bounded_space_length / 2) causes the floor boundary (z = -bounded_space_length / 2)
-  /// to also act as an oxygen-producing Dirichlet boundary.  By default it is automatically set to -bounded_space_length/2 to avoid any restrictions.
+  /// where the domain extends from -bounded_space_length / 2 to
+  /// +bounded_space_length / 2 along the z-axis. Setting this value equal to
+  /// the minimum domain height
+  /// (-bounded_space_length / 2) causes the floor boundary (z =
+  /// -bounded_space_length / 2) to also act as an oxygen-producing Dirichlet
+  /// boundary.  By default it is automatically set to -bounded_space_length/2
+  /// to avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t lateral_oxygen_production_min_z = -500.0;
   /// Maximum height (μm) at which lateral Dirichlet oxygen boundary conditions
   /// are applied. Heights are expressed in the simulation coordinate system,
-  /// where the domain extends from -bounded_space_length / 2 to +bounded_space_length / 2
-  /// along the z-axis. Setting this value equal to the maximum domain height
-  /// (+bounded_space_length / 2) causes the roof boundary (z = +bounded_space_length / 2)
-  /// to also act as an oxygen-producing Dirichlet boundary.  By default it is automatically set to bounded_space_length/2 to avoid any restrictions.
+  /// where the domain extends from -bounded_space_length / 2 to
+  /// +bounded_space_length / 2 along the z-axis. Setting this value equal to
+  /// the maximum domain height
+  /// (+bounded_space_length / 2) causes the roof boundary (z =
+  /// +bounded_space_length / 2) to also act as an oxygen-producing Dirichlet
+  /// boundary.  By default it is automatically set to bounded_space_length/2 to
+  /// avoid any restrictions.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t lateral_oxygen_production_max_z = 500.0;
-  /// Wether the Thomas algortithm should also diffuse the oxygen Chemical in the z-axis or not. 
-  /// If false, the diffusion will only be done in the x and y axis, ideal for a 2D model
+  /// Wether the Thomas algortithm should also diffuse the oxygen Chemical in
+  /// the z-axis or not. If false, the diffusion will only be done in the x and
+  /// y axis, ideal for a 2D model
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   bool diffuse_oxygen_on_z_axis = true;
-  /// Wether the Thomas algortithm should also diffuse the immunostimulatory_factor Chemical in the z-axis or not.
-    /// If false, the diffusion will only be done in the x and y axis, ideal for a 2D model
+  /// Wether the Thomas algortithm should also diffuse the
+  /// immunostimulatory_factor Chemical in the z-axis or not. If false, the
+  /// diffusion will only be done in the x and y axis, ideal for a 2D model
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-    bool diffuse_immunostimulatory_factor_on_z_axis = true;
-  /// Wether the Thomas algortithm should also diffuse the glucose Chemical in the z-axis or not. By default it will be true if the tumor shape is spherical and false if the tumor shape is cylindrical.
-    /// If false, the diffusion will only be done in the x and y axis, ideal for a 2D model
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-    bool diffuse_glucose_on_z_axis = true;
+  bool diffuse_immunostimulatory_factor_on_z_axis = true;
+  /// Wether the Thomas algortithm should also diffuse the glucose Chemical in
+  /// the z-axis or not. By default it will be true if the tumor shape is
+  /// spherical and false if the tumor shape is cylindrical. If false, the
+  /// diffusion will only be done in the x and y axis, ideal for a 2D model
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+  bool diffuse_glucose_on_z_axis = true;
   /// Diffusion coefficient of oxygen in μm²/min
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t diffusion_coefficient_oxygen = 100000;
@@ -243,9 +273,15 @@ struct SimParam : public ParamGroup {
   /// Initial glucose concentration in each voxel in mmol/L
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t initial_glucose_level = 24.98;
-  /// Maximum radius for glucose initialization in micrometers. If the tumor is spherical, the glucose will be initialized in a sphere of this radius. If the tumor is cylindrical, the glucose will be initialized in a cylinder of this radius. Outside of this radius, the glucose will be initialized to 0. By default it is set to the bounded_space_length to avoid any restrictions.
+  /// Maximum radius for glucose initialization in micrometers. If the tumor is
+  /// spherical, the glucose will be initialized in a sphere of this radius. If
+  /// the tumor is cylindrical, the glucose will be initialized in a cylinder of
+  /// this radius. Outside of this radius, the glucose will be initialized to 0.
+  /// By default it is set to the bounded_space_length to avoid any
+  /// restrictions.
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t max_radius_glucose_initialization = 1000;
-  
+
   /// Forces
   ///  Repulsion coeficient between tumor cells
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -315,10 +351,12 @@ struct SimParam : public ParamGroup {
   /// Oxygen saturation level in tumor cells for proliferation
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t oxygen_saturation_for_proliferation = 38;
-  /// Glucose saturation level in tumor cells for cell growth: it affects plorifereation since if cells are not big enough they will not divide
+  /// Glucose saturation level in tumor cells for cell growth: it affects
+  /// plorifereation since if cells are not big enough they will not divide
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t glucose_saturation_for_tumor_cell_growth = 0;
-  /// Limit of glucose level for tumor cell growth: it affects plorifereation since if cells are not big enough they will not divide
+  /// Limit of glucose level for tumor cell growth: it affects plorifereation
+  /// since if cells are not big enough they will not divide
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t glucose_limit_for_tumor_cell_growth = 0;
   /// Limit of oxygen level for tumor cell proliferation
@@ -340,11 +378,12 @@ struct SimParam : public ParamGroup {
   /// Limit of glucose to maximum cell death probability
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t glucose_limit_for_death_maximum = 0;
-  /// Maximum rate per minute of cell death for tumor cells in case of lack of nutrients
-  /// with glucose_limit_for_death_maximum glucose
+  /// Maximum rate per minute of cell death for tumor cells in case of lack of
+  /// nutrients with glucose_limit_for_death_maximum glucose
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t maximum_death_lack_of_glucose_rate = 0.0;
-  /// Basal cell death probability for cancer cells per minute: death due to natural random causes
+  /// Basal cell death probability for cancer cells per minute: death due to
+  /// natural random causes
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t basal_death_probability_cancer_cells = 0.0;
   /// Time in minutes until a lysed necrotic cell is removed from the simulation
@@ -369,7 +408,8 @@ struct SimParam : public ParamGroup {
   /// Minimum volume of a tumor cell in μm³
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t min_volume_new_tumor_cell = 2494;
-  /// Default fraction of volume of the nucleus of a tumor cell. It is the target fraction and the fraction a new born tumor cell will have
+  /// Default fraction of volume of the nucleus of a tumor cell. It is the
+  /// target fraction and the fraction a new born tumor cell will have
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t default_fraction_of_volume_for_nucleus_tumor_cell = 0.21652;
   /// Default fraction of fluid volume in a new tumor cell
@@ -381,7 +421,9 @@ struct SimParam : public ParamGroup {
   /// Standard Deviation for transformation Random Rate in hours
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t standard_deviation_transformation_random_rate = 3.7;
-  /// Minimum tumor cell volume for division. If the tumor cell volume is below this value times the target volume, it will not divide. This is used to avoid division of tumor cells that are too small due to lack of nutrients.
+  /// Minimum tumor cell volume for division. If the tumor cell volume is below
+  /// this value times the target volume, it will not divide. This is used to
+  /// avoid division of tumor cells that are too small due to lack of nutrients.
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t minimum_tumor_cell_target_volume_fraction_for_division = 0.0;
   /// Average adhesion time in minutes for Tumor Cell under CAR-T attack before
@@ -488,15 +530,15 @@ struct SimParam : public ParamGroup {
   /// Average persistence time before CAR-T cell moves
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t persistence_time_cart = 10;  // 10 minutes
-  /// Average migration bias of CAR-T cells. Higher bias (\in [0,1]) makes CAR-T movement more directed toward
-  /// immunostimulatory factor source; while a bias of 0 makes the movement
-  /// random
+  /// Average migration bias of CAR-T cells. Higher bias (\in [0,1]) makes CAR-T
+  /// movement more directed toward immunostimulatory factor source; while a
+  /// bias of 0 makes the movement random
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t avg_migration_bias_cart = 0.5;
-  ///Standard deviation of the migration bias for CAR-T cells. Higher values make the migration bias more variable among CAR-T cells
+  /// Standard deviation of the migration bias for CAR-T cells. Higher values
+  /// make the migration bias more variable among CAR-T cells
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   real_t std_migration_bias_cart = 0.0;
-
 
   /// Migration speed
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
