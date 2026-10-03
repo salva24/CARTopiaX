@@ -33,9 +33,10 @@
 8. [Input Parameters](#input-parameters)
 9. [Running the Simulation](#running-the-simulation)
 10. [Visualizing Results](#visualizing-results)
-11. [Acknowledgments](#acknowledgments)
-12. [License](#license)
-13. [Author Contact Information](#author-contact-information)
+11. [Model Calibration (Bayesian Optimization)](#model-calibration-bayesian-optimization)
+12. [Acknowledgments](#acknowledgments)
+13. [License](#license)
+14. [Author Contact Information](#author-contact-information)
 
 
 ---
@@ -104,6 +105,29 @@ The project is organized into the following components:
 ### Analysis
 
 - **[`CARTopiaX_Simulation_Analysis.ipynb`](CARTopiaX_Simulation_Analysis.ipynb)**: Jupyter notebook for post-processing simulation results, generating plots, and statistical analysis.
+
+### Auxiliary Scripts (`auxiliar_scripts/`)
+
+Small Python scripts for running and analyzing simulations. Each one has a *User settings* block at the top that can be edited before running it, and all generated plots and results are saved in `auxiliar_scripts/out/`.
+
+- **[`run_several_simulations.py`](auxiliar_scripts/run_several_simulations.py)**: Runs the simulation several times with different seeds (0 to `NUMBER_EXECUTIONS - 1`) using the configuration defined in `BASE_CONFIG`, and copies the `output/` folder of each run to `out/execution_seed_<seed>`. ParaView export can be enabled or disabled, and the original `params.json` and `bdm.toml` are always restored at the end.
+
+- **[`analysis_time_attribute.py`](auxiliar_scripts/analysis_time_attribute.py)**: Plots any attribute of `output/final_data.csv` (e.g. `tumor_radius`, `num_alive_cart`, `average_oncoprotein`) as a function of time, in days, hours or minutes.
+
+- **[`analysis_radius_attribute.py`](auxiliar_scripts/analysis_radius_attribute.py)**: Plots the radial profile of an attribute at a given minute using `output/data_dependent_on_radius_tumor.csv`. Values can optionally be normalized by the area of each ring.
+
+- **[`plot_cell_death_causes.py`](auxiliar_scripts/plot_cell_death_causes.py)**: Plots in a single graph the radial profile of tumor cell deaths for each cause (lack of oxygen, lack of glucose, random natural causes and CAR-T kill) at a given minute, and prints the total number of deaths of each cause.
+
+The radius-dependent scripts require the simulation to be run with `output_information_dependent_on_radius` set to `true`. Scripts can be run from the repository root, e.g.:
+```bash
+python3 auxiliar_scripts/analysis_time_attribute.py
+```
+
+### Model Calibration (`abm_calibration/`)
+
+- **[`optimize.py`](abm_calibration/optimize.py)**: Bayesian optimization workflow to calibrate model parameters against target data. See [Model Calibration](#model-calibration-bayesian-optimization).
+
+- **[`requirements.txt`](abm_calibration/requirements.txt)**: Python dependencies for the calibration workflow.
 
 
 ---
@@ -518,6 +542,58 @@ To visualize the 3D model of the execution in ParaView use:
 paraview ./output/CARTopiaX/CARTopiaX.pvsm
 
 ```
+
+---
+
+## Model Calibration (Bayesian Optimization)
+
+Many parameters of the model cannot be measured directly in the laboratory. [`optimize.py`](abm_calibration/optimize.py) finds the values of selected parameters that make the simulation reproduce some target data (e.g. experimental measurements) as closely as possible.
+
+### How it works
+
+Each simulation is expensive, so trying every combination of parameters (grid search) is not feasible. Instead, the script uses **Bayesian optimization** through [Optuna](https://optuna.org/) and its **Tree-structured Parzen Estimator (TPE)** sampler:
+
+1. Each *trial* proposes a value for every parameter to be calibrated within its range.
+2. The simulation is run with those values `NUMBER_MONTE_CARLO` times with different random seeds, and the error against the target data is averaged. This reduces the effect of the stochastic nature of the model.
+3. TPE builds a probabilistic model from all previous trials, separating the parameter values that gave good results from the ones that gave bad results. The next trial is sampled where good values are more likely, balancing *exploration* of new regions and *exploitation* of promising ones.
+4. After `NUMBER_OF_TRIALS` trials, the parameters with the lowest error are reported.
+
+This way good parameters are usually found with far fewer simulations than with a random or grid search.
+
+### Error modes
+
+The error is selected with the `MODE` variable:
+
+| Mode | Target file | Description |
+|------|-------------|-------------|
+| `total` | `target_data/final_data.csv` | Mean squared error of a metric of the whole tumor over time (e.g. `average_oxygen_all_cells`, `tumor_radius`) |
+| `radius` | `target_data/data_dependent_on_radius_tumor.csv` | Mean squared error of the radial profile of a metric at a fixed minute. Requires `output_information_dependent_on_radius: true` |
+| `custom` | - | User-defined error implemented in `compute_custom_error()` |
+
+Target CSVs must have the same format as the files written by the simulation in `output/`, and are compared on the common values of `total_minutes`.
+
+### Configuration
+
+The sections of the script marked with `Change this` are meant to be adapted to each experiment:
+
+- **Settings:** `EXPERIMENT_ID`, `MODE`, `SEED`, `NUMBER_OF_TRIALS`, `NUMBER_MONTE_CARLO` and `BIODYNAMO_DIR` (path to `thisbdm.sh`).
+- **`run_ABM()`:** fixed simulation configuration written to `params.json` for each run, together with the parameters being calibrated.
+- **`objective()`:** parameters to be calibrated and their search ranges, e.g. `trial.suggest_float("initial_oxygen_level", 30, 40)`.
+- **Error functions:** metric to compare and, for `radius` mode, the minute of the radial profile.
+
+### Running the calibration
+
+Install the dependencies and run the script from the repository root:
+```bash
+pip install -r abm_calibration/requirements.txt
+python3 abm_calibration/optimize.py
+```
+
+Results are stored in `abm_calibration/experiment_<EXPERIMENT_ID>/`:
+- `abm_optuna.db`: SQLite database with all trials. Running again with the same `EXPERIMENT_ID` resumes the study instead of starting from scratch. Setting `NUMBER_OF_TRIALS = 0` just prints the best result stored.
+- `optuna_results.csv`: table with the parameters and error of every trial.
+
+During the calibration ParaView export is disabled, and the original `params.json` and `bdm.toml` are always restored at the end, even if a run fails.
 
 ---
 
