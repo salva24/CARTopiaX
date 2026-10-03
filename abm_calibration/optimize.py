@@ -64,6 +64,7 @@ EXPERIMENT_DIR.mkdir(parents=True, exist_ok=True)
 # Change this: Simulations to run the ABM with the given parameters
 #######################################################
 
+
 # Function to run the ABM with the given parameters
 def run_ABM(params, seed):
     # Change this: parameter to be optimized in the ABM simulation
@@ -90,6 +91,7 @@ def run_ABM(params, seed):
 
     # Load the ByoDynaMo environment and run the ABM simulation using the BioDynaMo executable
     subprocess.run(["bash", "-c", f"source {BIODYNAMO_DIR} && bdm run"], check=True)
+
 
 #######################################################
 # Change this: Error functions (examples)
@@ -173,6 +175,7 @@ def objective(trial):
 #######################################################
 # Auxiliary functions
 #######################################################
+
 
 # Function to compute the error between the ABM simulation results and the target data
 def compute_error():

@@ -59,7 +59,9 @@ def main():
 
     time_col = f"total_{TIME_UNIT}"
     if time_col not in df.columns:
-        raise SystemExit(f"Invalid TIME_UNIT '{TIME_UNIT}' (use days, hours or minutes)")
+        raise SystemExit(
+            f"Invalid TIME_UNIT '{TIME_UNIT}' (use days, hours or minutes)"
+        )
     if ATTRIBUTE not in df.columns:
         raise SystemExit(
             f"Attribute '{ATTRIBUTE}' not found in {CSV_PATH}. "
@@ -70,7 +72,9 @@ def main():
     values = df[ATTRIBUTE] / DIVIDING_FACTOR
 
     print(f"Attribute: {ATTRIBUTE}")
-    print(f"Time range: {time_points.iloc[0]:g} to {time_points.iloc[-1]:g} {TIME_UNIT}")
+    print(
+        f"Time range: {time_points.iloc[0]:g} to {time_points.iloc[-1]:g} {TIME_UNIT}"
+    )
     print(f"Number of points: {len(df)}")
 
     fig, ax = plt.subplots(figsize=(10, 6))
