@@ -96,7 +96,7 @@ The project is organized into the following components:
 
 ### Configuration Files
 
-- **[`params.json`](params.json)**: JSON-formatted parameter file for configuring simulation runs without recompilation.
+- **[`params.json`](params.json)**: JSON-formatted parameter file for configuring simulation runs without recompilation. In [`params4SphericalModel.json`](params4SphericalModel.json) there is a configuration example for an spherical tumor and in [`params4CylindricalModel.json`](params4CylindricalModel.json) the configuration to simulate a cylindrical one.
 
 - **[`bdm.toml`](bdm.toml)**: BioDynaMo-specific configuration for visualization settings.
 
@@ -366,15 +366,31 @@ These are basic parameters that are commonly changed when designing a treatment 
 
 | Parameter | Default Value | Units | Description |
 |-----------|---------------|-------|-------------|
-| `seed` | 1 | - | Seed for random number generation to ensure reproducibility |
+| `seed` | 42 | - | Seed for random number generation to ensure reproducibility |
 | `output_performance_statistics` | false | - | Enable/disable performance statistics output |
 | `total_minutes_to_simulate` | 43200 | minutes | Total simulation time (default: 30 days) |
-| `initial_spherical_tumor_radius` | 150 | μm | Initial radius of the spherical tumor |
+| `tumor_shape` | `"sphere"` | - | Shape of the initial tumor: `"sphere"` or `"cylinder"` |
+| `initial_spherical_tumor_radius` | 150 | μm | Initial radius of the spherical tumor (only used if `tumor_shape` is `"sphere"`) |
+| `cylindrical_tumor_radius` | 3000 | μm | Initial radius of the cylindrical tumor (only used if `tumor_shape` is `"cylinder"`) |
+| `cylindrical_tumor_height` | 100 | μm | Initial height of the cylindrical tumor (only used if `tumor_shape` is `"cylinder"`) |
+| `initial_number_of_cylindrical_tumor_cells` | 2800 | cells | Initial number of tumor cells in the cylindrical tumor (only used if `tumor_shape` is `"cylinder"`) |
 | `bounded_space_length` | 1000 | μm | Length of the cubic simulation domain |
+| `bound_space_toplogy` | `"torus"` | - | Topology of the domain boundaries for the agents: `"torus"`, `"open"` or `"closed"` (see BioDynaMo documentation) |
 | `treatment` | `{0: 3957, 8: 3957}` | day:cells | Map of treatment days to CAR-T cell counts. Key = day, Value = number of cells |
 
 ### Specific Parameters: 
 These are all the other hyperparameters that are not adviced to be modified unless having a deeper understanding of the model and code.
+
+
+#### Domain Boundary Parameters
+
+These parameters restrict the region where cells can be located, e.g. to model physical barriers in cylindrical tumors. Coordinates are expressed in the simulation coordinate system, where the domain extends from `-bounded_space_length/2` to `+bounded_space_length/2`. By default they do not impose any restriction.
+
+| Parameter | Default Value | Units | Description |
+|-----------|---------------|-------|-------------|
+| `bounded_space_min_allowed_z` | `-bounded_space_length/2` (-500) | μm | Minimum allowed z coordinate for cells |
+| `bounded_space_max_allowed_z` | `bounded_space_length/2` (500) | μm | Maximum allowed z coordinate for cells |
+| `bounded_space_max_allowed_radius` | `bounded_space_length` (1000) | μm | Maximum allowed distance of cells from the center of the tumor (from the center point for spherical tumors and from the axis for cylindrical ones) |
 
 
 #### Time Step Parameters
@@ -385,7 +401,15 @@ These are all the other hyperparameters that are not adviced to be modified unle
 | `dt_mechanics` | 0.1 | minutes | Time step for mechanical forces between cells |
 | `dt_cycle` | 6 | minutes | Time step for cell cycle progression |
 | `dt_step` | 0.1 | minutes | General simulation time step (same as `dt_mechanics`) |
+
+#### Output Parameters
+
+| Parameter | Default Value | Units | Description |
+|-----------|---------------|-------|-------------|
 | `output_csv_interval` | 7200 | steps | Interval for writing simulation data to CSV (default: 12 hours) |
+| `output_information_dependent_on_radius` | false | - | Outputs an additional CSV (`output/data_dependent_on_radius_tumor.csv`) with information aggregated by distance from the center of the tumor (from the center point for spherical tumors and from the axis for cylindrical ones) |
+| `max_radius_analysis_csv_dependent_on_radius` | 3000 | μm | Maximum radius considered in the radius-dependent CSV |
+| `num_radius_intervals` | 10 | - | Number of equal radius intervals, from 0 to `max_radius_analysis_csv_dependent_on_radius`, in which the radius-dependent information is aggregated |
 
 #### Apoptosis Parameters
 
@@ -402,12 +426,42 @@ These are all the other hyperparameters that are not adviced to be modified unle
 | Parameter | Default Value | Units | Description |
 |-----------|---------------|-------|-------------|
 | `resolution_grid_substances` | 50 | voxels/axis | Number of voxels per axis for diffusion grids |
+| `min_initial_z_substances` | `-bounded_space_length/2` (-500) | μm | Minimum height at which the substance grids are initialized to a value different from 0 |
+| `max_initial_z_substances` | `bounded_space_length/2` (500) | μm | Maximum height at which the substance grids are initialized to a value different from 0 |
+
+<u>Oxygen Parameters</u>
+
+| Parameter | Default Value | Units | Description |
+|-----------|---------------|-------|-------------|
 | `diffusion_coefficient_oxygen` | 100000 | μm²/min | Diffusion coefficient for oxygen |
 | `decay_constant_oxygen` | 0.1 | min⁻¹ | Decay constant (λ) for oxygen |
-| `diffusion_coefficient_immunostimulatory_factor` | 1000 | μm²/min | Diffusion coefficient for immunostimulatory factor |
-| `decay_constant_immunostimulatory_factor` | 0.016 | min⁻¹ | Decay constant (λ) for immunostimulatory factor |
 | `oxygen_reference_level` | 38 | mmHg | Boundary condition value for oxygen concentration |
 | `initial_oxygen_level` | 38 | mmHg | Initial oxygen concentration in all voxels |
+| `lateral_oxygen_production_min_z` | `-bounded_space_length/2` (-500) | μm | Minimum height at which the Dirichlet oxygen boundary condition is applied. If it equals the domain's minimum z, the floor also produces oxygen |
+| `lateral_oxygen_production_max_z` | `bounded_space_length/2` (500) | μm | Maximum height at which the Dirichlet oxygen boundary condition is applied. If it equals the domain's maximum z, the roof also produces oxygen |
+| `diffuse_oxygen_on_z_axis` | true | - | Whether oxygen also diffuses along the z axis. If false, it only diffuses in the x and y axes (ideal for a 2D model) |
+
+<u>Immunostimulatory Factor Parameters</u>
+
+| Parameter | Default Value | Units | Description |
+|-----------|---------------|-------|-------------|
+| `add_immunostimulatory_factor` | true | - | Whether to add the immunostimulatory factor diffusion grid |
+| `diffusion_coefficient_immunostimulatory_factor` | 1000 | μm²/min | Diffusion coefficient for immunostimulatory factor |
+| `decay_constant_immunostimulatory_factor` | 0.016 | min⁻¹ | Decay constant (λ) for immunostimulatory factor |
+| `diffuse_immunostimulatory_factor_on_z_axis` | true | - | Whether the immunostimulatory factor also diffuses along the z axis. If false, it only diffuses in the x and y axes (ideal for a 2D model) |
+
+<u>Glucose Parameters</u>
+
+Glucose is disabled by default. When `add_glucose` is set to `true`, a glucose diffusion grid is added and glucose levels affect tumor cell growth and death (see the glucose parameters in [Tumor Cell Parameters](#tumor-cell-parameters)).
+
+| Parameter | Default Value | Units | Description |
+|-----------|---------------|-------|-------------|
+| `add_glucose` | false | - | Whether to add the glucose diffusion grid |
+| `diffusion_coefficient_glucose` | 7800 | μm²/min | Diffusion coefficient for glucose |
+| `decay_constant_glucose` | 0.01 | min⁻¹ | Decay constant (λ) for glucose |
+| `initial_glucose_level` | 24.98 | mmol/L | Initial glucose concentration in each voxel |
+| `max_radius_glucose_initialization` | `bounded_space_length` (1000) | μm | Radius of the sphere (spherical tumor) or cylinder (cylindrical tumor) inside which glucose is initialized. Outside of it glucose is initialized to 0 |
+| `diffuse_glucose_on_z_axis` | true for `"sphere"`, false for `"cylinder"` | - | Whether glucose also diffuses along the z axis. If false, it only diffuses in the x and y axes (ideal for a 2D model) |
 
 #### Mechanical Forces Parameters
 
@@ -430,25 +484,53 @@ These are all the other hyperparameters that are not adviced to be modified unle
 
 | Parameter | Default Value | Units | Description |
 |-----------|---------------|-------|-------------|
-| `rate_secretion_immunostimulatory_factor` | 10 | 1/min | Secretion rate of immunostimulatory factor by tumor cells |
-| `saturation_density_immunostimulatory_factor` | 1 | - | Saturation density for immunostimulatory factor secretion |
 | `oncoprotein_mean` | 1 | - | Mean oncoprotein expression level in tumor cells |
 | `oncoprotein_standard_deviation` | 0.25 | - | Standard deviation of oncoprotein expression |
 | `oncoprotein_limit` | 0.5 | - | Minimum oncoprotein level for CAR-T recognition |
 | `oncoprotein_saturation` | 2.0 | - | Maximum oncoprotein level |
-| `oxygen_saturation_for_proliferation` | 38 | mmHg | Oxygen level for maximum proliferation rate |
-| `oxygen_limit_for_proliferation` | 10 | mmHg | Minimum oxygen level for cell proliferation |
-| `oxygen_limit_for_necrosis` | 5 | mmHg | Oxygen level below which necrosis begins |
-| `oxygen_limit_for_necrosis_maximum` | 2.5 | mmHg | Oxygen level for maximum necrosis probability |
 | `time_lysis` | 86400 | minutes | Time until lysed necrotic cell removal |
-| `maximum_necrosis_lack_of_oxygen_rate` | 0.00277778 | min⁻¹ | Maximum necrosis rate at 0 oxygen (1/360 min⁻¹) |
-| `default_oxygen_consumption_tumor_cell` | 10 | 1/min | Baseline oxygen consumption rate of tumor cells |
-| `default_volume_new_tumor_cell` | 2494 | μm³ | Total volume of newly created tumor cell |
+| `basal_death_probability_cancer_cells` | 0 | min⁻¹ | Basal death probability of tumor cells due to natural random causes |
+| `default_volume_new_tumor_cell` | 2494 | μm³ | Mean total volume of newly created tumor cell |
+| `std_volume_new_tumor_cell` | 0 | μm³ | Standard deviation of the total volume of newly created tumor cells |
+| `min_volume_new_tumor_cell` | 2494 | μm³ | Minimum total volume of newly created tumor cells (sampled volumes are clipped) |
+| `max_volume_new_tumor_cell` | 2494 | μm³ | Maximum total volume of newly created tumor cells (sampled volumes are clipped) |
 | `default_fraction_of_volume_for_nucleus_tumor_cell` |  0.21652 | - | Nuclear volume of newly created tumor cell |
 | `default_fraction_fluid_tumor_cell` | 0.75 | - | Fraction of cytoplasmic volume that is fluid |
 | `average_time_transformation_random_rate` | 38.6 | hours | Mean cell cycle duration |
 | `standard_deviation_transformation_random_rate` | 3.7 | hours | Standard deviation of cell cycle duration |
+| `minimum_tumor_cell_target_volume_fraction_for_division` | 0 | - | Minimum fraction of its target volume a tumor cell must reach to be able to divide |
 | `adhesion_time` | 60 | minutes | Average time tumor cell remains attached to CAR-T before escaping |
+
+<u>Tumor Cell Oxygen Parameters</u>
+
+| Parameter | Default Value | Units | Description |
+|-----------|---------------|-------|-------------|
+| `default_oxygen_consumption_tumor_cell` | 10 | 1/min | Baseline oxygen consumption rate of tumor cells |
+| `oxygen_saturation_for_proliferation` | 38 | mmHg | Oxygen level for maximum proliferation rate |
+| `oxygen_limit_for_proliferation` | 10 | mmHg | Minimum oxygen level for cell proliferation |
+| `oxygen_limit_for_necrosis` | 5 | mmHg | Oxygen level below which necrosis begins |
+| `oxygen_limit_for_necrosis_maximum` | 2.5 | mmHg | Oxygen level for maximum necrosis probability |
+| `maximum_necrosis_lack_of_oxygen_rate` | 0.00277778 | min⁻¹ | Maximum necrosis rate at 0 oxygen (1/360 min⁻¹) |
+
+<u>Tumor Cell Immunostimulatory Factor Parameters</u>
+
+| Parameter | Default Value | Units | Description |
+|-----------|---------------|-------|-------------|
+| `rate_secretion_immunostimulatory_factor` | 10 | 1/min | Secretion rate of immunostimulatory factor by tumor cells |
+| `saturation_density_immunostimulatory_factor` | 1 | - | Saturation density for immunostimulatory factor secretion |
+
+<u>Tumor Cell Glucose Parameters</u>
+
+These parameters only have an effect when `add_glucose` is `true`.
+
+| Parameter | Default Value | Units | Description |
+|-----------|---------------|-------|-------------|
+| `default_glucose_consumption_tumor_cell` | 0.0007 | 1/min | Baseline glucose consumption rate of tumor cells |
+| `glucose_saturation_for_tumor_cell_growth` | 0 | mmol/L | Glucose level above which tumor cells grow at full speed. Below it, growth slows down linearly, which also delays proliferation since cells must grow before dividing |
+| `glucose_limit_for_tumor_cell_growth` | 0 | mmol/L | Glucose level below which tumor cells stop growing |
+| `glucose_limit_for_death` | 0 | mmol/L | Glucose level below which tumor cells start dying from lack of glucose |
+| `glucose_limit_for_death_maximum` | 0 | mmol/L | Glucose level at which the death probability due to lack of glucose is maximum |
+| `maximum_death_lack_of_glucose_rate` | 0 | min⁻¹ | Maximum death rate due to lack of glucose |
 
 <u>Tumor Cell Volume Relaxation Rates</u>
 
@@ -479,7 +561,13 @@ These are all the other hyperparameters that are not adviced to be modified unle
 |-----------|---------------|-------|-------------|
 | `average_maximum_time_until_apoptosis_cart` | 12342.86 | minutes | Average CAR-T cell lifespan |
 | `default_oxygen_consumption_cart` | 1 | 1/min | Baseline oxygen consumption rate of CAR-T cells |
-| `default_volume_new_cart_cell` | 2494 | μm³ | Total volume of newly created CAR-T cell |
+| `default_glucose_consumption_cart` | 0.0007 | 1/min | Baseline glucose consumption rate of CAR-T cells (only used if `add_glucose` is `true`) |
+| `default_volume_new_cart_cell` | 2494 | μm³ | Mean total volume of newly created CAR-T cell |
+| `std_volume_new_cart_cell` | 0 | μm³ | Standard deviation of the total volume of newly created CAR-T cells |
+| `min_volume_new_cart_cell` | 2494 | μm³ | Minimum total volume of newly created CAR-T cells (sampled volumes are clipped) |
+| `max_volume_new_cart_cell` | 2494 | μm³ | Maximum total volume of newly created CAR-T cells (sampled volumes are clipped) |
+| `default_fraction_of_volume_for_nucleus_cart_cell` | 0.21652 | - | Nuclear volume fraction of newly created CAR-T cell |
+| `default_fraction_fluid_cart_cell` | 0.75 | - | Fraction of the CAR-T cell volume that is fluid |
 | `kill_rate_cart` | 0.06667 | min⁻¹ | Rate at which CAR-T attempts to kill attached tumor cell |
 | `adhesion_rate_cart` | 0.013 | min⁻¹ | Rate at which CAR-T attempts to attach to tumor cells |
 | `max_adhesion_distance_cart` | 18 | μm | Maximum distance for CAR-T to tumor cell attachment |
@@ -491,7 +579,8 @@ These are all the other hyperparameters that are not adviced to be modified unle
 | Parameter | Default Value | Units | Description |
 |-----------|---------------|-------|-------------|
 | `persistence_time_cart` | 10 | minutes | Average time before CAR-T changes direction |
-| `migration_bias_cart` | 0.5 | - | Chemotaxis bias toward immunostimulatory factor (0=random, 1=fully directed) |
+| `avg_migration_bias_cart` | 0.5 | - | Mean chemotaxis bias toward immunostimulatory factor (0=random, 1=fully directed) |
+| `std_migration_bias_cart` | 0 | - | Standard deviation of the migration bias among CAR-T cells (sampled values are clipped to ≤ 1) |
 | `migration_speed_cart` | 5 | μm/min | CAR-T cell migration speed |
 | `elastic_constant_cart` | 0.01 | - | Elastic constant for CAR-T cell motility |
 

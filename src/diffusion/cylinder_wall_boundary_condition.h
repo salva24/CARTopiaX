@@ -67,7 +67,7 @@ class CylinderWallBoundaryCondition final : public BoundaryCondition {
   /// Upper z-bound (inclusive) where the boundary condition is active
   real_t max_z_ = 0.0;
 
-  // NOLINTNEXTLINE(modernize-type-traits,llvm-else-after-return,readability-else-after-return)
+  // NOLINTNEXTLINE(modernize-type-traits,llvm-else-after-return,readability-else-after-return,cppcoreguidelines-avoid-non-const-global-variables)
   BDM_CLASS_DEF_OVERRIDE(CylinderWallBoundaryCondition, 1);
 };
 
