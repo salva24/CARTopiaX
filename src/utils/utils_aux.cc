@@ -133,7 +133,8 @@ std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius,
 // the tumor of the living cart cells. Only considering cells within the
 // specified inner and outer radius.
 std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, size_t,
-           real_t, real_t, real_t, real_t, real_t, real_t, real_t>
+           size_t, size_t, size_t, size_t, real_t, real_t, real_t, real_t,
+           real_t, real_t, real_t>
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
   real_t inner_radius_squared =
@@ -158,6 +159,10 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
   int num_tumor_cells_type3 = 0;
   int num_tumor_cells_type4 = 0;
   int num_tumor_cells_type5_dead = 0;
+  int num_dead_lack_of_oxygen = 0;
+  int num_dead_lack_of_glucose = 0;
+  int num_dead_random_natural_causes = 0;
+  int num_dead_cartcell_kill = 0;
   int num_alive_cart = 0;
   int num_dead_cart = 0;
 
@@ -240,6 +245,23 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
           break;
         case TumorCellType::kType5:
           num_tumor_cells_type5_dead++;
+          // Count dead tumor cells by cause of death
+          switch (tumor_cell->GetDeathCause()) {
+            case TumorCellDeathCause::kLackOfOxygen:
+              num_dead_lack_of_oxygen++;
+              break;
+            case TumorCellDeathCause::kLackOfGlucose:
+              num_dead_lack_of_glucose++;
+              break;
+            case TumorCellDeathCause::kRandomNaturalCauses:
+              num_dead_random_natural_causes++;
+              break;
+            case TumorCellDeathCause::kCartKill:
+              num_dead_cartcell_kill++;
+              break;
+            default:
+              break;
+          }
           break;
         default:
           break;
@@ -298,6 +320,10 @@ AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered) {
           num_tumor_cells_type3,
           num_tumor_cells_type4,
           num_tumor_cells_type5_dead,
+          num_dead_lack_of_oxygen,
+          num_dead_lack_of_glucose,
+          num_dead_random_natural_causes,
+          num_dead_cartcell_kill,
           num_alive_cart,
           num_dead_cart,
           std::sqrt(max_dist_sq),
@@ -328,17 +354,19 @@ void OutputSummary::operator()() {
                        current_step == 0 ? std::ios::trunc : std::ios::app);
     if (file.is_open()) {
       if (current_step == 0) {
-        file
-            << "total_days,total_hours,total_minutes,tumor_radius,num_cells,"
-               "num_tumor_cells,tumor_cells_type1,tumor_cells_type2,tumor_"
-               "cells_type3,tumor_cells_type4,tumor_cells_type5_dead,num_alive_"
-               "cart,num_dead_cart,average_oncoprotein,average_oxygen_cancer_"
-               "cells,average_oxygen_all_cells,average_glucose_cancer_cells,"
-               "average_glucose_all_cells,average_radius_distance_living_cart_"
-               "cells\n";  // Header
-                           // for
-                           // CSV
-                           // file
+        file << "total_days,total_hours,total_minutes,tumor_radius,num_cells,"
+                "num_tumor_cells,tumor_cells_type1,tumor_cells_type2,tumor_"
+                "cells_type3,tumor_cells_type4,tumor_cells_type5_dead,"
+                "dead_tumor_cells_lack_of_oxygen,dead_tumor_cells_lack_of_"
+                "glucose,dead_tumor_cells_random_natural_causes,dead_tumor_"
+                "cells_cartcell_kill,num_alive_cart,num_dead_cart,average_"
+                "oncoprotein,average_oxygen_cancer_"
+                "cells,average_oxygen_all_cells,average_glucose_cancer_cells,"
+                "average_glucose_all_cells,average_radius_distance_living_cart_"
+                "cells\n";  // Header
+                            // for
+                            // CSV
+                            // file
       }
 
       // Count total cells, tumor cells of each type and tumor radius
@@ -348,6 +376,10 @@ void OutputSummary::operator()() {
       int num_tumor_cells_type3 = 0;
       int num_tumor_cells_type4 = 0;
       int num_tumor_cells_type5_dead = 0;
+      int num_dead_lack_of_oxygen = 0;
+      int num_dead_lack_of_glucose = 0;
+      int num_dead_random_natural_causes = 0;
+      int num_dead_cartcell_kill = 0;
       int num_alive_cart = 0;
       int num_dead_cart = 0;
       real_t tumor_radius = 0.0;
@@ -361,6 +393,8 @@ void OutputSummary::operator()() {
       std::tie(total_num_tumor_cells, num_tumor_cells_type1,
                num_tumor_cells_type2, num_tumor_cells_type3,
                num_tumor_cells_type4, num_tumor_cells_type5_dead,
+               num_dead_lack_of_oxygen, num_dead_lack_of_glucose,
+               num_dead_random_natural_causes, num_dead_cartcell_kill,
                num_alive_cart, num_dead_cart, tumor_radius, average_oncoprotein,
                average_oxygen_cancer_cells, average_oxygen_all_cells,
                average_glucose_cancer_cells, average_glucose_all_cells,
@@ -388,7 +422,9 @@ void OutputSummary::operator()() {
            << total_num_tumor_cells << "," << num_tumor_cells_type1 << ","
            << num_tumor_cells_type2 << "," << num_tumor_cells_type3 << ","
            << num_tumor_cells_type4 << "," << num_tumor_cells_type5_dead << ","
-           << num_alive_cart << "," << num_dead_cart << ","
+           << num_dead_lack_of_oxygen << "," << num_dead_lack_of_glucose << ","
+           << num_dead_random_natural_causes << "," << num_dead_cartcell_kill
+           << "," << num_alive_cart << "," << num_dead_cart << ","
            << average_oncoprotein << "," << average_oxygen_cancer_cells << ","
            << average_oxygen_all_cells << "," << average_glucose_cancer_cells
            << "," << average_glucose_all_cells << ","
@@ -445,6 +481,14 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step,
              << (i + 1) * interval_size;
         file << ",tumor_cells_type5_dead_radius_" << i * interval_size << "_to_"
              << (i + 1) * interval_size;
+        file << ",dead_tumor_cells_lack_of_oxygen_radius_" << i * interval_size
+             << "_to_" << (i + 1) * interval_size;
+        file << ",dead_tumor_cells_lack_of_glucose_radius_" << i * interval_size
+             << "_to_" << (i + 1) * interval_size;
+        file << ",dead_tumor_cells_random_natural_causes_radius_"
+             << i * interval_size << "_to_" << (i + 1) * interval_size;
+        file << ",dead_tumor_cells_cartcell_kill_radius_" << i * interval_size
+             << "_to_" << (i + 1) * interval_size;
         file << ",average_oncoprotein_radius_" << i * interval_size << "_to_"
              << (i + 1) * interval_size;
         file << ",average_oxygen_cancer_cells_radius_" << i * interval_size
@@ -475,6 +519,10 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step,
       int num_tumor_cells_type3 = 0;
       int num_tumor_cells_type4 = 0;
       int num_tumor_cells_type5_dead = 0;
+      int num_dead_lack_of_oxygen = 0;
+      int num_dead_lack_of_glucose = 0;
+      int num_dead_random_natural_causes = 0;
+      int num_dead_cartcell_kill = 0;
       int num_alive_cart = 0;
       int num_dead_cart = 0;
       real_t tumor_radius = 0.0;
@@ -488,6 +536,8 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step,
       std::tie(total_num_tumor_cells, num_tumor_cells_type1,
                num_tumor_cells_type2, num_tumor_cells_type3,
                num_tumor_cells_type4, num_tumor_cells_type5_dead,
+               num_dead_lack_of_oxygen, num_dead_lack_of_glucose,
+               num_dead_random_natural_causes, num_dead_cartcell_kill,
                num_alive_cart, num_dead_cart, tumor_radius, average_oncoprotein,
                average_oxygen_cancer_cells, average_oxygen_all_cells,
                average_glucose_cancer_cells, average_glucose_all_cells,
@@ -508,10 +558,12 @@ void OutputInformationBasedOnRadiusCSV(const uint64_t current_step,
            << num_dead_cart << "," << num_tumor_cells_type1 << ","
            << num_tumor_cells_type2 << "," << num_tumor_cells_type3 << ","
            << num_tumor_cells_type4 << "," << num_tumor_cells_type5_dead << ","
-           << average_oncoprotein << "," << average_oxygen_cancer_cells << ","
-           << average_oxygen_all_cells << "," << average_glucose_cancer_cells
-           << "," << average_glucose_all_cells << ","
-           << average_radius_distance_living_cart_cells;
+           << num_dead_lack_of_oxygen << "," << num_dead_lack_of_glucose << ","
+           << num_dead_random_natural_causes << "," << num_dead_cartcell_kill
+           << "," << average_oncoprotein << "," << average_oxygen_cancer_cells
+           << "," << average_oxygen_all_cells << ","
+           << average_glucose_cancer_cells << "," << average_glucose_all_cells
+           << "," << average_radius_distance_living_cart_cells;
     }
     // End of line for the current step
     file << "\n";
@@ -572,7 +624,7 @@ void SpawnCart::operator()() {
         if (dist_sq > max_dist_sq) {
           max_dist_sq = dist_sq;
         }
-      } 
+      }
     });
 
     // the car-t spawns at least

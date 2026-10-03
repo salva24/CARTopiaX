@@ -458,7 +458,7 @@ bool CarTCell::TryToInduceApoptosis(bdm::AgentPointer<TumorCell> attached_cell,
 
   // The CAR-T has succeeded to induce apoptosis on the Cancer Cell
   if (succeeded) {
-    attached_cell->StartApoptosis();
+    attached_cell->StartApoptosis(TumorCellDeathCause::kCartKill);
   }
 
   return succeeded;

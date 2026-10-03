@@ -468,7 +468,7 @@ void TumorCell::ComputeConstantsConsumptionSecretion() {
   }
 }
 
-void TumorCell::StartApoptosis() {
+void TumorCell::StartApoptosis(TumorCellDeathCause cause) {
   // If the cell is already dead, do nothing
   if (IsDead()) {
     return;
@@ -477,6 +477,8 @@ void TumorCell::StartApoptosis() {
 
   // The cell Dies
   SetState(TumorCellState::kApoptotic);
+  // Register the cause of death
+  SetDeathCause(cause);
 
   // Reset timer_state
   SetTimerState(0);
@@ -799,6 +801,8 @@ bool StateControlGrowProliferate::ShouldDie(real_t oxygen_level,
                                             current_nuclear_solid);
     // Set type to 5 to indicate dead cell
     cell->SetType(TumorCellType::kType5);
+    // Register the cause of death
+    cell->SetDeathCause(TumorCellDeathCause::kLackOfOxygen);
     return true;
   }
 
@@ -825,21 +829,28 @@ bool StateControlGrowProliferate::ShouldDie(real_t oxygen_level,
   const real_t maximum_death_rate_glucose_multiplier =
       sparams->maximum_death_lack_of_glucose_rate * multiplier;
 
-  // Random natural causes
+  // Lack of glucose: first independent check. Multiply by sparams->dt_cycle
+  // since each timestep is sparams->dt_cycle minutes. If there is no glucose
+  // effect the check is skipped
+  const real_t probability_glucose_death =
+      sparams->dt_cycle * maximum_death_rate_glucose_multiplier;
+  if (probability_glucose_death > 0 &&
+      random->Uniform(0, 1) < probability_glucose_death) {
+    // If the random number is less than the probability, enter apoptosis
+    cell->StartApoptosis(TumorCellDeathCause::kLackOfGlucose);
+    return true;
+  }
+
+  // Random natural causes: second independent check, only if the cell did not
+  // die because of lack of glucose. The total probability of apoptosis is
+  // dt*g + dt*b - dt^2*g*b
   const real_t current_basal_death_probability =
       cell->GetBasalDeathProbability();
-  // Final probability: multiply by sparams->dt_cycle since each timestep is
-  // sparams->dt_cycle minutes The probability of natural aopotosis is
-  // calculated as the complement of the product of the complements of the
-  // individual probabilities, scaled by the time step.
-  const real_t probability_apoptosis =
-      sparams->dt_cycle * (1.0 - (1.0 - maximum_death_rate_glucose_multiplier) *
-                                     (1.0 - current_basal_death_probability));
-
-  const bool enter_apoptosis = random->Uniform(0, 1) < probability_apoptosis;
-  // If the random number is less than the probability, enter necrosis
-  if (enter_apoptosis) {
-    cell->StartApoptosis();
+  const real_t probability_natural_death =
+      sparams->dt_cycle * current_basal_death_probability;
+  if (random->Uniform(0, 1) < probability_natural_death) {
+    // If the random number is less than the probability, enter apoptosis
+    cell->StartApoptosis(TumorCellDeathCause::kRandomNaturalCauses);
     return true;
   }
   return false;  // Return whether the cell died

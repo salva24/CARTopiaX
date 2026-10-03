@@ -114,12 +114,10 @@ doc/latex
 
 
 #Debugging and result files
-#*.csv
+*.csv
 *.xyz
 *.dat
-
-# Draft code for comparing models
-draft_code_my_own_analysis/
+auxiliar_scripts/out/*.png
 
 # Python environment
 .venv/

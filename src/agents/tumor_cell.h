@@ -70,6 +70,17 @@ enum class TumorCellType : int {
   kType5 = 5   ///< Dead tumor cells
 };
 
+/// Enumeration representing the cause of death of a tumor cell
+///
+/// This enum class defines why a dead tumor cell (type 5) died.
+enum class TumorCellDeathCause : int {
+  kNone = 0,                 ///< The cell is alive
+  kLackOfOxygen = 1,         ///< Necrosis due to low oxygen levels
+  kLackOfGlucose = 2,        ///< Apoptosis due to low glucose levels
+  kRandomNaturalCauses = 3,  ///< Apoptosis due to random natural causes
+  kCartKill = 4              ///< Apoptosis induced by a CAR-T cell
+};
+
 /// Tumor cell class implementation
 ///
 /// This class represents a cancer cell that forms a heterogeneous tumor in the
@@ -188,6 +199,9 @@ class TumorCell : public Cell, public ISubstanceInteractor {
 
   bool IsDead() const { return type_ == TumorCellType::kType5; }
 
+  void SetDeathCause(TumorCellDeathCause cause) { death_cause_ = cause; }
+  TumorCellDeathCause GetDeathCause() const { return death_cause_; }
+
   /// Returns the diffusion grid for oxygen
   DiffusionGrid* GetOxygenDiffusionGrid() const { return oxygen_dgrid_; }
   /// Returns the diffusion grid for immunostimulatory factors
@@ -252,8 +266,10 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Start apoptosis
   ///
   ///  This function is called when the tumor cell is induced to apoptosis by a
-  ///  CAR-T cell.
-  void StartApoptosis();
+  ///  CAR-T cell, by lack of glucose or by random natural causes.
+  ///
+  ///  @param cause The cause of death of the tumor cell
+  void StartApoptosis(TumorCellDeathCause cause);
 
  private:
   /// Current state of the tumor cell
@@ -313,6 +329,9 @@ class TumorCell : public Cell, public ISubstanceInteractor {
 
   /// Cell type as int for exporting to paraview
   int cell_type_ = 0;
+
+  /// Cause of death of the cell (kNone while the cell is alive)
+  TumorCellDeathCause death_cause_ = TumorCellDeathCause::kNone;
 
   /// Velocity of the cell in the previous time step
   Real3 older_velocity_ = {0, 0, 0};

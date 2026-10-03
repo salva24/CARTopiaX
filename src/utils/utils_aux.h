@@ -85,6 +85,10 @@ std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius,
 ///   - Number of type 3 tumor cells
 ///   - Number of type 4 tumor cells (least aggressive)
 ///   - Number of type 5 tumor cells (dead)
+///   - Number of dead tumor cells that died because of lack of oxygen
+///   - Number of dead tumor cells that died because of lack of glucose
+///   - Number of dead tumor cells that died because of random natural causes
+///   - Number of dead tumor cells that were killed by CAR-T cells
 ///   - Number of living CAR-T cells (not apoptotic)
 ///   - Number of dead CAR-T cells (apoptotic)
 ///   - Current tumor radius in micrometers
@@ -95,7 +99,8 @@ std::vector<Real3> CreateCylinderOfTumorCells(real_t cylinder_radius,
 ///   - Average glucose level across all cells
 ///   - Average radial position of the living cart cells from the tumor center
 std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t, size_t,
-           real_t, real_t, real_t, real_t, real_t, real_t, real_t>
+           size_t, size_t, size_t, size_t, real_t, real_t, real_t, real_t,
+           real_t, real_t, real_t>
 AnalyzeTumor(real_t inner_radius_considered, real_t outer_radius_considered);
 
 /// Generates a random direction unitary vector
