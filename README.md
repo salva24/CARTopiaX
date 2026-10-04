@@ -106,23 +106,6 @@ The project is organized into the following components:
 
 - **[`CARTopiaX_Simulation_Analysis.ipynb`](CARTopiaX_Simulation_Analysis.ipynb)**: Jupyter notebook for post-processing simulation results, generating plots, and statistical analysis.
 
-### Auxiliary Scripts (`auxiliar_scripts/`)
-
-Small Python scripts for running and analyzing simulations. Each one has a *User settings* block at the top that can be edited before running it, and all generated plots and results are saved in `auxiliar_scripts/out/`.
-
-- **[`run_several_simulations.py`](auxiliar_scripts/run_several_simulations.py)**: Runs the simulation several times with different seeds (0 to `NUMBER_EXECUTIONS - 1`) using the configuration defined in `BASE_CONFIG`, and copies the `output/` folder of each run to `out/execution_seed_<seed>`. ParaView export can be enabled or disabled, and the original `params.json` and `bdm.toml` are always restored at the end.
-
-- **[`analysis_time_attribute.py`](auxiliar_scripts/analysis_time_attribute.py)**: Plots any attribute of `output/final_data.csv` (e.g. `tumor_radius`, `num_alive_cart`, `average_oncoprotein`) as a function of time, in days, hours or minutes.
-
-- **[`analysis_radius_attribute.py`](auxiliar_scripts/analysis_radius_attribute.py)**: Plots the radial profile of an attribute at a given minute using `output/data_dependent_on_radius_tumor.csv`. Values can optionally be normalized by the area of each ring.
-
-- **[`plot_cell_death_causes.py`](auxiliar_scripts/plot_cell_death_causes.py)**: Plots in a single graph the radial profile of tumor cell deaths for each cause (lack of oxygen, lack of glucose, random natural causes and CAR-T kill) at a given minute, and prints the total number of deaths of each cause.
-
-The radius-dependent scripts require the simulation to be run with `output_information_dependent_on_radius` set to `true`. Scripts can be run from the repository root, e.g.:
-```bash
-python3 auxiliar_scripts/analysis_time_attribute.py
-```
-
 ### Model Calibration (`abm_calibration/`)
 
 - **[`optimize.py`](abm_calibration/optimize.py)**: Bayesian optimization workflow to calibrate model parameters against target data. See [Model Calibration](#model-calibration-bayesian-optimization).

@@ -127,3 +127,6 @@ cout.txt
 
 #sqlite database files
 *.db
+
+#auxiliar_scripts
+auxiliar_scripts/
