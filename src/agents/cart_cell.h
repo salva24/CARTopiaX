@@ -56,7 +56,7 @@ enum class CarTCellState : int {
 /// simulation. It inherits from the base Cell class and includes specific
 /// behaviors and properties related to CAR-T cell biology, including states,
 /// volume dynamics, and interactions with tumor cells.
-class CarTCell final : public Cell, public ISubstanceInteractor {
+class CarTCell : public Cell, public ISubstanceInteractor {
   // NOLINTNEXTLINE(modernize-type-traits)
   BDM_AGENT_HEADER(CarTCell, Cell, 1);
 
