@@ -411,7 +411,7 @@ void SimParam::LoadParams(const std::string& filename) {
   // Calculate steps per day. This is always calculated here
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   steps_in_one_day = static_cast<size_t>(24 * 60 / dt_step);
-  // Calculate the volume of a single mechanical voxel in μm³
+  // Calculate the volume of a single substance voxel in μm³
   voxel_volume =
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances) *
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances) *
