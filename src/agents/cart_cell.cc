@@ -337,10 +337,12 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
       radi_sq = next_position[0] * next_position[0] +
                 next_position[1] * next_position[1];
       if (radi_sq > max_r_sq) {
-        // Scale down the movement to stay within the allowed radius
+        // Project the target position radially onto the allowed boundary
         const double scale_factor = std::sqrt(max_r_sq / radi_sq);
-        movement_at_next_step[0] *= scale_factor;
-        movement_at_next_step[1] *= scale_factor;
+        movement_at_next_step[0] =
+            next_position[0] * scale_factor - current_position[0];
+        movement_at_next_step[1] =
+            next_position[1] * scale_factor - current_position[1];
       }
       break;
     }
@@ -351,11 +353,14 @@ Real3 CarTCell::CalculateDisplacement(const InteractionForce* force,
                 next_position[1] * next_position[1] +
                 next_position[2] * next_position[2];
       if (radi_sq > max_r_sq) {
-        // Scale down the movement to stay within the allowed radius
+        // Project the target position radially onto the allowed boundary
         const double scale_factor = std::sqrt(max_r_sq / radi_sq);
-        movement_at_next_step[0] *= scale_factor;
-        movement_at_next_step[1] *= scale_factor;
-        movement_at_next_step[2] *= scale_factor;
+        movement_at_next_step[0] =
+            next_position[0] * scale_factor - current_position[0];
+        movement_at_next_step[1] =
+            next_position[1] * scale_factor - current_position[1];
+        movement_at_next_step[2] =
+            next_position[2] * scale_factor - current_position[2];
       }
       break;
     }

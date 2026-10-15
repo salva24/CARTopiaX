@@ -71,7 +71,40 @@ Together, these features make **CARTopiaX** a powerful computational tool for in
 
 The diagram below illustrates the **agents and main mechanics** interacting within CARTopiaX:
 
-![Model Diagram](./assets/images/model_outline.png)
+
+<!-- ![Model Diagram](./assets/images/model_outline.png) -->
+```mermaid
+---
+config:
+  flowchart:
+    curve: basis
+---
+flowchart LR
+    CART("CAR-T Cell")
+    IMMUNO(("Immunostimulatory<br>factor"))
+    OXY(("Oxygen"))
+    GLU(("Glucose"))
+    TUMOR("Tumor Cell")
+    ONCO(("Oncoprotein<br>Level"))
+    NOTE["Represents<br>the antigen<br>expression of the<br>tumor cell.<br>Cells with higher<br>oncoprotein levels are<br>more proliferative but<br>also more likely to be<br>killed by CAR-T cells."]
+
+    CART -->|"moved by<br>chemotaxis<br>towards"| IMMUNO
+    IMMUNO <-->|"secretes"| TUMOR
+    CART -->|"Induces apoptosis to"| TUMOR
+    OXY -->|"lack of it<br>induces<br>necrosis"| TUMOR
+    OXY <-->|"consumes"| TUMOR
+    CART -->|"consumes"| OXY
+    GLU <-->|"consumes"| TUMOR
+    GLU -->|"lack of it<br>induces<br>apoptosis"| TUMOR
+    CART -->|"consumes"| GLU
+    TUMOR -->|"expresses"| ONCO
+    ONCO -.- NOTE
+
+    linkStyle 1,4,6 marker-end:none
+    classDef cell font-size:22px
+    class CART,TUMOR cell
+```
+
 
 
 The project is organized into the following components:

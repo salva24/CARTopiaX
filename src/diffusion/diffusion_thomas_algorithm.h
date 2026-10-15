@@ -36,7 +36,7 @@ namespace bdm {
 ///
 /// Implements the diffusion equation, solved implicitly: ∂t u = ∇D∇u - μu
 /// Uses the Thomas algorithm for solving tridiagonal systems efficiently.
-class DiffusionThomasAlgorithm final : public DiffusionGrid {
+class DiffusionThomasAlgorithm : public DiffusionGrid {
  public:
   DiffusionThomasAlgorithm()
       : resolution_(0),
