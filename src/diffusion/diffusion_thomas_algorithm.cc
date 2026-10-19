@@ -56,6 +56,7 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(
       jump_(resolution_ * resolution_),
       spatial_diffusion_coeff_(dc * dt / (d_space_ * d_space_)),
       neg_diffusion_factor_(-spatial_diffusion_coeff_),
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
       temporal_decay_coeff_(mu * dt / (diffuse_on_z_axis ? 3.0 : 2.0)),
       central_coeff_(1.0 + 2 * spatial_diffusion_coeff_ +
                      temporal_decay_coeff_),
