@@ -117,9 +117,7 @@ doc/latex
 *.csv
 *.xyz
 *.dat
-
-# Draft code for comparing models
-draft_code_my_own_analysis/
+auxiliar_scripts/out/*.png
 
 # Python environment
 .venv/
@@ -129,3 +127,6 @@ cout.txt
 
 #sqlite database files
 *.db
+
+#auxiliar_scripts
+auxiliar_scripts/

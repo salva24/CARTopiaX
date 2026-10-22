@@ -70,6 +70,17 @@ enum class TumorCellType : int {
   kType5 = 5   ///< Dead tumor cells
 };
 
+/// Enumeration representing the cause of death of a tumor cell
+///
+/// This enum class defines why a dead tumor cell (type 5) died.
+enum class TumorCellDeathCause : int {
+  kNone = 0,                 ///< The cell is alive
+  kLackOfOxygen = 1,         ///< Necrosis due to low oxygen levels
+  kLackOfGlucose = 2,        ///< Apoptosis due to low glucose levels
+  kRandomNaturalCauses = 3,  ///< Apoptosis due to random natural causes
+  kCartKill = 4              ///< Apoptosis induced by a CAR-T cell
+};
+
 /// Tumor cell class implementation
 ///
 /// This class represents a cancer cell that forms a heterogeneous tumor in the
@@ -149,11 +160,20 @@ class TumorCell : public Cell, public ISubstanceInteractor {
     return transformation_random_rate_;
   }
 
+  void SetBasalDeathProbability(real_t basal_death_probability) {
+    basal_death_probability_ = basal_death_probability;
+  }
+  real_t GetBasalDeathProbability() const { return basal_death_probability_; }
+
   void SetAttachedToCart(bool attached) { attached_to_cart_ = attached; }
   bool IsAttachedToCart() const { return attached_to_cart_; }
 
-  void SetType(TumorCellType type) { type_ = type; }
+  void SetType(TumorCellType type) {
+    type_ = type;
+    cell_type_ = static_cast<int>(type_);
+  }
   TumorCellType GetType() const { return type_; }
+  int GetTypeAsInt() const { return cell_type_; }
 
   Real3 GetOlderVelocity() const { return older_velocity_; }
   void SetOlderVelocity(const Real3& velocity) { older_velocity_ = velocity; }
@@ -161,6 +181,11 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   real_t GetOxygenConsumptionRate() const { return oxygen_consumption_rate_; }
   void SetOxygenConsumptionRate(real_t rate) {
     oxygen_consumption_rate_ = rate;
+  }
+
+  real_t GetGlucoseConsumptionRate() const { return glucose_consumption_rate_; }
+  void SetGlucoseConsumptionRate(real_t rate) {
+    glucose_consumption_rate_ = rate;
   }
 
   real_t GetImmunostimulatoryFactorSecretionRate() const {
@@ -174,7 +199,8 @@ class TumorCell : public Cell, public ISubstanceInteractor {
 
   bool IsDead() const { return type_ == TumorCellType::kType5; }
 
-  int GetTypeAsInt() const { return static_cast<int>(type_); }
+  void SetDeathCause(TumorCellDeathCause cause) { death_cause_ = cause; }
+  TumorCellDeathCause GetDeathCause() const { return death_cause_; }
 
   /// Returns the diffusion grid for oxygen
   DiffusionGrid* GetOxygenDiffusionGrid() const { return oxygen_dgrid_; }
@@ -182,6 +208,14 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   DiffusionGrid* GetImmunostimulatoryFactorDiffusionGrid() const {
     return immunostimulatory_factor_dgrid_;
   }
+  /// Returns wether the Immunostimulatory factor is defined
+  bool IsImmunostimulatoryFactorDefined() const {
+    return immunostimulatory_factor_dgrid_ != nullptr;
+  }
+  /// Returns the diffusion grid for glucose
+  DiffusionGrid* GetGlucoseDiffusionGrid() const { return glucose_dgrid_; }
+  /// Returns wether the Immunostimulatory factor is defined
+  bool IsGlucoseDefined() const { return glucose_dgrid_ != nullptr; }
 
   /// Change volume using exponential relaxation equation
   ///
@@ -232,8 +266,10 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Start apoptosis
   ///
   ///  This function is called when the tumor cell is induced to apoptosis by a
-  ///  CAR-T cell.
-  void StartApoptosis();
+  ///  CAR-T cell, by lack of glucose or by random natural causes.
+  ///
+  ///  @param cause The cause of death of the tumor cell
+  void StartApoptosis(TumorCellDeathCause cause);
 
  private:
   /// Current state of the tumor cell
@@ -248,6 +284,9 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Pointer to the immunostimulatory factor diffusion grid
   DiffusionGrid* immunostimulatory_factor_dgrid_ = nullptr;
 
+  /// Pointer to the glucose diffusion grid
+  DiffusionGrid* glucose_dgrid_ = nullptr;
+
   /// Level of oncoprotein expression
   real_t oncoprotein_level_ = 0.0;
 
@@ -255,6 +294,9 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Affects the probability of transitioning and depends on the individual
   /// cell. This rate is kept constant during the cell's lifetime.
   real_t transformation_random_rate_ = 0.0;
+
+  /// Current probability of death due to natural causes
+  real_t basal_death_probability_ = 0.0;
 
   /// Flag indicating if the cell is attached to a CAR-T cell
   bool attached_to_cart_ = false;
@@ -285,6 +327,12 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// aggressive. Type 5 means the cell is dead.
   TumorCellType type_ = TumorCellType::kType0;
 
+  /// Cell type as int for exporting to paraview
+  int cell_type_ = 0;
+
+  /// Cause of death of the cell (kNone while the cell is alive)
+  TumorCellDeathCause death_cause_ = TumorCellDeathCause::kNone;
+
   /// Velocity of the cell in the previous time step
   Real3 older_velocity_ = {0, 0, 0};
 
@@ -294,11 +342,22 @@ class TumorCell : public Cell, public ISubstanceInteractor {
   /// Rate of immunostimulatory factor secretion by the cell
   real_t immunostimulatory_factor_secretion_rate_ = 0.0;
 
+  /// Rate of glucose consumption by the cell
+  real_t glucose_consumption_rate_ = 0.0;
+
   /// Constant 1 for oxygen consumption/secretion differential equation solution
   real_t constant1_oxygen_ = 0.0;
 
   /// Constant 2 for oxygen consumption/secretion differential equation solution
   real_t constant2_oxygen_ = 0.0;
+
+  /// Constant 1 for glucose consumption/secretion differential equation
+  /// solution
+  real_t constant1_glucose_ = 0.0;
+
+  /// Constant 2 for glucose consumption/secretion differential equation
+  /// solution
+  real_t constant2_glucose_ = 0.0;
 
   /// Constant 1 for immunostimulatory factor consumption/secretion differential
   /// equation solution
@@ -314,7 +373,7 @@ class TumorCell : public Cell, public ISubstanceInteractor {
 /// This behavior handles the state control logic for tumor cells, managing
 /// transitions between different cell states, growth, proliferation, and death
 /// processes. It includes logic for determining when cells should enter
-/// necrosis based on oxygen levels and other environmental factors.
+/// death based on oxygen levels and other environmental factors.
 
 struct StateControlGrowProliferate : public Behavior {
   // NOLINTNEXTLINE(llvm-else-after-return, moderinize-type-traits,
@@ -337,20 +396,26 @@ struct StateControlGrowProliferate : public Behavior {
   void Run(Agent* agent) override;
 
  private:
-  /// Compute the probability of the cell entering necrosis
+  /// Compute the probability of the cell dying due to low oxygen or glucose
+  /// levels or due to random natural causes
   ///
-  /// Determines whether a cell should enter necrosis based on oxygen levels
+  /// Determines whether a cell should enter necrosis based on oxygen levels or
+  /// apoptosis because of random causes and, if deffined, glucose levels
   ///
   /// @param oxygen_level Current oxygen concentration at the cell's location
+  /// @param glucose_level Current glucose concentration at the cell's location
   /// @param cell Pointer to the tumor cell being evaluated
-  /// @return True if the cell should enter necrosis, false otherwise
-  static bool ShouldEnterNecrosis(real_t oxygen_level, TumorCell* cell);
+  /// @return True if the cell should die, false otherwise
+  static bool ShouldDie(real_t oxygen_level, real_t glucose_level,
+                        TumorCell* cell);
 
   /// Manage the behavior of a living tumor cell
   ///
   /// @param cell Pointer to the tumor cell being managed
   /// @param oxygen_level Current oxygen concentration at the cell's location
-  static void ManageLivingCell(TumorCell* cell, real_t oxygen_level);
+  /// @param glucose_level Current glucose concentration at the cell's location
+  static void ManageLivingCell(TumorCell* cell, real_t oxygen_level,
+                               real_t glucose_level);
 };
 
 }  // namespace bdm

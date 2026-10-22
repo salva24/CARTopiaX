@@ -20,8 +20,10 @@
  */
 
 #include "params/hyperparams.h"
+#include "core/param/param.h"
 #include "core/param/param_group.h"
 #include "core/real_t.h"
+#include "core/util/log.h"
 #include "core/util/math.h"
 #include <cmath>
 #include <cstddef>
@@ -69,12 +71,85 @@ void SimParam::LoadParams(const std::string& filename) {
     }
   };
 
+  auto load_string = [&](const std::string& key, std::string& var) {
+    if (jfile.contains(key)) {
+      var = jfile[key].get<std::string>();
+    }
+  };
+
   // Load parameters from JSON file
   load_int("seed", seed);
   load_bool("output_performance_statistics", output_performance_statistics);
   load_int("total_minutes_to_simulate", total_minutes_to_simulate);
-  load_double("initial_tumor_radius", initial_tumor_radius);
+
+  std::string tumor_shape_string;
+  load_string("tumor_shape", tumor_shape_string);
+  if (jfile.contains("tumor_shape")) {
+    tumor_shape_string = jfile["tumor_shape"].get<std::string>();
+    if (tumor_shape_string == "sphere") {
+      tumor_shape = TumorShape::kSphere;
+    } else if (tumor_shape_string == "cylinder") {
+      tumor_shape = TumorShape::kCylinder;
+    } else {
+      tumor_shape = TumorShape::kSphere;
+      Log::Error("SimParam::LoadParams",
+                 "Unknown tumor shape '" + tumor_shape_string +
+                     "'. It should be either 'sphere' or 'cylinder'. Loading "
+                     "default value ('sphere') instead");
+    }
+  }
+
+  load_int("initial_number_of_cylindrical_tumor_cells",
+           initial_number_of_cylindrical_tumor_cells);
   load_int("bounded_space_length", bounded_space_length);
+  std::string bound_space_toplogy_string;
+  if (jfile.contains("bound_space_toplogy")) {
+    bound_space_toplogy_string =
+        jfile["bound_space_toplogy"].get<std::string>();
+    if (bound_space_toplogy_string == "torus") {
+      bound_space_toplogy = Param::BoundSpaceMode::kTorus;
+    } else if (bound_space_toplogy_string == "open") {
+      bound_space_toplogy = Param::BoundSpaceMode::kOpen;
+    } else if (bound_space_toplogy_string == "closed") {
+      bound_space_toplogy = Param::BoundSpaceMode::kClosed;
+    } else {
+      bound_space_toplogy = Param::BoundSpaceMode::kTorus;
+      Log::Error("SimParam::LoadParams",
+                 "Unknown bound space topology '" + bound_space_toplogy_string +
+                     "'. It should be either 'torus', 'open' or 'closed'. "
+                     "Loading default value ('torus') instead");
+    }
+  }
+
+  load_double("initial_spherical_tumor_radius", initial_spherical_tumor_radius);
+  load_double("cylindrical_tumor_radius", cylindrical_tumor_radius);
+  load_double("cylindrical_tumor_height", cylindrical_tumor_height);
+
+  // Half of the bounded space length (integer division, as in the original
+  // defaults)
+  const int half_bounded_space_length = bounded_space_length / 2;
+
+  if (jfile.contains("bounded_space_min_allowed_z")) {
+    bounded_space_min_allowed_z =
+        jfile["bounded_space_min_allowed_z"].get<double>();
+  } else {
+    bounded_space_min_allowed_z = -half_bounded_space_length;
+  }
+  if (jfile.contains("bounded_space_max_allowed_z")) {
+    bounded_space_max_allowed_z =
+        jfile["bounded_space_max_allowed_z"].get<double>();
+  } else {
+    bounded_space_max_allowed_z = half_bounded_space_length;
+  }
+
+  if (jfile.contains("bounded_space_max_allowed_radius")) {
+    bounded_space_max_allowed_radius =
+        jfile["bounded_space_max_allowed_radius"].get<double>();
+  } else {
+    // if it is not defined we assign the whole length of the bounded space to
+    // avoid any restrictions
+    bounded_space_max_allowed_radius = bounded_space_length;
+  }
 
   if (jfile.contains("treatment")) {
     treatment.clear();
@@ -103,6 +178,14 @@ void SimParam::LoadParams(const std::string& filename) {
     output_csv_interval = static_cast<int>(12 * 60 / dt_step);
   }
 
+  load_bool("output_information_dependent_on_radius",
+            output_information_dependent_on_radius);
+
+  load_double("max_radius_analysis_csv_dependent_on_radius",
+              max_radius_analysis_csv_dependent_on_radius);
+
+  load_int("num_radius_intervals", num_radius_intervals);
+
   load_double("volume_relaxation_rate_cytoplasm_apoptotic_cells",
               volume_relaxation_rate_cytoplasm_apoptotic_cells);
   load_double("volume_relaxation_rate_nucleus_apoptotic_cells",
@@ -115,15 +198,64 @@ void SimParam::LoadParams(const std::string& filename) {
               reduction_consumption_dead_cells);
   load_int("resolution_grid_substances", resolution_grid_substances);
 
+  if (jfile.contains("min_initial_z_substances")) {
+    min_initial_z_substances = jfile["min_initial_z_substances"].get<double>();
+  } else {
+    min_initial_z_substances = -half_bounded_space_length;
+  }
+
+  if (jfile.contains("max_initial_z_substances")) {
+    max_initial_z_substances = jfile["max_initial_z_substances"].get<double>();
+  } else {
+    max_initial_z_substances = half_bounded_space_length;
+  }
+
+  if (jfile.contains("lateral_oxygen_production_min_z")) {
+    lateral_oxygen_production_min_z =
+        jfile["lateral_oxygen_production_min_z"].get<double>();
+  } else {
+    lateral_oxygen_production_min_z = -half_bounded_space_length;
+  }
+
+  if (jfile.contains("lateral_oxygen_production_max_z")) {
+    lateral_oxygen_production_max_z =
+        jfile["lateral_oxygen_production_max_z"].get<double>();
+  } else {
+    lateral_oxygen_production_max_z = half_bounded_space_length;
+  }
+  load_bool("diffuse_oxygen_on_z_axis", diffuse_oxygen_on_z_axis);
+  load_bool("diffuse_immunostimulatory_factor_on_z_axis",
+            diffuse_immunostimulatory_factor_on_z_axis);
+  load_bool("diffuse_glucose_on_z_axis", diffuse_glucose_on_z_axis);
+
   load_double("diffusion_coefficient_oxygen", diffusion_coefficient_oxygen);
   load_double("decay_constant_oxygen", decay_constant_oxygen);
+  load_double("oxygen_reference_level", oxygen_reference_level);
+  load_double("initial_oxygen_level", initial_oxygen_level);
+  load_bool("add_immunostimulatory_factor", add_immunostimulatory_factor);
   load_double("diffusion_coefficient_immunostimulatory_factor",
               diffusion_coefficient_immunostimulatory_factor);
   load_double("decay_constant_immunostimulatory_factor",
               decay_constant_immunostimulatory_factor);
-  load_double("oxygen_reference_level", oxygen_reference_level);
-  load_double("initial_oxygen_level", initial_oxygen_level);
-  load_double("oxygen_saturation", oxygen_saturation);
+  load_bool("add_glucose", add_glucose);
+  load_double("diffusion_coefficient_glucose", diffusion_coefficient_glucose);
+  load_double("decay_constant_glucose", decay_constant_glucose);
+  load_double("initial_glucose_level", initial_glucose_level);
+
+  if (jfile.contains("max_radius_glucose_initialization")) {
+    max_radius_glucose_initialization =
+        jfile["max_radius_glucose_initialization"].get<double>();
+  } else {
+    max_radius_glucose_initialization = bounded_space_length;
+  }
+
+  if (jfile.contains("diffuse_glucose_on_z_axis")) {
+    diffuse_glucose_on_z_axis = jfile["diffuse_glucose_on_z_axis"].get<bool>();
+  } else {
+    // if the tumor shape is cylindrical it should be set to false, otherwise it
+    // should be set to true
+    diffuse_glucose_on_z_axis = (tumor_shape != TumorShape::kCylinder);
+  }
 
   load_double("cell_repulsion_between_tumor_tumor",
               cell_repulsion_between_tumor_tumor);
@@ -168,23 +300,43 @@ void SimParam::LoadParams(const std::string& filename) {
   load_double("oxygen_saturation_for_proliferation",
               oxygen_saturation_for_proliferation);
   load_double("oxygen_limit_for_proliferation", oxygen_limit_for_proliferation);
+  load_double("glucose_saturation_for_tumor_cell_growth",
+              glucose_saturation_for_tumor_cell_growth);
+  load_double("glucose_limit_for_tumor_cell_growth",
+              glucose_limit_for_tumor_cell_growth);
   load_double("oxygen_limit_for_necrosis", oxygen_limit_for_necrosis);
   load_double("oxygen_limit_for_necrosis_maximum",
               oxygen_limit_for_necrosis_maximum);
+  load_double("maximum_necrosis_lack_of_oxygen_rate",
+              maximum_necrosis_lack_of_oxygen_rate);
+  load_double("glucose_limit_for_death", glucose_limit_for_death);
+  load_double("glucose_limit_for_death_maximum",
+              glucose_limit_for_death_maximum);
+  load_double("maximum_death_lack_of_glucose_rate",
+              maximum_death_lack_of_glucose_rate);
+  load_double("basal_death_probability_cancer_cells",
+              basal_death_probability_cancer_cells);
   load_double("time_lysis", time_lysis);
-  load_double("maximum_necrosis_rate", maximum_necrosis_rate);
 
   load_double("default_oxygen_consumption_tumor_cell",
               default_oxygen_consumption_tumor_cell);
+  load_double("default_glucose_consumption_tumor_cell",
+              default_glucose_consumption_tumor_cell);
   load_double("default_volume_new_tumor_cell", default_volume_new_tumor_cell);
-  load_double("default_volume_nucleus_tumor_cell",
-              default_volume_nucleus_tumor_cell);
+  load_double("std_volume_new_tumor_cell", std_volume_new_tumor_cell);
+  load_double("max_volume_new_tumor_cell", max_volume_new_tumor_cell);
+  load_double("min_volume_new_tumor_cell", min_volume_new_tumor_cell);
+  load_double("default_fraction_of_volume_for_nucleus_tumor_cell",
+              default_fraction_of_volume_for_nucleus_tumor_cell);
   load_double("default_fraction_fluid_tumor_cell",
               default_fraction_fluid_tumor_cell);
   load_double("average_time_transformation_random_rate",
               average_time_transformation_random_rate);
   load_double("standard_deviation_transformation_random_rate",
               standard_deviation_transformation_random_rate);
+  load_double("minimum_tumor_cell_target_volume_fraction_for_division",
+              minimum_tumor_cell_target_volume_fraction_for_division);
+
   load_double("adhesion_time", adhesion_time);
   load_double("oncoprotein_limit", oncoprotein_limit);
   load_double("oncoprotein_saturation", oncoprotein_saturation);
@@ -218,18 +370,27 @@ void SimParam::LoadParams(const std::string& filename) {
   load_double("threshold_cancer_cell_type3", threshold_cancer_cell_type3);
   load_double("threshold_cancer_cell_type4", threshold_cancer_cell_type4);
 
-  if (jfile.contains("average_maximum_time_untill_apoptosis_cart")) {
-    average_maximum_time_untill_apoptosis_cart =
-        jfile["average_maximum_time_untill_apoptosis_cart"].get<double>();
+  if (jfile.contains("average_maximum_time_until_apoptosis_cart")) {
+    average_maximum_time_until_apoptosis_cart =
+        jfile["average_maximum_time_until_apoptosis_cart"].get<double>();
   } else {
-    average_maximum_time_untill_apoptosis_cart =
+    average_maximum_time_until_apoptosis_cart =
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
         dt_cycle * 10.0 * 24.0 * 60.0 / (dt_cycle + 1.0);
   }
 
   load_double("default_oxygen_consumption_cart",
               default_oxygen_consumption_cart);
+  load_double("default_glucose_consumption_cart",
+              default_glucose_consumption_cart);
   load_double("default_volume_new_cart_cell", default_volume_new_cart_cell);
+  load_double("std_volume_new_cart_cell", std_volume_new_cart_cell);
+  load_double("max_volume_new_cart_cell", max_volume_new_cart_cell);
+  load_double("min_volume_new_cart_cell", min_volume_new_cart_cell);
+  load_double("default_fraction_fluid_cart_cell",
+              default_fraction_fluid_cart_cell);
+  load_double("default_fraction_of_volume_for_nucleus_cart_cell",
+              default_fraction_of_volume_for_nucleus_cart_cell);
   load_double("kill_rate_cart", kill_rate_cart);
   load_double("adhesion_rate_cart", adhesion_rate_cart);
   load_double("max_adhesion_distance_cart", max_adhesion_distance_cart);
@@ -237,7 +398,8 @@ void SimParam::LoadParams(const std::string& filename) {
   load_double("minimum_distance_from_tumor_to_spawn_cart",
               minimum_distance_from_tumor_to_spawn_cart);
   load_double("persistence_time_cart", persistence_time_cart);
-  load_double("migration_bias_cart", migration_bias_cart);
+  load_double("avg_migration_bias_cart", avg_migration_bias_cart);
+  load_double("std_migration_bias_cart", std_migration_bias_cart);
   load_double("migration_speed_cart", migration_speed_cart);
   load_double("elastic_constant_cart", elastic_constant_cart);
 
@@ -249,16 +411,20 @@ void SimParam::LoadParams(const std::string& filename) {
   // Calculate steps per day. This is always calculated here
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
   steps_in_one_day = static_cast<size_t>(24 * 60 / dt_step);
-  // Calculate the volume of a single mechanical voxel in μm³
+  // Calculate the volume of a single substance voxel in μm³
   voxel_volume =
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances) *
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances) *
       (static_cast<real_t>(bounded_space_length) / resolution_grid_substances);
-  // 1-migration_bias_cart
-  migration_one_minus_bias_cart = 1.0 - migration_bias_cart;
+
+  // Squared max allowed radius
+  bounded_space_max_allowed_radius_squared =
+      bounded_space_max_allowed_radius * bounded_space_max_allowed_radius;
+
   // Probability of a CAR-T cell to migrate in a given
   // mechanical time step
-  motility_probability_cart = dt_mechanics / persistence_time_cart;
+  motility_probability_cart =
+      (persistence_time_cart == 0) ? 1.0 : dt_mechanics / persistence_time_cart;
   // Probability of a Tumor cell to escape in a given
   // mechanical time step
   probability_escape_from_cart =
@@ -312,10 +478,41 @@ void SimParam::PrintParams() const {
             << (output_performance_statistics ? "true" : "false") << "\n";
   std::cout << "Total simulation time in minutes (30 days): "
             << total_minutes_to_simulate << "\n";
-  std::cout << "Initial radius of the spherical tumor (micrometers): "
-            << initial_tumor_radius << "\n";
+  switch (tumor_shape) {
+    case TumorShape::kSphere:
+      std::cout << "Tumor shape: 'sphere' \n";
+      std::cout << "Initial radius of the spherical tumor (micrometers): "
+                << initial_spherical_tumor_radius << "\n";
+      break;
+    case TumorShape::kCylinder:
+      std::cout << "Tumor shape: 'cylinder' \n";
+      std::cout << "Initial radius of the cylindrical tumor (micrometers): "
+                << cylindrical_tumor_radius << "\n";
+      std::cout << "Initial height of the cylindrical tumor (micrometers): "
+                << cylindrical_tumor_height << "\n";
+      std::cout << "Min allowed Z coordinate for cells (micrometers): "
+                << bounded_space_min_allowed_z << "\n";
+      std::cout << "Max allowed Z coordinate for cells (micrometers): "
+                << bounded_space_max_allowed_z << "\n";
+      std::cout << "Max allowed radius for cells (micrometers): "
+                << bounded_space_max_allowed_radius << "\n";
+      std::cout << "Initial number of cylindrical tumor cells: "
+                << initial_number_of_cylindrical_tumor_cells << "\n";
+      break;
+  }
   std::cout << "Length of the bounded space (micrometers): "
             << bounded_space_length << "\n\n";
+  switch (bound_space_toplogy) {
+    case Param::BoundSpaceMode::kTorus:
+      std::cout << "Bound space topology: 'torus' \n";
+      break;
+    case Param::BoundSpaceMode::kOpen:
+      std::cout << "Bounded space topology: 'open' \n";
+      break;
+    case Param::BoundSpaceMode::kClosed:
+      std::cout << "Bounded space topology: 'closed' \n";
+      break;
+  }
 
   /// Treatment Dosages
   std::cout << "/// Treatment Dosages\n";
@@ -340,6 +537,17 @@ void SimParam::PrintParams() const {
   std::cout << "Time step for the cell cycle (minutes): " << dt_cycle << "\n";
   std::cout << "General time step for the simulation: " << dt_step << "\n";
   std::cout << "Output CSV interval: " << output_csv_interval << "\n\n";
+  std::cout << "Output information dependent on radius: "
+            << (output_information_dependent_on_radius ? "true" : "false")
+            << "\n\n";
+  if (output_information_dependent_on_radius) {
+    std::cout << "Number of radius intervals to output the agregated "
+                 "information CSV: "
+              << num_radius_intervals << "\n\n";
+    std::cout << "Maximum radius for the analysis of information dependent on "
+                 "radius: "
+              << max_radius_analysis_csv_dependent_on_radius << "\n\n";
+  }
 
   /// Apoptotic cells volume change
   std::cout << "/// Apoptotic cells volume change\n";
@@ -352,8 +560,7 @@ void SimParam::PrintParams() const {
             << volume_relaxation_rate_fluid_apoptotic_cells << "\n";
   std::cout << "Time in minutes until an apoptotic cell is removed: "
             << time_apoptosis << "\n";
-  std::cout << "Reduction of consumption rate of dead cells when they enter "
-               "necrosis: "
+  std::cout << "Reduction of consumption rate of dead cells when they die: "
             << reduction_consumption_dead_cells << "\n\n";
 
   /// Chemicals
@@ -362,20 +569,49 @@ void SimParam::PrintParams() const {
   std::cout << "///\n\n";
   std::cout << "Number of voxels per axis for the substances grid: "
             << resolution_grid_substances << "\n";
+  std::cout << "Minimum initial z-coordinate for substances values different "
+               "than 0 (micrometers): "
+            << min_initial_z_substances << "\n";
+  std::cout << "Maximum initial z-coordinate for substances values different "
+               "than 0 (micrometers): "
+            << max_initial_z_substances << "\n";
+  std::cout
+      << "Minimum z-coordinate for lateral oxygen production (micrometers): "
+      << lateral_oxygen_production_min_z << "\n";
+  std::cout
+      << "Maximum z-coordinate for lateral oxygen production (micrometers): "
+      << lateral_oxygen_production_max_z << "\n";
+  std::cout << "Whether to diffuse oxygen on the z-axis: "
+            << (diffuse_oxygen_on_z_axis ? "true" : "false") << "\n";
+  std::cout << "Whether to diffuse immunostimulatory factor on the z-axis: "
+            << (diffuse_immunostimulatory_factor_on_z_axis ? "true" : "false")
+            << "\n";
+  std::cout << "Whether to diffuse glucose on the z-axis: "
+            << (diffuse_glucose_on_z_axis ? "true" : "false") << "\n";
   std::cout << "Diffusion coefficient of oxygen (μm²/min): "
             << diffusion_coefficient_oxygen << "\n";
   std::cout << "Decay constant of oxygen (min⁻¹): " << decay_constant_oxygen
             << "\n";
-  std::cout << "Diffusion coefficient of immunostimulatory factor (μm²/min): "
-            << diffusion_coefficient_immunostimulatory_factor << "\n";
-  std::cout << "Decay constant of immunostimulatory factor (min⁻¹): "
-            << decay_constant_immunostimulatory_factor << "\n";
   std::cout << "Reference level of oxygen at the boundaries (mmHg): "
             << oxygen_reference_level << "\n";
   std::cout << "Initial oxygen concentration in each voxel (mmHg): "
             << initial_oxygen_level << "\n";
-  std::cout << "Oxygen saturation in the microenvironment (mmHg): "
-            << oxygen_saturation << "\n\n";
+  std::cout << "Whether to add immunostimulatory factor: "
+            << (add_immunostimulatory_factor ? "true" : "false") << "\n";
+  std::cout << "Diffusion coefficient of immunostimulatory factor (μm²/min): "
+            << diffusion_coefficient_immunostimulatory_factor << "\n";
+  std::cout << "Decay constant of immunostimulatory factor (min⁻¹): "
+            << decay_constant_immunostimulatory_factor << "\n";
+  std::cout << "Whether to add glucose: " << (add_glucose ? "true" : "false")
+            << "\n";
+  std::cout << "Diffusion coefficient of glucose (μm²/min): "
+            << diffusion_coefficient_glucose << "\n";
+  std::cout << "Decay constant of glucose (min⁻¹): " << decay_constant_glucose
+            << "\n";
+  std::cout << "Initial glucose concentration in each voxel (mM): "
+            << initial_glucose_level << "\n\n";
+  std::cout << "Maximum radius for glucose initialization (micrometers): "
+            << max_radius_glucose_initialization << "\n\n";
 
   /// Forces
   ///
@@ -431,22 +667,44 @@ void SimParam::PrintParams() const {
             << oxygen_saturation_for_proliferation << "\n";
   std::cout << "Limit of oxygen level for tumor cell proliferation: "
             << oxygen_limit_for_proliferation << "\n";
+  std::cout << "Glucose saturation level in tumor cells for growth: "
+            << glucose_saturation_for_tumor_cell_growth << "\n";
+  std::cout << "Limit of glucose level for tumor cell growth: "
+            << glucose_limit_for_tumor_cell_growth << "\n";
   std::cout << "Limit of oxygen to start causing necrosis: "
             << oxygen_limit_for_necrosis << "\n";
   std::cout << "Limit of oxygen to maximum necrosis probability: "
             << oxygen_limit_for_necrosis_maximum << "\n";
+  std::cout << "Basal death probability for tumor cells: "
+            << basal_death_probability_cancer_cells << "\n";
   std::cout << "Time in minutes until a lysed necrotic cell is removed: "
             << time_lysis << "\n";
   std::cout << "Maximum rate per minute of necrosis for tumor cells: "
-            << maximum_necrosis_rate << "\n";
+            << maximum_necrosis_lack_of_oxygen_rate << "\n";
+  std::cout << "Limit of glucose to start causing death: "
+            << glucose_limit_for_death << "\n";
+  std::cout << "Limit of glucose to maximum death probability: "
+            << glucose_limit_for_death_maximum << "\n";
+  std::cout << "Maximum rate per minute of death for tumor cells: "
+            << maximum_death_lack_of_glucose_rate << "\n";
+
   std::cout << "Default oxygen consumption rate of tumor cell: "
             << default_oxygen_consumption_tumor_cell << "\n";
+  std::cout << "Default glucose consumption rate of tumor cell: "
+            << default_glucose_consumption_tumor_cell << "\n";
 
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new tumor cell (μm³): "
             << default_volume_new_tumor_cell << "\n";
-  std::cout << "Default volume of the nucleus of a new tumor cell (μm³): "
-            << default_volume_nucleus_tumor_cell << "\n";
+  std::cout
+      << "Standard deviation of the total volume of a new tumor cell (μm³): "
+      << std_volume_new_tumor_cell << "\n";
+  std::cout << "Maximum total volume of a new tumor cell (μm³): "
+            << max_volume_new_tumor_cell << "\n";
+  std::cout << "Minimum total volume of a new tumor cell (μm³): "
+            << min_volume_new_tumor_cell << "\n";
+  std::cout << "Default fraction of volume for nucleus tumor cell: "
+            << default_fraction_of_volume_for_nucleus_tumor_cell << "\n";
   std::cout << "Default fraction of fluid volume in a new tumor cell: "
             << default_fraction_fluid_tumor_cell << "\n";
 
@@ -455,6 +713,8 @@ void SimParam::PrintParams() const {
             << average_time_transformation_random_rate << "\n";
   std::cout << "Standard Deviation for transformation Random Rate (hours): "
             << standard_deviation_transformation_random_rate << "\n";
+  std::cout << "Minimum tumor cell target volume fraction for division: "
+            << minimum_tumor_cell_target_volume_fraction_for_division << "\n";
   std::cout
       << "Average adhesion time for Tumor Cell under CAR-T attack (minutes): "
       << adhesion_time << "\n";
@@ -511,13 +771,26 @@ void SimParam::PrintParams() const {
   std::cout << "///\n\n";
 
   std::cout << "Average time in minutes until a CAR-T cell dies: "
-            << average_maximum_time_untill_apoptosis_cart << "\n";
+            << average_maximum_time_until_apoptosis_cart << "\n";
   std::cout << "Default oxygen consumption rate of CAR-T cell: "
             << default_oxygen_consumption_cart << "\n";
+  std::cout << "Default glucose consumption rate of CAR-T cell: "
+            << default_glucose_consumption_cart << "\n";
 
   std::cout << "\nVolume parameters:\n";
   std::cout << "Default total volume of a new CAR-T cell (μm³): "
             << default_volume_new_cart_cell << "\n";
+  std::cout
+      << "Standard deviation of the total volume of a new CAR-T cell (μm³): "
+      << std_volume_new_cart_cell << "\n";
+  std::cout << "Maximum total volume of a new CAR-T cell (μm³): "
+            << max_volume_new_cart_cell << "\n";
+  std::cout << "Minimum total volume of a new CAR-T cell (μm³): "
+            << min_volume_new_cart_cell << "\n";
+  std::cout << "Default fraction of fluid volume in a new CAR-T cell: "
+            << default_fraction_fluid_cart_cell << "\n";
+  std::cout << "Default fraction of volume for nucleus CAR-T cell: "
+            << default_fraction_of_volume_for_nucleus_cart_cell << "\n";
 
   std::cout << "\nKilling and adhesion rates:\n";
   std::cout << "How often a CAR-T cell tries to kill an attached cancer cell "
@@ -541,8 +814,11 @@ void SimParam::PrintParams() const {
   std::cout << "\nMotility parameters:\n";
   std::cout << "Average persistence time before CAR-T cell moves: "
             << persistence_time_cart << "\n";
-  std::cout << "Migration bias (higher values = more directed movement): "
-            << migration_bias_cart << "\n";
+  std::cout
+      << "Average Migration bias (higher values = more directed movement): "
+      << avg_migration_bias_cart << "\n";
+  std::cout << "Standard deviation migration bias: " << std_migration_bias_cart
+            << "\n";
   std::cout << "Migration speed: " << migration_speed_cart << "\n";
   std::cout << "Elastic constant: " << elastic_constant_cart << "\n\n";
 

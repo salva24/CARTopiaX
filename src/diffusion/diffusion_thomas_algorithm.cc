@@ -38,11 +38,9 @@
 
 namespace bdm {
 
-DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
-                                                   std::string substance_name,
-                                                   real_t dc, real_t mu,
-                                                   int resolution, real_t dt,
-                                                   bool dirichlet_border)
+DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(
+    int substance_id, std::string substance_name, real_t dc, real_t mu,
+    int resolution, real_t dt, bool dirichlet_border, bool diffuse_on_z_axis)
     : DiffusionGrid(substance_id, std::move(substance_name), dc, mu,
                     resolution),
       resolution_(static_cast<int>(GetResolution())),
@@ -52,12 +50,14 @@ DiffusionThomasAlgorithm::DiffusionThomasAlgorithm(int substance_id,
                                        ->bounded_space_length) /
                static_cast<real_t>(resolution_)),
       dirichlet_border_(dirichlet_border),
+      diffuse_on_z_axis_(diffuse_on_z_axis),
       jump_i_(1),
       jump_j_(resolution_),
       jump_(resolution_ * resolution_),
       spatial_diffusion_coeff_(dc * dt / (d_space_ * d_space_)),
       neg_diffusion_factor_(-spatial_diffusion_coeff_),
-      temporal_decay_coeff_(mu * dt / 3.0),
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+      temporal_decay_coeff_(mu * dt / (diffuse_on_z_axis ? 3.0 : 2.0)),
       central_coeff_(1.0 + 2 * spatial_diffusion_coeff_ +
                      temporal_decay_coeff_),
       edge_coeff_(1.0 + spatial_diffusion_coeff_ + temporal_decay_coeff_),
@@ -208,9 +208,11 @@ void DiffusionThomasAlgorithm::DiffuseChemical() {
   SolveDirectionThomas(1);
   ApplyBoundaryConditionsIfNeeded();
 
-  // Solve for Z-direction (direction = 2)
-  SolveDirectionThomas(2);
-  ApplyBoundaryConditionsIfNeeded();
+  // Solve for Z-direction (direction = 2) if diffuse_on_z_axis is true
+  if (diffuse_on_z_axis_) {
+    SolveDirectionThomas(2);
+    ApplyBoundaryConditionsIfNeeded();
+  }
 
   // Change of concentration levels because of agents
   ComputeConsumptionsSecretions();
