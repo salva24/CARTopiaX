@@ -456,9 +456,16 @@ void SimParam::LoadParams(const std::string& filename) {
   // maximum squared distance to avoid CAR-T pushing
   // tumor cells If a CAR-T and a Tumor Cell are closer than this distance, the
   // CAR-T cell will only move to the tumor cell with the adhesion forces
-  // (radiusCART + radiusTumorCell + 1 to avoid numerical errors)**2
-  max_squared_distance_cart_moving_towards_tumor_cell =
-      std::pow(radius_cart_cell + radius_tumor_cell + 1, 2);
+  // By default (radiusCART + radiusTumorCell + 1 to avoid numerical errors)**2,
+  // unless it is given in the JSON file
+  if (jfile.contains("max_squared_distance_cart_moving_towards_tumor_cell")) {
+    max_squared_distance_cart_moving_towards_tumor_cell =
+        jfile["max_squared_distance_cart_moving_towards_tumor_cell"]
+            .get<double>();
+  } else {
+    max_squared_distance_cart_moving_towards_tumor_cell =
+        std::pow(radius_cart_cell + radius_tumor_cell + 1, 2);
+  }
 }
 
 void SimParam::PrintParams() const {
